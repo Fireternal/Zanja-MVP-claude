@@ -29,7 +29,8 @@ La firma visual principal es la **grieta / corte**: dos campos que compiten y se
 - Yellow = AMBOS, premio, VS, CTA principal.
 - Pink = LIVE solamente.
 - Verde no representa “ganador” porque el resultado es opinión colectiva, no verdad objetiva.
-- Violeta pertenece a marca/sistema y a Pulso.
+- Violeta pertenece a marca/sistema y al Debate Semanal.
+- Verde marca además la verificación: no es un veredicto de opinión, es una comprobación de normas.
 
 ## 3. Tipografía
 
@@ -119,9 +120,9 @@ No mezclar múltiples estilos de sombra sin función.
 
 ### Por modo
 - **Arena:** choque / split.
-- **Pulso:** radar / scan / puntos.
-- **Choque:** dos identidades que convergen.
+- **Semanal:** fases que avanzan de izquierda a derecha.
 - **Zanjar:** piezas que se ensamblan.
+- **Verificación:** balanza, sin dramatismo.
 
 ## 10. Sonido y haptics
 No música continua. Solo sonido ligado a acción.
@@ -145,21 +146,26 @@ Todos deben funcionar también en silencio. Haptics se degradan con seguridad en
 - Inputs y labels visibles, no placeholders como única etiqueta.
 
 ## 12. Componentes oficiales
-- AppHeader
+- AppHeader (marca + XP pod + racha)
+- QuestBar (misión diaria; se oculta al completarse)
 - BottomNav
-- ModeCard
+- ModeHero / ModeTile / ModeBand
+- WeeklyCard y PhaseRail
 - DailyCaseCard
-- CaseQuestion
+- CaseQuestion (con chips de prueba y denuncia)
 - Battlefield
 - VSControl
 - VoteButtons
 - ResultBars
 - CountdownButton
 - ActionButton
-- Field / TextArea
-- SegmentedControl
+- Field / TextArea / SegmentedControl
+- StateChip (zanjándose / zanjado / retirado / en revisión)
+- MineCard
+- VerifyCard
+- ProposalRow
 - AchievementCard
 - ActivityItem
-- Sheet
+- Sheet (compartir, denuncia, visor de prueba)
 
 Cualquier pantalla nueva debe construirse con estos componentes antes de inventar una variante nueva.

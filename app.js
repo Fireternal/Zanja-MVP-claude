@@ -47,35 +47,34 @@
     {id:'majority',icon:'≈',name:'VOZ DE LA MAYORÍA',desc:'Tras 40 votos, coincide con la mayoría más del 75%.',test:s=>s.judged>=40&&ratio(s.majorityMatches,s.judged)>.75},
     {id:'balance',icon:'=',name:'EQUILIBRISTA',desc:'Elige AMBOS en al menos el 25% de tus votos.',test:s=>s.judged>=30&&ratio(s.choiceCounts.both,s.judged)>=.25},
     {id:'sharp',icon:'!',name:'TAJANTE',desc:'Tras 30 votos, usa AMBOS menos del 5%.',test:s=>s.judged>=30&&ratio(s.choiceCounts.both,s.judged)<.05},
-    {id:'radar',icon:'◎',name:'RADAR SOCIAL',desc:'Encadena 5 aciertos en Pulso.',test:s=>s.pulseMaxCombo>=5},
-    {id:'oracle',icon:'7',name:'TE LEO',desc:'Consigue 7/7 en un Pulso.',test:s=>s.pulseBest>=7},
+    {id:'weekly',icon:'W',name:'VOZ SEMANAL',desc:'Participa en un debate semanal.',test:s=>s.weeklyPlayed>=1},
+    {id:'agenda',icon:'★',name:'AGENDA PROPIA',desc:'Propón un tema para el debate semanal.',test:s=>s.proposalsMade>=1},
     {id:'creator',icon:'+',name:'ZANJADOR',desc:'Publica tu primer caso.',test:s=>s.created>=1},
     {id:'jury100',icon:'100',name:'EL JURADO HA HABLADO',desc:'Crea un caso que alcance 100 votos.',test:s=>s.createdVotePeak>=100},
     {id:'close',icon:'%',name:'SE HA LIADO',desc:'Participa en un caso cerrado por menos de 3 puntos.',test:s=>s.closeCalls>=1},
-    {id:'twins',icon:'7/7',name:'DOS GOTAS',desc:'Coincide 7/7 en un Choque.',test:s=>s.clashPerfect>=1},
-    {id:'train',icon:'0/7',name:'CHOQUE DE TRENES',desc:'No coincidas en ningún caso de un Choque.',test:s=>s.clashZero>=1}
+    {id:'guardian',icon:'⚖',name:'GUARDIÁN',desc:'Llega al nivel 5 y entra en verificación.',test:s=>levelOf(s.xp)>=5},
+    {id:'firm',icon:'10',name:'MANO FIRME',desc:'Emite 10 verificaciones.',test:s=>s.verifiedCount>=10}
   ];
 
   const DEFAULT_STATE={
     onboarded:false,sound:true,haptics:true,xp:0,streak:0,lastActiveDate:null,daily:{date:todayKey(),arenaVotes:0,done:false},
     judged:0,majorityMatches:0,choiceCounts:{a:0,both:0,b:0},votes:{},customCases:[],created:0,createdVotePeak:0,closeCalls:0,
-    pulseBest:0,pulsePlayed:0,pulseCorrect:0,pulseMaxCombo:0,clashes:0,clashPerfect:0,clashZero:0,
-    unlocked:[],activities:[],unread:3,clashHistory:[]
+    weekly:null,weeklyHistory:[],weeklyPlayed:0,proposalsMade:0,
+    reported:{},verifyQueue:[],verifiedCount:0,
+    unlocked:[],activities:[],unread:3,displayName:null
   };
   const STORAGE='zanja-beta-07';
   let state=loadState();
 
   let currentMode=null,currentCase=null,currentQueue=[],currentIndex=0,transitionBusy=false;
-  let pulse={score:0,correct:0,combo:0,maxCombo:0};
-  let clash={name:'Lucía',votes:[],otherVotes:[],queue:[]};
   let createStep=0,createPublished=false;
   let draft=freshDraft();
   let countdownTimer=null,countdownInterval=null;
 
   const screens={
-    onboarding:$('#onboardingScreen'),home:$('#homeScreen'),play:$('#playScreen'),clashSetup:$('#clashSetupScreen'),create:$('#createScreen'),activity:$('#activityScreen'),profile:$('#profileScreen'),achievements:$('#achievementsScreen')
+    onboarding:$('#onboardingScreen'),home:$('#homeScreen'),play:$('#playScreen'),create:$('#createScreen'),weekly:$('#weeklyScreen'),mine:$('#myCasesScreen'),verify:$('#verifyScreen'),activity:$('#activityScreen'),profile:$('#profileScreen'),achievements:$('#achievementsScreen')
   };
-  const els={bottom:$('#bottomNav'),playStage:$('#playStage'),playMode:$('#playModeLabel'),playProgress:$('#playProgress'),wash:$('#ambientWash'),toast:$('#toast'),share:$('#shareSheet')};
+  const els={bottom:$('#bottomNav'),playStage:$('#playStage'),playMode:$('#playModeLabel'),playProgress:$('#playProgress'),wash:$('#ambientWash'),toast:$('#toast'),share:$('#shareSheet'),report:$('#reportSheet'),photo:$('#photoDialog')};
 
   function loadState(){
     try{
@@ -87,15 +86,46 @@
       return s;
     }catch{return structuredClone(DEFAULT_STATE)}
   }
-  function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state))}catch{}}
-  function freshDraft(){return {story:'',question:'',tag:'TU ZANJA',a:['','',''],b:['','',''],bReady:false,inviteMode:false,audience:'public',duration:'1 h'};}
+  let quotaWarned=false;
+  function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state));quotaWarned=false}catch{if(!quotaWarned){quotaWarned=true;toast('SIN ESPACIO LOCAL · BORRA ALGUNA PRUEBA')}}}
+  function freshDraft(){return {story:'',question:'',tag:'TU ZANJA',photo:null,a:['','',''],b:['','',''],bReady:false,inviteMode:false,audience:'public',duration:'1 h'};}
   function ratio(a,b){return b? a/b:0}
-  function getLevel(){return Math.floor(state.xp/150)+1}
+  function levelOf(xp){return Math.floor(xp/150)+1}
+  function getLevel(){return levelOf(state.xp)}
   function levelProgress(){return (state.xp%150)/150}
   function allCases(){return [...state.customCases,...CASES]}
   function getWinner(counts){return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0]}
-  function percentage(counts){const t=counts.a+counts.b+counts.both;const a=Math.round(counts.a/t*100),both=Math.round(counts.both/t*100);return {a,both,b:100-a-both,total:t}}
+  function percentage(counts){const t=counts.a+counts.b+counts.both;if(!t)return{a:0,both:0,b:0,total:0};const a=Math.round(counts.a/t*100),both=Math.round(counts.both/t*100);return {a,both,b:100-a-both,total:t}}
   function dailyCase(){const idx=Math.floor(new Date().setHours(0,0,0,0)/86400000)%CASES.length;return CASES[idx]}
+
+  const XP={arena:5,daily:15,created:40,weekly:25,proposal:15,verify:10};
+  const VERIFY_LEVEL=5,VERIFY_QUORUM=5,REPORT_HIDE_AT=3;
+  const DURATION_MS={'15 min':9e5,'1 h':36e5,'24 h':864e5};
+  const REPORT_REASONS=['Ataque personal o acoso','Datos privados de alguien','Contenido sexual o violento','Spam o publicidad','Otro motivo'];
+  const SINGLE_CASE_MODES=['daily','weekly','shared'];
+
+  // A published case has no real jury behind it in this beta, so its vote count is
+  // derived from how far it is through its own open window.
+  function caseProgress(c){if(!c.closesAt||!c.createdAt)return 1;const span=Math.max(1,c.closesAt-c.createdAt);return Math.sqrt(clamp((Date.now()-c.createdAt)/span,0,1))}
+  function caseVotes(c){
+    if(!c||!c.mix)return {...(c&&c.counts||{a:0,both:0,b:0})};
+    const t=Math.round((c.reach||120)*caseProgress(c));
+    const a=Math.round(t*c.mix.a),both=Math.round(t*c.mix.both);
+    return {a,both,b:Math.max(0,t-a-both)};
+  }
+  function caseState(c){if(c.removed)return 'removed';if(c.closesAt&&Date.now()>=c.closesAt)return 'closed';return 'open'}
+  function newMix(){const a=.22+Math.random()*.42,both=.05+Math.random()*.16;return {a,both,b:Math.max(.05,1-a-both)}}
+  function reportFor(id){return state.verifyQueue.find(v=>v.caseId===id)}
+  function isUnderReview(c){const r=reportFor(c.id);return !!(r&&!r.resolved)}
+  function isHidden(c){const r=reportFor(c.id);return !!(c.removed||(r&&!r.resolved&&r.reportCount>=REPORT_HIDE_AT))}
+  function arenaPool(){return allCases().filter(c=>!isHidden(c)&&!state.reported[c.id]&&caseState(c)==='open')}
+  function timeLeft(ms){
+    if(ms<=0)return 'CERRADO';
+    const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);
+    if(d>=1)return `${d} D ${h%24} H`;
+    if(h>=1)return `${h} H ${m%60} MIN`;
+    return `${Math.max(1,m)} MIN`;
+  }
 
   class AudioEngine{
     constructor(){this.ctx=null;this.master=null}
@@ -116,17 +146,36 @@
     const main=['home','activity','profile'].includes(name);
     els.bottom.classList.toggle('is-visible',main);
     $$('#bottomNav button').forEach(b=>b.classList.toggle('is-active',b.dataset.nav===nav));
-    if(name==='home')updateHome();if(name==='activity')renderActivity();if(name==='profile')renderProfile();if(name==='achievements')renderAchievements();
+    if(name==='home')updateHome();if(name==='activity')renderActivity();if(name==='profile')renderProfile();if(name==='achievements')renderAchievements();if(name==='mine')renderMyCases();if(name==='verify')renderVerify();if(name==='weekly')renderWeekly();
   }
   function toast(msg){els.toast.textContent=msg;els.toast.classList.add('is-visible');clearTimeout(toast.t);toast.t=setTimeout(()=>els.toast.classList.remove('is-visible'),1800)}
   function clearCountdown(){if(countdownTimer)clearTimeout(countdownTimer);if(countdownInterval)clearInterval(countdownInterval);countdownTimer=countdownInterval=null}
 
   function updateHome(){
-    $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=getLevel();$('#pulseBest').textContent=state.pulsePlayed?`${state.pulseBest}/7`:'—';$('#createHomeStatus').textContent=state.created?`${state.created} caso${state.created===1?'':'s'} creado${state.created===1?'':'s'}`:'Crea tu primer caso';$('#clashHomeStatus').textContent=state.clashes?`${state.clashes} JUGADOS`:'RETA A UN AMIGO';$('#arenaOpenCount').textContent=CASES.length+state.customCases.length;
+    const lvl=getLevel();
+    $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=lvl;
     $('#homeXpFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#homeXpText').textContent=`${state.xp%150} / 150 XP`;
+    $('#createHomeStatus').textContent=state.created?`${state.created} caso${state.created===1?'':'s'} creado${state.created===1?'':'s'}`:'Crea tu primer caso';
+    $('#arenaOpenCount').textContent=arenaPool().length;
+
+    const openMine=state.customCases.filter(c=>caseState(c)==='open').length;
+    $('#mineCount').textContent=state.created?(openMine?`${openMine} abierta${openMine===1?'':'s'}`:'Todas zanjadas'):'Aún ninguna';
+
+    const lockedVerify=lvl<VERIFY_LEVEL,pending=state.verifyQueue.filter(v=>!v.resolved).length;
+    $('#verifyTile').classList.toggle('is-locked',lockedVerify);
+    $('#verifyCount').textContent=lockedVerify?`NIVEL ${VERIFY_LEVEL} PARA ENTRAR`:(pending?`${pending} pendiente${pending===1?'':'s'}`:'Nada pendiente');
+
+    const w=weeklySummary();
+    $('#weeklyPhase').textContent=w.badge;$('#weeklyTitle').textContent=w.title;$('#weeklyMeta').textContent=w.meta;$('#weeklyCta').textContent=w.cta;
+
     const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
     const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);$('#dailyCountdown').textContent=`CIERRA ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    const daily=state.daily;let txt='Haz una actividad',pct=0;if(daily.done){txt='Racha protegida ✓';pct=100}else if(daily.arenaVotes>0){txt=`Arena ${daily.arenaVotes}/5 votos`;pct=daily.arenaVotes/5*100}$('#dailyGoalText').textContent=txt;$('#dailyGoalFill').style.width=`${pct}%`;$('#dailyGoal').classList.toggle('is-done',daily.done);
+
+    // Once the daily mission is done it stops taking space at the top.
+    const daily=state.daily,goal=$('#dailyGoal');
+    goal.hidden=daily.done;
+    if(!daily.done){let txt='Haz una actividad',pct=0;if(daily.arenaVotes>0){txt=`Arena ${daily.arenaVotes}/5 votos`;pct=daily.arenaVotes/5*100}$('#dailyGoalText').textContent=txt;$('#dailyGoalFill').style.width=`${pct}%`}
+
     for(const b of [$('#activityBadge'),$('#homeUnread')]){b.textContent=state.unread;b.style.display=state.unread?'grid':'none'}
   }
 
@@ -134,7 +183,7 @@
   function markDaily(kind){
     if(state.daily.date!==todayKey())state.daily={date:todayKey(),arenaVotes:0,done:false};
     if(kind==='arena')state.daily.arenaVotes=Math.min(5,state.daily.arenaVotes+1);
-    const qualifies=['pulse','clash','created','daily'].includes(kind)||state.daily.arenaVotes>=5;
+    const qualifies=['weekly','created','daily','verify'].includes(kind)||state.daily.arenaVotes>=5;
     if(qualifies&&!state.daily.done){state.daily.done=true;const y=yesterdayKey();state.streak=state.lastActiveDate===y?state.streak+1:Math.max(1,state.streak);state.lastActiveDate=todayKey();addActivity('streak','Racha protegida',`🔥 ${state.streak} días seguidos en ZANJA`)}
     save();updateHome();
   }
@@ -145,27 +194,28 @@
 
   function openMode(mode){
     sound('open');haptic(8);clearCountdown();clearWash();
-    if(mode==='arena')startArena();else if(mode==='pulse')startPulse();else if(mode==='clash')showScreen('clashSetup',{nav:'home'});else if(mode==='create')openCreate();
+    if(mode==='arena')startArena();else if(mode==='weekly')openWeekly();else if(mode==='mine')showScreen('mine',{nav:'home'});else if(mode==='verify')showScreen('verify',{nav:'home'});else if(mode==='create')openCreate();
   }
 
   /* ---------------- ARENA / DAILY ---------------- */
   function startArena(tutorial=false){
-    currentMode=tutorial?'tutorial':'arena';currentQueue=shuffle(allCases().filter(c=>!state.votes[c.id]));if(currentQueue.length<6)currentQueue=shuffle(allCases());currentIndex=0;els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';els.playProgress.innerHTML='';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],tutorial);
+    currentMode=tutorial?'tutorial':'arena';const pool=arenaPool();currentQueue=shuffle(pool.filter(c=>!state.votes[c.id]));if(currentQueue.length<6)currentQueue=shuffle(pool.length?pool:allCases());currentIndex=0;els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';els.playProgress.innerHTML='';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],tutorial);
   }
   function startDaily(){currentMode='daily';currentQueue=[dailyCase()];currentIndex=0;els.playMode.textContent='CASO DEL DÍA';els.playProgress.innerHTML='<i class="is-current"></i>';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],false,true)}
   function renderArenaCase(c,tutorial=false,daily=false){
     clearCountdown();currentCase=c;transitionBusy=false;clearWash();const existing=state.votes[c.id];
     els.playStage.innerHTML=`<article class="case-shell">
-      <header class="case-question"><div class="case-meta"><span class="case-tag">${escapeHtml(c.tag)}</span><span class="case-live"><i></i>${daily?'HOY':'VEREDICTO LIVE'}</span></div><h2>${escapeHtml(c.q)}</h2>${tutorial?'<div class="case-subline">Lee los dos bandos. Luego mantén el VS o toca una opción.</div>':''}</header>
+      <header class="case-question">${caseMetaMarkup(c,daily)}<h2>${escapeHtml(c.q)}</h2>${tutorial?'<div class="case-subline">Lee los dos bandos. Luego mantén el VS o toca una opción.</div>':''}</header>
       ${battlefieldMarkup(c,existing)}
       <section class="vote-zone" id="voteZone">${existing?arenaResultMarkup(c,existing.choice):voteMarkup(daily?'¿A QUIÉN DAS LA RAZÓN?':'¿A QUIÉN DAS LA RAZÓN?')}</section>
     </article>`;
+    bindCaseMeta(c);
     fitQuestionHeading($('.case-question h2',els.playStage));
     if(!existing){bindVoteButtons(choice=>commitArenaVote(choice));bindVs(choice=>commitArenaVote(choice))}else bindResultNext();
   }
   function fitQuestionHeading(h2){
     if(!h2)return;
-    const shell=h2.closest('.case-shell,.clash-play-shell');
+    const shell=h2.closest('.case-shell');
     h2.classList.remove('is-long','is-longer');
     if(!shell)return;
     const vs=shell.querySelector('.vs-control');
@@ -196,50 +246,35 @@
   }
   function fieldMarkup(side,args){return `<section class="field field--${side}" data-side="${side}" style="--side-color:${side==='a'?'var(--cyan)':'var(--coral)'}"><span class="field-ghost">${side.toUpperCase()}</span><div class="field-content"><div class="side-badge">${side.toUpperCase()}</div><div class="side-copy"><span class="side-label">BANDO ${side.toUpperCase()}</span><ul class="argument-list">${args.slice(0,3).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div></div></section>`}
   function voteMarkup(prompt='¿A QUIÉN DAS LA RAZÓN?'){return `<div class="vote-question">${prompt}</div><div class="vote-buttons"><button class="vote-button vote-button--a" data-vote="a" type="button"><span>A</span></button><button class="vote-button vote-button--both" data-vote="both" type="button"><span>AMBOS</span></button><button class="vote-button vote-button--b" data-vote="b" type="button"><span>B</span></button></div><div class="vote-helper"><b>MANTÉN EL VS</b> Y ARRASTRA · O TOCA UNA OPCIÓN</div>`}
-  function arenaResultMarkup(c,choice){const counts={...c.counts};counts[choice]=(counts[choice]||0)+1;const p=percentage(counts),winner=getWinner(counts);let title=choice===winner?'ESTÁS CON LA MAYORÍA':'EL JURADO VA POR OTRO LADO';const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);if((sorted[0][1]-sorted[1][1])/p.total<.04)title='PARTIDO EN DOS';const label=currentMode==='daily'?'VOLVER AL INICIO':'SIGUIENTE CASO';return `<div class="result-panel"><div class="result-head"><strong>${title}</strong><span>RESULTADO AHORA</span></div><div class="result-bars">${resultBar('A',p.a,'var(--cyan)',choice==='a')}${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}${resultBar('B',p.b,'var(--coral)',choice==='b')}</div><button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button></div>`}
+  function arenaResultMarkup(c,choice){const counts=caseVotes(c);counts[choice]=(counts[choice]||0)+1;const p=percentage(counts),winner=getWinner(counts);let title=choice===winner?'ESTÁS CON LA MAYORÍA':'EL JURADO VA POR OTRO LADO';const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);if((sorted[0][1]-sorted[1][1])/p.total<.04)title='PARTIDO EN DOS';const label=SINGLE_CASE_MODES.includes(currentMode)?'VOLVER AL INICIO':'SIGUIENTE CASO';return `<div class="result-panel"><div class="result-head"><strong>${title}</strong><span>RESULTADO AHORA</span></div><div class="result-bars">${resultBar('A',p.a,'var(--cyan)',choice==='a')}${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}${resultBar('B',p.b,'var(--coral)',choice==='b')}</div><button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button></div>`}
   function resultBar(label,pct,color,selected){return `<div class="result-bar ${selected?'is-selected':''}" style="--pct:${pct}%;--bar:${color}"><span>${label}</span><strong>${pct}%</strong></div>`}
   function commitArenaVote(choice){
-    if(!currentCase||transitionBusy||state.votes[currentCase.id])return;const counts={...currentCase.counts};counts[choice]++;const winner=getWinner(counts);state.votes[currentCase.id]={choice,at:Date.now()};state.judged++;state.choiceCounts[choice]++;if(choice===winner)state.majorityMatches++;addXp(currentMode==='daily'?15:5);if(currentMode==='daily')markDaily('daily');else markDaily('arena');save();checkAchievements();sound('vote',choice);haptic([12,15,20]);setWash(choice,.18);const z=$('#voteZone');z.innerHTML=arenaResultMarkup(currentCase,choice);$('#vsControl')?.classList.add('is-locked');setTimeout(()=>{sound('reveal');setWash(choice,.06)},150);bindResultNext();
+    if(!currentCase||transitionBusy||state.votes[currentCase.id])return;const counts=caseVotes(currentCase);counts[choice]++;const winner=getWinner(counts);state.votes[currentCase.id]={choice,at:Date.now()};state.judged++;state.choiceCounts[choice]++;if(choice===winner)state.majorityMatches++;
+    const spread=Object.values(counts).sort((x,y)=>y-x),tally=spread.reduce((s,n)=>s+n,0);
+    if(tally&&(spread[0]-spread[1])/tally<.03)state.closeCalls++;
+    const kind=currentMode==='daily'?'daily':currentMode==='weekly'?'weekly':'arena';
+    addXp(XP[kind]||XP.arena);
+    if(kind==='weekly'){state.weeklyPlayed++;const w=ensureWeekly();w.debateVote=choice}
+    markDaily(kind);save();checkAchievements();sound('vote',choice);haptic([12,15,20]);setWash(choice,.18);const z=$('#voteZone');z.innerHTML=arenaResultMarkup(currentCase,choice);$('#vsControl')?.classList.add('is-locked');setTimeout(()=>{sound('reveal');setWash(choice,.06)},150);bindResultNext();
   }
   function bindResultNext(){
     const btn=$('#resultNext');if(!btn)return;clearCountdown();let r=5;const label=btn.dataset.label||'SIGUIENTE';const out=$('#resultCountdown');const go=()=>{clearCountdown();advanceArena()};btn.addEventListener('click',go);countdownInterval=setInterval(()=>{r=Math.max(0,r-1);if(out)out.textContent=`${label} · ${r}s`},1000);countdownTimer=setTimeout(go,5000)
   }
   function advanceArena(){
-    clearCountdown();if(transitionBusy)return;transitionBusy=true;$('.case-shell',els.playStage)?.classList.add('is-leaving');sound('whoosh');haptic(6);setTimeout(()=>{clearWash();if(currentMode==='daily'){showScreen('home');return}if(currentMode==='tutorial'){state.onboarded=true;save();showScreen('home');toast('YA SABES USAR ZANJA');return}currentIndex++;if(currentIndex>=currentQueue.length){currentQueue=shuffle(allCases());currentIndex=0}renderArenaCase(currentQueue[currentIndex])},330)
+    clearCountdown();if(transitionBusy)return;transitionBusy=true;$('.case-shell',els.playStage)?.classList.add('is-leaving');sound('whoosh');haptic(6);setTimeout(()=>{clearWash();if(SINGLE_CASE_MODES.includes(currentMode)){showScreen('home');return}if(currentMode==='tutorial'){state.onboarded=true;save();showScreen('home');toast('YA SABES USAR ZANJA');return}currentIndex++;if(currentIndex>=currentQueue.length){currentQueue=shuffle(allCases());currentIndex=0}renderArenaCase(currentQueue[currentIndex])},330)
   }
-
-  /* ---------------- PULSO ---------------- */
-  function startPulse(){
-    currentMode='pulse';currentQueue=shuffle(allCases()).slice(0,7);currentIndex=0;pulse={score:0,correct:0,combo:0,maxCombo:0};els.playMode.textContent='PULSO · LEE AL JURADO';showScreen('play',{nav:'home'});renderPlayDots(7,0);renderPulseCase()
-  }
-  function renderPlayDots(n,idx){els.playProgress.innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<idx?'is-done':i===idx?'is-current':''}"></i>`).join('')}
-  function renderPulseCase(){
-    clearCountdown();currentCase=currentQueue[currentIndex];transitionBusy=false;const c=currentCase;
-    els.playStage.innerHTML=`<article class="pulse-shell"><section class="pulse-hud"><div><span>PUNTOS</span><b>${pulse.score}</b></div><div class="pulse-hud__combo"><span>COMBO</span><b>×${pulse.combo}</b></div></section><div class="pulse-radar" style="--pulse-progress:${currentIndex/7*100}%"><i></i></div><section class="pulse-prompt"><span>¿QUÉ VOTARÁ EL JURADO?</span><h2>${escapeHtml(c.q)}</h2></section><section class="pulse-options"><button class="pulse-option pulse-option--a" data-pulse="a"><b>A · BANDO A</b><p>${escapeHtml(c.a[0])}</p></button><button class="pulse-option pulse-option--both" data-pulse="both"><b>AMBOS</b><p>El jurado puede decidir que los dos tienen parte de razón.</p></button><button class="pulse-option pulse-option--b" data-pulse="b"><b>B · BANDO B</b><p>${escapeHtml(c.b[0])}</p></button></section><section class="pulse-question-bottom"><span>NO VOTES LO QUE PIENSAS TÚ · PREDICE A LA GENTE</span><div class="pulse-answer-buttons"><button class="vote-button vote-button--a" data-pulse="a"><span>A</span></button><button class="vote-button vote-button--both" data-pulse="both"><span>AMBOS</span></button><button class="vote-button vote-button--b" data-pulse="b"><span>B</span></button></div></section></article>`;
-    $$('[data-pulse]',els.playStage).forEach(b=>b.addEventListener('click',()=>commitPulse(b.dataset.pulse)))
-  }
-  function commitPulse(choice){if(transitionBusy)return;transitionBusy=true;const c=currentCase,winner=getWinner(c.counts),correct=choice===winner,p=percentage(c.counts);if(correct){pulse.correct++;pulse.combo++;pulse.maxCombo=Math.max(pulse.maxCombo,pulse.combo);pulse.score+=100+(pulse.combo-1)*20;sound('correct');haptic([10,15,18])}else{pulse.combo=0;sound('wrong');haptic(8)}
-    els.playStage.innerHTML=`<article class="pulse-shell"><section class="pulse-hud"><div><span>PUNTOS</span><b>${pulse.score}</b></div><div class="pulse-hud__combo"><span>COMBO</span><b>×${pulse.combo}</b></div></section><div class="pulse-radar" style="--pulse-progress:${(currentIndex+1)/7*100}%"><i></i></div><section class="pulse-prompt"><span>EL JURADO HA RESPONDIDO</span><h2>${escapeHtml(c.q)}</h2></section><section class="pulse-reveal"><strong class="pulse-reveal__status ${correct?'is-correct':'is-wrong'}">${correct?'ACIERTO':'TE SORPRENDIÓ'}</strong><span class="pulse-reveal__score">La mayoría eligió <b>${winner==='both'?'AMBOS':winner.toUpperCase()}</b>${correct?` · COMBO ×${pulse.combo}`:''}</span><div class="result-bars">${resultBar('A',p.a,'var(--cyan)',winner==='a')}${resultBar('AMBOS',p.both,'var(--signal)',winner==='both')}${resultBar('B',p.b,'var(--coral)',winner==='b')}</div><button class="result-next" id="resultNext" data-label="${currentIndex===6?'VER RESULTADO':'SIGUIENTE'}"><b id="resultCountdown">${currentIndex===6?'VER RESULTADO':'SIGUIENTE'} · 5s</b><span class="countdown-track"><i></i></span></button></section></article>`;bindPulseNext()
-  }
-  function bindPulseNext(){const btn=$('#resultNext');let r=5;const label=btn.dataset.label,out=$('#resultCountdown');const go=()=>{clearCountdown();currentIndex++;if(currentIndex>=7)finishPulse();else{renderPlayDots(7,currentIndex);renderPulseCase()}};btn.addEventListener('click',go);countdownInterval=setInterval(()=>{r--;if(out)out.textContent=`${label} · ${Math.max(0,r)}s`},1000);countdownTimer=setTimeout(go,5000)}
-  function finishPulse(){state.pulsePlayed++;state.pulseCorrect+=pulse.correct;state.pulseBest=Math.max(state.pulseBest,pulse.correct);state.pulseMaxCombo=Math.max(state.pulseMaxCombo,pulse.maxCombo);addXp(40+pulse.correct*10);markDaily('pulse');checkAchievements();addActivity('pulse','Pulso completado',`${pulse.correct}/7 predicciones · ${pulse.score} puntos`);sound('complete');haptic([12,25,18,25,26]);save();els.playProgress.innerHTML='';els.playStage.innerHTML=`<section class="clash-result-card"><span class="eyebrow">PULSO COMPLETADO</span><h2>¿QUÉ TAL LEES<br>AL JURADO?</h2><div class="clash-percent">${pulse.correct}/7</div><div class="clash-result-grid"><div><strong>${pulse.score}</strong><span>PUNTOS</span></div><div><strong>×${pulse.maxCombo}</strong><span>COMBO MÁXIMO</span></div></div><button class="action action--primary action--xl" id="pulseAgain">OTRO PULSO →</button><button class="action action--secondary action--lg" id="pulseArena">CAMBIAR A ARENA</button><button class="link-action" id="pulseHome">VOLVER AL INICIO</button></section>`;$('#pulseAgain').onclick=startPulse;$('#pulseArena').onclick=startArena;$('#pulseHome').onclick=()=>showScreen('home')}
-
-  /* ---------------- CHOQUE ---------------- */
-  function startClash(name='Lucía'){
-    clash={name:name.trim()||'Invitado',queue:shuffle(allCases()).slice(0,7),votes:[],otherVotes:[]};clash.otherVotes=clash.queue.map((c,i)=>{const keys=['a','both','b'];const winner=getWinner(c.counts);return i%4===0?keys[(keys.indexOf(winner)+1)%3]:winner});currentMode='clash';currentIndex=0;els.playMode.textContent=`CHOQUE · ${clash.name.toUpperCase()}`;showScreen('play',{nav:'home'});renderPlayDots(7,0);renderClashCase()
-  }
-  function renderClashCase(){currentCase=clash.queue[currentIndex];transitionBusy=false;clearWash();els.playStage.innerHTML=`<article class="clash-play-shell"><section class="clash-scoreboard"><div class="clash-player"><i class="clash-avatar">TÚ</i><span>TÚ</span></div><b>VS</b><div class="clash-player"><span>${escapeHtml(clash.name)}</span><i class="clash-avatar">${escapeHtml(clash.name.slice(0,1).toUpperCase())}</i></div></section><div class="clash-lock">LAS RESPUESTAS SE REVELAN AL FINAL</div><header class="case-question"><div class="case-meta"><span class="case-tag">${escapeHtml(currentCase.tag)}</span><span class="case-live"><i></i>CHOQUE ${currentIndex+1}/7</span></div><h2>${escapeHtml(currentCase.q)}</h2></header>${battlefieldMarkup(currentCase,false)}<section class="vote-zone" id="voteZone">${voteMarkup('¿TÚ QUÉ PIENSAS?')}</section></article>`;fitQuestionHeading($('.case-question h2',els.playStage));bindVoteButtons(choice=>commitClash(choice));bindVs(choice=>commitClash(choice))}
-  function commitClash(choice){if(transitionBusy)return;transitionBusy=true;clash.votes.push(choice);sound('vote',choice);haptic([10,12,16]);const zone=$('#voteZone');zone.innerHTML=`<div class="result-panel"><div class="result-head"><strong>RESPUESTA GUARDADA</strong><span>${clash.name.toUpperCase()} NO LA VE</span></div><button class="result-next" id="resultNext"><b>CASO BLOQUEADO ✓</b><span class="countdown-track"><i style="animation-duration:1.25s"></i></span></button></div>`;$('#vsControl')?.classList.add('is-locked');setTimeout(()=>{currentIndex++;if(currentIndex>=7)finishClash();else{renderPlayDots(7,currentIndex);renderClashCase()}},1250)}
-  function finishClash(){const matches=clash.votes.filter((v,i)=>v===clash.otherVotes[i]).length;state.clashes++;if(matches===7)state.clashPerfect++;if(matches===0)state.clashZero++;state.clashHistory.unshift({name:clash.name,matches,at:Date.now()});state.clashHistory=state.clashHistory.slice(0,10);addXp(30);markDaily('clash');checkAchievements();addActivity('clash',`${clash.name} terminó vuestro Choque`,`${matches}/7 coincidencias · ya podéis ver dónde chocasteis`);save();sound('complete');const firstDiff=clash.votes.findIndex((v,i)=>v!==clash.otherVotes[i]);const diff=firstDiff>=0?clash.queue[firstDiff]:null;els.playProgress.innerHTML='';els.playStage.innerHTML=`<section class="clash-result-card"><span class="eyebrow">CHOQUE TERMINADO</span><h2>TÚ × ${escapeHtml(clash.name.toUpperCase())}</h2><div class="clash-percent">${Math.round(matches/7*100)}%</div><span style="color:#AEB6D5;font-size:11px;font-weight:800">DE ACUERDO</span><div class="clash-result-grid"><div><strong>${matches}</strong><span>COINCIDENCIAS</span></div><div><strong>${7-matches}</strong><span>CHOQUES</span></div></div>${diff?`<div class="clash-disagreement"><span>VUESTRO MAYOR DESACUERDO</span><b>${escapeHtml(diff.q)}</b><div><i>TÚ · ${clash.votes[firstDiff]==='both'?'AMBOS':clash.votes[firstDiff].toUpperCase()}</i><i>${escapeHtml(clash.name)} · ${clash.otherVotes[firstDiff]==='both'?'AMBOS':clash.otherVotes[firstDiff].toUpperCase()}</i></div></div>`:''}<button class="action action--clash action--xl" id="clashRematch">REVANCHA →</button><button class="action action--secondary action--lg" id="clashShare">COMPARTIR RESULTADO</button><button class="link-action" id="clashHome">VOLVER AL INICIO</button></section>`;$('#clashRematch').onclick=()=>startClash(clash.name);$('#clashShare').onclick=()=>openShare('CHOQUE','Juega mis mismos 7 casos y descubre cuánto coincidimos.',{t:'clash',name:myName(),ids:clash.queue.map(c=>c.id),votes:clash.votes});$('#clashHome').onclick=()=>showScreen('home')}
 
   /* ---------------- ZANJAR ---------------- */
   function openCreate(){createStep=0;createPublished=false;draft=freshDraft();showScreen('create',{nav:'home'});renderCreate()}
+  // Adding or removing a photo re-renders step 1, which would otherwise throw away
+  // whatever the user had already typed into the story field.
+  function keepStoryDraft(){const t=$('#storyInput');if(t)draft.story=t.value}
   function renderCreate(){
     const bars=$$('#createProgress i');bars.forEach((b,i)=>{b.classList.toggle('is-active',i===Math.min(createStep,3));b.classList.toggle('is-done',i<createStep)});
     const body=$('#createBody');
     body.classList.toggle('is-compact',createPublished||createStep===0||(createStep===2&&!draft.bReady));
     if(createPublished){body.innerHTML=`<section class="create-step"><div class="published-card"><div class="published-card__mark">✓</div><span class="eyebrow">CASO PUBLICADO</span><h2>YA ESTÁ EN<br>EL JURADO.</h2><p>${escapeHtml(draft.question)}</p></div><div class="create-actions"><button class="action action--primary action--xl" id="publishedArena">VER EN ARENA →</button><button class="action action--secondary action--lg" id="publishedShare">COMPARTIR CON AMIGOS</button><button class="link-action" id="publishedHome">VOLVER AL INICIO</button></div></section>`;$('#publishedArena').onclick=startArena;$('#publishedShare').onclick=()=>openShare('TU ZANJA',draft.question,{t:'case',tag:draft.tag||'TU ZANJA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b.filter(Boolean)});$('#publishedHome').onclick=()=>showScreen('home');return}
-    if(createStep===0){body.innerHTML=`<section class="create-step"><span class="eyebrow">PASO 1 · CUÉNTALO</span><h1>¿QUÉ HA<br>PASADO?</h1><p>No pienses en redactarlo perfecto. Cuéntalo como te salga y ZANJA lo ordena.</p><textarea class="text-area" id="storyInput" maxlength="650" placeholder="Ej.: Mi compañero dice que si avisa 10 minutos antes, llegar 20 minutos tarde ya no cuenta como llegar tarde…">${escapeHtml(draft.story)}</textarea><div class="create-tools"><button class="tool-button" id="dictateBtn" type="button">🎙 DICTAR</button><button class="tool-button" id="evidenceBtn" type="button">📷 AÑADIR PRUEBA</button></div><button class="action action--primary action--xl" id="createNext">ORDENAR MI CASO →</button></section>`;$('#createNext').onclick=()=>{draft.story=$('#storyInput').value.trim();if(draft.story.length<12){toast('CUÉNTAME UN POCO MÁS');return}autoBuildDraft();createStep=1;renderCreate()};$('#dictateBtn').onclick=()=>toast('DICTADO · LISTO PARA CONECTAR EN APP NATIVA');$('#evidenceBtn').onclick=()=>toast('PRUEBAS · SE AÑADIRÁN EN BACKEND BETA')}
+    if(createStep===0){body.innerHTML=`<section class="create-step"><span class="eyebrow">PASO 1 · CUÉNTALO</span><h1>¿QUÉ HA<br>PASADO?</h1><p>No pienses en redactarlo perfecto. Cuéntalo como te salga y ZANJA lo ordena.</p><textarea class="text-area" id="storyInput" maxlength="650" placeholder="Ej.: Mi compañero dice que si avisa 10 minutos antes, llegar 20 minutos tarde ya no cuenta como llegar tarde…">${escapeHtml(draft.story)}</textarea><div class="create-tools"><button class="tool-button" id="dictateBtn" type="button">🎙 DICTAR</button><button class="tool-button${draft.photo?' is-on':''}" id="evidenceBtn" type="button">📷 ${draft.photo?'CAMBIAR PRUEBA':'AÑADIR PRUEBA'}</button></div>${draft.photo?`<figure class="evidence-preview"><img src="${draft.photo}" alt="Prueba adjunta al caso" /><button class="evidence-remove" id="removeEvidence" type="button">QUITAR PRUEBA</button></figure>`:''}<button class="action action--primary action--xl" id="createNext">ORDENAR MI CASO →</button></section>`;$('#createNext').onclick=()=>{draft.story=$('#storyInput').value.trim();if(draft.story.length<12){toast('CUÉNTAME UN POCO MÁS');return}autoBuildDraft();createStep=1;renderCreate()};$('#dictateBtn').onclick=()=>toast('DICTADO · LISTO PARA CONECTAR EN APP NATIVA');$('#evidenceBtn').onclick=()=>$('#photoInput').click();const rm=$('#removeEvidence');if(rm)rm.onclick=()=>{keepStoryDraft();draft.photo=null;renderCreate()}}
     else if(createStep===1){body.innerHTML=`<section class="create-step"><span class="eyebrow">PASO 2 · TU DEFENSA</span><h1>ASÍ LO VERÁ<br>EL JURADO.</h1><p>Edita lo que haga falta. El caso debe entenderse en pocos segundos.</p><div class="case-builder"><div class="builder-question"><label>PREGUNTA</label><textarea id="draftQuestion">${escapeHtml(draft.question)}</textarea></div><div class="builder-side"><div class="builder-side__head"><strong>BANDO A</strong><span>TU POSICIÓN</span></div>${draft.a.map((x,i)=>`<input class="argument-input" data-a="${i}" value="${escapeHtml(x)}" placeholder="Argumento ${i+1}" />`).join('')}</div></div><button class="action action--primary action--xl" id="createNext">ESTA ES MI DEFENSA →</button></section>`;$('#createNext').onclick=()=>{draft.question=$('#draftQuestion').value.trim();draft.a=$$('[data-a]').map(i=>i.value.trim()).filter(Boolean).slice(0,3);while(draft.a.length<3)draft.a.push('');if(!draft.question||!draft.a[0]){toast('FALTA LA PREGUNTA O TU DEFENSA');return}createStep=2;renderCreate()}}
     else if(createStep===2){const bWritten=draft.b.some(Boolean);body.innerHTML=draft.bReady?`<section class="create-step"><span class="eyebrow">PASO 3 · BANDO B</span><h1>${bWritten?'EL OTRO LADO<br>YA ESTÁ LISTO.':'AHORA ESCRIBE<br>TU DEFENSA.'}</h1><div class="builder-question"><label>SOBRE QUÉ VOTA EL JURADO</label><textarea readonly>${escapeHtml(draft.question)}</textarea></div><div class="builder-side builder-side--b"><div class="builder-side__head"><strong>BANDO B</strong><span>SU DEFENSA</span></div>${draft.b.map((x,i)=>`<input class="argument-input" data-b="${i}" value="${escapeHtml(x)}" placeholder="Argumento ${i+1}" />`).join('')}</div><div class="info-box">A y B se han escrito <b>sin ver la defensa del otro</b>. El caso ya puede abrirse al jurado.</div><button class="action action--primary action--xl" id="createNext">${draft.inviteMode?'LISTO · GENERAR ENLACE →':'PREPARAR PUBLICACIÓN →'}</button></section>`:`<section class="create-step"><span class="eyebrow">PASO 3 · FALTA EL OTRO LADO</span><h1>AHORA LE TOCA<br>A B.</h1><p>B debe escribir su defensa sin ver la tuya. Así reducimos respuestas estratégicas.</p><div class="invite-hero"><b>VS</b></div><div class="create-actions"><button class="action action--primary action--xl" id="inviteB">ENVIAR INVITACIÓN →</button><button class="action action--secondary action--lg" id="localB">RESPONDER COMO B AQUÍ · BETA</button></div><div class="info-box"><b>B recibe un enlace y responde sin instalar nada.</b> Al terminar, le genera otro enlace para devolvértelo.</div></section>`;
       if(draft.bReady){
@@ -259,21 +294,344 @@
     if(q.length>110)q=q.slice(0,106).replace(/\s+\S*$/,'')+'…?';
     draft.question=q;draft.a=['','',''];
   }
-  function publishDraft(){const id='custom-'+Date.now();const c={id,tag:draft.tag||'TU ZANJA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b.filter(Boolean),counts:{a:7,both:2,b:6},custom:true};state.customCases.unshift(c);state.created++;state.createdVotePeak=Math.max(state.createdVotePeak,15);addXp(40);markDaily('created');addActivity('created','Tu ZANJA ya está en el jurado',`${draft.duration} · ${draft.audience==='public'?'jurado público':'solo con enlace'}`);checkAchievements();sound('zanjar');haptic([14,25,28]);createPublished=true;save();renderCreate()}
+  function publishDraft(){
+    const id='custom-'+Date.now(),now=Date.now(),span=DURATION_MS[draft.duration]||36e5;
+    const c={id,tag:draft.tag||'TU ZANJA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b.filter(Boolean),
+      photo:draft.photo||null,counts:{a:0,both:0,b:0},mix:newMix(),reach:60+Math.floor(Math.random()*340),
+      createdAt:now,closesAt:now+span,audience:draft.audience,custom:true};
+    state.customCases.unshift(c);state.created++;
+    addXp(XP.created);markDaily('created');
+    addActivity('created','Tu ZANJA ya está en el jurado',`${draft.duration} · ${draft.audience==='public'?'jurado público':'solo con enlace'}`);
+    checkAchievements();sound('zanjar');haptic([14,25,28]);createPublished=true;save();renderCreate();
+  }
+
+  /* ---------------- PRUEBAS FOTOGRÁFICAS ---------------- */
+  function downscaleImage(file,max=900,q=.62){
+    return new Promise((res,rej)=>{
+      const url=URL.createObjectURL(file),img=new Image();
+      img.onload=()=>{
+        URL.revokeObjectURL(url);
+        const s=Math.min(1,max/Math.max(img.width,img.height));
+        const cv=document.createElement('canvas');
+        cv.width=Math.max(1,Math.round(img.width*s));cv.height=Math.max(1,Math.round(img.height*s));
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        try{res(cv.toDataURL('image/jpeg',q))}catch(e){rej(e)}
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('imagen no válida'))};
+      img.src=url;
+    });
+  }
+  function openPhoto(src,caption){if(!src)return;$('#photoImage').src=src;$('#photoCaption').textContent=caption||'';els.photo.showModal()}
+
+  /* ---------------- DENUNCIAS ---------------- */
+  function caseMetaMarkup(c,daily){
+    const review=isUnderReview(c);
+    return `<div class="case-meta">
+      <span class="case-tag">${escapeHtml(c.tag)}</span>
+      <span class="case-live"><i></i>${daily?'HOY':currentMode==='weekly'?'SEMANAL':'VEREDICTO LIVE'}</span>
+      <span class="case-meta__gap"></span>
+      ${c.photo?'<button class="case-chip case-chip--photo" id="caseEvidence" type="button" aria-label="Ver la prueba adjunta">PRUEBA</button>':''}
+      <button class="case-chip case-chip--report" id="caseReport" type="button" aria-label="Denunciar este caso">⚑</button>
+    </div>${review?'<div class="review-banner">EN REVISIÓN · la comunidad ha denunciado este caso</div>':''}`;
+  }
+  function bindCaseMeta(c){
+    const ev=$('#caseEvidence');if(ev)ev.onclick=e=>{e.stopPropagation();openPhoto(c.photo,c.q)};
+    const rp=$('#caseReport');if(rp)rp.onclick=e=>{e.stopPropagation();openReport(c)};
+  }
+  function openReport(c){
+    if(state.reported[c.id]){toast('YA HABÍAS DENUNCIADO ESTE CASO');return}
+    $('#reportQuestion').textContent=c.q;
+    $('#reportBody').innerHTML=REPORT_REASONS.map((r,i)=>`<button class="report-reason" data-reason="${i}" type="button">${escapeHtml(r)}</button>`).join('');
+    els.report.showModal();
+    $$('[data-reason]',els.report).forEach(b=>b.onclick=()=>submitReport(c,REPORT_REASONS[+b.dataset.reason]));
+  }
+  function submitReport(c,reason){
+    els.report.close();
+    if(state.reported[c.id])return;
+    state.reported[c.id]={reason,at:Date.now()};
+    let item=reportFor(c.id);
+    if(!item){item={caseId:c.id,tag:c.tag,q:c.q,photo:c.photo||null,reasons:[],reportCount:0,votes:{remove:0,keep:0},myVote:null,resolved:null,mine:state.customCases.some(x=>x.id===c.id)};state.verifyQueue.unshift(item)}
+    item.reportCount++;item.reasons.push(reason);
+    const pulled=item.reportCount>=REPORT_HIDE_AT;
+    addActivity('report','Denuncia enviada',`${reason} · ${pulled?'el caso sale de Arena':'queda en revisión'}`);
+    save();sound('tap');haptic(12);
+    toast(pulled?'FUERA DE ARENA · PASA A VERIFICACIÓN':'DENUNCIA ENVIADA · EN REVISIÓN');
+    if(currentMode==='arena')advanceArena();else showScreen('home');
+  }
+
+  /* ---------------- VERIFICACIÓN ---------------- */
+  function seedVerifyQueue(){
+    if(state.verifyQueue.length)return;
+    state.verifyQueue=[
+      {caseId:'demo-r1',tag:'DENUNCIADO',q:'¿Puede tu cuñado publicar fotos de tus hijos sin pedirte permiso?',photo:null,
+       reasons:['Datos privados de alguien','Datos privados de alguien'],reportCount:2,votes:{remove:2,keep:2},myVote:null,resolved:null,mine:false},
+      {caseId:'demo-r2',tag:'DENUNCIADO',q:'¿Está bien poner música a todo volumen a las 3 de la mañana un martes?',photo:null,
+       reasons:['Otro motivo'],reportCount:1,votes:{remove:1,keep:1},myVote:null,resolved:null,mine:false},
+      {caseId:'demo-r3',tag:'DENUNCIADO',q:'¿Se puede contar en público lo que te contaron en confianza?',photo:null,
+       reasons:['Ataque personal o acoso','Otro motivo','Ataque personal o acoso'],reportCount:3,votes:{remove:3,keep:1},myVote:null,resolved:null,mine:false}
+    ];
+    save();
+  }
+  function verifyVote(item,choice){
+    if(item.myVote||item.resolved)return;
+    item.votes[choice]++;item.myVote=choice;
+    const total=item.votes.remove+item.votes.keep;
+    if(total>=VERIFY_QUORUM){
+      item.resolved=item.votes.remove>item.votes.keep?'removed':'kept';
+      if(item.resolved==='removed'){const c=state.customCases.find(x=>x.id===item.caseId);if(c)c.removed=true}
+      addActivity('verify',item.resolved==='removed'?'Un caso ha sido retirado':'Un caso se mantiene publicado',
+        `${item.votes.remove} retirar · ${item.votes.keep} mantener`);
+    }
+    state.verifiedCount++;addXp(XP.verify);markDaily('verify');checkAchievements();save();
+    sound(choice==='remove'?'wrong':'correct');haptic(12);
+    toast(item.resolved?(item.resolved==='removed'?'DECIDIDO · SE RETIRA':'DECIDIDO · SE MANTIENE'):`VOTO REGISTRADO · ${item.votes.remove+item.votes.keep}/${VERIFY_QUORUM}`);
+    renderVerify();
+  }
+  function verifyCardMarkup(item){
+    const total=item.votes.remove+item.votes.keep,pct=total?Math.round(item.votes.remove/total*100):0;
+    const reasons=[...new Set(item.reasons)];
+    return `<article class="verify-card${item.resolved?' is-resolved':''}">
+      <div class="verify-card__head">
+        <span class="state-chip is-review">${item.reportCount} DENUNCIA${item.reportCount===1?'':'S'}</span>
+        ${item.reportCount>=REPORT_HIDE_AT?'<span class="state-chip is-removed">FUERA DE ARENA</span>':''}
+        ${item.resolved?`<span class="state-chip ${item.resolved==='removed'?'is-removed':'is-closed'}">${item.resolved==='removed'?'RETIRADO':'MANTENIDO'}</span>`:''}
+      </div>
+      <b>${escapeHtml(item.q)}</b>
+      <div class="verify-reasons">${reasons.map(r=>`<span>${escapeHtml(r)}</span>`).join('')}</div>
+      ${item.photo?`<button class="evidence-button" data-vphoto="${escapeHtml(item.caseId)}" type="button">VER PRUEBA</button>`:''}
+      <div class="verify-tally"><i style="width:${pct}%"></i></div>
+      <div class="verify-tally__legend"><span>${item.votes.remove} retirar</span><span>${item.votes.keep} mantener</span><b>${total}/${VERIFY_QUORUM}</b></div>
+      ${item.resolved?'' :item.myVote
+        ?`<div class="verify-mine">TU VOTO: ${item.myVote==='remove'?'RETIRAR':'MANTENER'} · faltan votos</div>`
+        :`<div class="verify-actions"><button class="action action--danger action--lg" data-verify="remove" data-id="${escapeHtml(item.caseId)}" type="button">RETIRAR</button><button class="action action--secondary action--lg" data-verify="keep" data-id="${escapeHtml(item.caseId)}" type="button">MANTENER</button></div>`}
+    </article>`;
+  }
+  function renderVerify(){
+    const lvl=getLevel(),body=$('#verifyBody');
+    if(lvl<VERIFY_LEVEL){
+      const need=Math.max(0,VERIFY_LEVEL*150-state.xp);
+      body.innerHTML=`<div class="verify-lock">
+        <div class="verify-lock__badge">⚖</div>
+        <span class="eyebrow">PANEL DE VERIFICACIÓN</span>
+        <h2>SE ABRE EN<br>EL NIVEL ${VERIFY_LEVEL}.</h2>
+        <p>Los verificadores revisan los casos denunciados y deciden si se retiran. Hace falta criterio acumulado, así que se desbloquea usando ZANJA.</p>
+        <div class="verify-lock__meter"><i style="width:${Math.round(clamp(state.xp/(VERIFY_LEVEL*150),0,1)*100)}%"></i></div>
+        <b>NIVEL ${lvl} · TE FALTAN ${fmt.format(need)} XP</b>
+        <ul class="xp-legend">
+          <li><span>+${XP.arena}</span> votar en Arena</li>
+          <li><span>+${XP.daily}</span> Caso del Día</li>
+          <li><span>+${XP.weekly}</span> debate semanal</li>
+          <li><span>+${XP.created}</span> publicar un caso</li>
+        </ul>
+      </div>`;
+      return;
+    }
+    const queue=state.verifyQueue.filter(v=>!v.mine);
+    const pending=queue.filter(v=>!v.resolved),done=queue.filter(v=>v.resolved);
+    $('#verifyStat').textContent=`${state.verifiedCount} verificadas`;
+    body.innerHTML=`<div class="verify-rules">Decide si el caso respeta las normas. Al llegar a <b>${VERIFY_QUORUM} votos</b> gana la mayoría simple. Cada verificación suma <b>+${XP.verify} XP</b>.</div>
+      ${pending.length?pending.map(verifyCardMarkup).join(''):'<div class="empty-state"><b>NADA PENDIENTE</b><p>No hay casos denunciados esperando verificación ahora mismo.</p></div>'}
+      ${done.length?`<div class="section-title"><div><span>YA RESUELTOS</span><b>Decisiones de la comunidad</b></div></div>${done.map(verifyCardMarkup).join('')}`:''}`;
+    $$('[data-verify]',body).forEach(b=>b.onclick=()=>{const item=state.verifyQueue.find(v=>v.caseId===b.dataset.id);if(item)verifyVote(item,b.dataset.verify)});
+    $$('[data-vphoto]',body).forEach(b=>b.onclick=()=>{const item=state.verifyQueue.find(v=>v.caseId===b.dataset.vphoto);if(item)openPhoto(item.photo,item.q)});
+  }
+
+  /* ---------------- MIS ZANJAS ---------------- */
+  function sideLabel(k){return k==='both'?'AMBOS':k==='a'?'BANDO A':'BANDO B'}
+  function refreshCasePeak(){
+    let m=state.createdVotePeak;
+    for(const c of state.customCases){const v=caseVotes(c);m=Math.max(m,v.a+v.both+v.b)}
+    if(m!==state.createdVotePeak){state.createdVotePeak=m;save()}
+  }
+  function renderMyCases(){
+    refreshCasePeak();checkAchievements();
+    const list=state.customCases,body=$('#myCasesList');
+    const open=list.filter(c=>caseState(c)==='open').length,closed=list.filter(c=>caseState(c)==='closed').length;
+    $('#mineSummary').textContent=list.length?`${open} zanjándose · ${closed} zanjada${closed===1?'':'s'}`:'Todavía no has publicado nada';
+    if(!list.length){
+      body.innerHTML=`<div class="empty-state"><b>AÚN NO HAS ZANJADO NADA</b><p>Cuando publiques un caso aparecerá aquí: cómo va la votación, cuánto le queda abierto y el veredicto final.</p></div>`;
+      return;
+    }
+    body.innerHTML=list.map(c=>{
+      const st=caseState(c),v=caseVotes(c),p=percentage(v),review=isUnderReview(c);
+      const chip=st==='removed'?['RETIRADO','is-removed']:st==='closed'?['ZANJADO','is-closed']:['ZANJÁNDOSE','is-open'];
+      const foot=st==='open'?`CIERRA EN ${timeLeft(c.closesAt-Date.now())}`
+        :st==='removed'?'RETIRADO POR VERIFICACIÓN'
+        :p.total?`GANA ${sideLabel(getWinner(v))}`:'CERRÓ SIN VOTOS';
+      return `<article class="mine-card${st==='removed'?' is-dimmed':''}">
+        <div class="mine-card__head">
+          <span class="state-chip ${chip[1]}">${chip[0]}</span>
+          ${review?'<span class="state-chip is-review">EN REVISIÓN</span>':''}
+          ${c.photo?`<button class="mine-photo" data-mphoto="${escapeHtml(c.id)}" type="button">PRUEBA</button>`:''}
+        </div>
+        <b>${escapeHtml(c.q)}</b>
+        <div class="result-bars result-bars--mini">
+          ${resultBar('A',p.a,'var(--cyan)',false)}${resultBar('AMBOS',p.both,'var(--signal)',false)}${resultBar('B',p.b,'var(--coral)',false)}
+        </div>
+        <div class="mine-card__foot"><span>${p.total?`${fmt.format(p.total)} votos`:'Sin votos todavía'}</span><i>${foot}</i></div>
+      </article>`;
+    }).join('');
+    $$('[data-mphoto]',body).forEach(b=>b.onclick=()=>{const c=state.customCases.find(x=>x.id===b.dataset.mphoto);if(c)openPhoto(c.photo,c.q)});
+  }
+
+  /* ---------------- DEBATE SEMANAL ---------------- */
+  const PROPOSAL_POOL=[
+    {q:'¿Se puede ir a una boda sin confirmar la asistencia?',a:['Avisé en el grupo el día antes.','Había sitio de sobra.','Surgió a última hora.'],b:['El catering se paga por cabeza.','Confirmar es lo mínimo.','Descolocas la mesa de alguien.'],author:'Marta'},
+    {q:'¿Está mal devolver un regalo que no te gusta a la misma persona?',a:['Prefiero ser sincero.','No lo voy a usar nunca.','Que lo disfrute alguien.'],b:['El gesto era lo que contaba.','Hace sentir fatal a quien lo eligió.','Se guarda y ya está.'],author:'Iván'},
+    {q:'¿Puede un grupo obligarte a pagar a partes iguales si tú no bebiste?',a:['Repartir es más rápido.','Siempre se hace así.','Otras veces salgo ganando yo.'],b:['Pagué lo mío y poco más.','La diferencia era grande.','Cada uno lo suyo.'],author:'Lucía'},
+    {q:'¿Es de mala educación contestar mensajes mientras cenas con alguien?',a:['Miro el móvil dos segundos.','Puede ser algo urgente.','Sigo la conversación igual.'],b:['Rompe la atención del todo.','El rato era para los dos.','Puede esperar al postre.'],author:'Diego'},
+    {q:'¿Deberías avisar si vas a llevar a alguien más a una cena en casa ajena?',a:['Es alguien de confianza.','Siempre sobra comida.','Se lo dije al llegar.'],b:['Hay que contar los platos.','La casa no es tuya.','Un mensaje antes cuesta nada.'],author:'Nerea'},
+    {q:'¿Se puede dejar de seguir a un amigo en redes sin que sea algo personal?',a:['Solo limpio el feed.','Seguimos hablando igual.','No significa nada.'],b:['Se nota y duele.','Es un gesto público.','Podrías silenciarlo en vez de eso.'],author:'Pablo'}
+  ];
+  function weekStart(d=new Date()){const t=new Date(d);t.setHours(0,0,0,0);t.setDate(t.getDate()-((t.getDay()+6)%7));return t}
+  function weekKey(){return weekStart().toISOString().slice(0,10)}
+  function weekEnd(){const t=weekStart();t.setDate(t.getDate()+7);return t.getTime()-60000}
+  function debateStart(){const t=weekStart();t.setDate(t.getDate()+3);return t.getTime()}
+  function weeklyPhase(){const d=new Date().getDay();return (d===1||d===2)?'propose':d===3?'elect':'debate'}
+  function seedProposals(key){
+    let h=7;for(const ch of key)h=(h*33+ch.charCodeAt(0))>>>0;
+    return PROPOSAL_POOL.map((p,i)=>({id:'p'+i,q:p.q,a:p.a,b:p.b,author:p.author,votes:60+((h>>(i*3))%180)}));
+  }
+  function winningProposal(w){return w&&w.proposals&&w.proposals.length?[...w.proposals].sort((x,y)=>y.votes-x.votes)[0]:null}
+  function ensureWeekly(){
+    const k=weekKey();
+    if(state.weekly&&state.weekly.key===k)return state.weekly;
+    if(state.weekly&&state.weekly.proposals){
+      const win=winningProposal(state.weekly);
+      if(win){state.weeklyHistory.unshift({key:state.weekly.key,q:win.q,myVote:state.weekly.debateVote||null,at:Date.now()});state.weeklyHistory=state.weeklyHistory.slice(0,8)}
+    }
+    state.weekly={key:k,proposals:seedProposals(k),myProposalId:null,votedProposalId:null,debateVote:null};
+    save();return state.weekly;
+  }
+  function weeklyCase(w){
+    const p=winningProposal(w);if(!p)return null;
+    const mixA=.24+((p.votes*13)%34)/100,mixBoth=.06+((p.votes*7)%13)/100;
+    return {id:`weekly-${w.key}`,tag:'DEBATE SEMANAL',q:p.q,a:p.a,b:p.b,counts:{a:0,both:0,b:0},
+      mix:{a:mixA,both:mixBoth,b:Math.max(.05,1-mixA-mixBoth)},reach:900+((p.votes*7)%1500),
+      createdAt:debateStart(),closesAt:weekEnd()};
+  }
+  function weeklySummary(){
+    const w=ensureWeekly(),phase=weeklyPhase();
+    if(phase==='propose')return {badge:'FASE 1 · PROPUESTAS',title:'¿QUÉ DEBATIMOS ESTA SEMANA?',meta:`${w.proposals.length} temas en la mesa`,cta:w.myProposalId?'VER PROPUESTAS →':'PROPONER TEMA →'};
+    if(phase==='elect')return {badge:'FASE 2 · ELECCIÓN',title:'ELIGE EL TEMA DE LA SEMANA',meta:w.votedProposalId?'Ya has votado':'Tu voto decide el debate',cta:w.votedProposalId?'VER RESULTADOS →':'VOTAR TEMA →'};
+    const c=weeklyCase(w);
+    return {badge:'FASE 3 · DEBATE ABIERTO',title:c?c.q:'DEBATE DE LA SEMANA',meta:`Cierra en ${timeLeft(weekEnd()-Date.now())}`,cta:c&&state.votes[c.id]?'VER RESULTADO →':'ENTRAR AL DEBATE →'};
+  }
+  function openWeekly(){ensureWeekly();showScreen('weekly',{nav:'home'})}
+  function startWeeklyDebate(){
+    const w=ensureWeekly(),c=weeklyCase(w);
+    if(!c){toast('TODAVÍA NO HAY TEMA GANADOR');return}
+    sound('open');haptic(8);clearCountdown();clearWash();
+    currentMode='weekly';currentQueue=[c];currentIndex=0;
+    els.playMode.textContent='DEBATE SEMANAL';els.playProgress.innerHTML='<i class="is-current"></i>';
+    showScreen('play',{nav:'home'});renderArenaCase(c);
+  }
+  function submitProposal(){
+    const w=ensureWeekly();
+    const q=$('#propQ').value.trim(),a=$('#propA').value.trim(),b=$('#propB').value.trim();
+    if(q.length<10){toast('ESCRIBE UNA PREGUNTA MÁS CLARA');return}
+    if(!a||!b){toast('HACEN FALTA LOS DOS BANDOS');return}
+    const id='mine-'+Date.now();
+    w.proposals.push({id,q:/^\s*¿/.test(q)?q:`¿${q.replace(/^[¿\s]+/,'')}`,a:[a],b:[b],author:'Tú',votes:1,mine:true});
+    w.myProposalId=id;state.proposalsMade++;
+    addXp(XP.proposal);addActivity('weekly','Has propuesto un tema',q.slice(0,70));
+    checkAchievements();save();sound('zanjar');haptic([12,20]);
+    toast(`PROPUESTA ENVIADA · +${XP.proposal} XP`);
+    renderWeekly();
+  }
+  function voteProposal(id){
+    const w=ensureWeekly();
+    if(w.votedProposalId){toast('YA HAS ELEGIDO TEMA ESTA SEMANA');return}
+    const p=w.proposals.find(x=>x.id===id);if(!p)return;
+    p.votes++;w.votedProposalId=id;
+    addActivity('weekly','Has votado el tema de la semana',p.q.slice(0,70));
+    save();sound('vote','a');haptic(12);toast('VOTO REGISTRADO');
+    renderWeekly();
+  }
+  function proposalRowMarkup(p,w,phase,maxVotes){
+    const chosen=w.votedProposalId===p.id,pct=maxVotes?Math.round(p.votes/maxVotes*100):0;
+    return `<article class="proposal${chosen?' is-chosen':''}${p.mine?' is-mine':''}">
+      <div class="proposal__bar" style="width:${pct}%"></div>
+      <div class="proposal__body">
+        <b>${escapeHtml(p.q)}</b>
+        <span class="proposal__meta">${p.mine?'Tu propuesta':`Propuesto por ${escapeHtml(p.author)}`} · ${fmt.format(p.votes)} votos</span>
+      </div>
+      ${phase==='elect'&&!w.votedProposalId?`<button class="proposal__vote" data-prop="${escapeHtml(p.id)}" type="button">VOTAR</button>`:chosen?'<span class="proposal__check">✓</span>':''}
+    </article>`;
+  }
+  function renderWeekly(){
+    const w=ensureWeekly(),phase=weeklyPhase(),body=$('#weeklyBody');
+    const order=['propose','elect','debate'];
+    const rail=`<div class="phase-rail">${[['PROPUESTAS','propose'],['ELECCIÓN','elect'],['DEBATE','debate'],['ZANJADO','end']].map(([l,k])=>{
+      const cls=k===phase?'is-current':(order.indexOf(k)>-1&&order.indexOf(k)<order.indexOf(phase))?'is-done':'';
+      return `<span class="${cls}">${l}</span>`;
+    }).join('')}</div>`;
+    const sorted=[...w.proposals].sort((x,y)=>y.votes-x.votes);
+    const maxVotes=sorted.length?sorted[0].votes:0;
+
+    if(phase==='propose'){
+      body.innerHTML=`${rail}
+        <section class="panel-hero">
+          <span class="eyebrow">LUNES Y MARTES</span>
+          <h1>¿QUÉ DEBATIMOS<br>ESTA SEMANA?</h1>
+          <p>Propón un tema. El miércoles la comunidad elige cuál se debate de jueves a domingo.</p>
+        </section>
+        ${w.myProposalId
+          ?'<div class="info-box"><b>Tu propuesta ya está en la mesa.</b> El miércoles se vota cuál gana.</div>'
+          :`<div class="proposal-form">
+              <label class="field-label" for="propQ">TU PREGUNTA</label>
+              <textarea class="text-area text-area--sm" id="propQ" maxlength="120" placeholder="¿Se puede…?"></textarea>
+              <label class="field-label" for="propA">BANDO A</label>
+              <input class="text-input" id="propA" maxlength="80" placeholder="El argumento de un lado" />
+              <label class="field-label" for="propB">BANDO B</label>
+              <input class="text-input" id="propB" maxlength="80" placeholder="El argumento del otro" />
+              <button class="action action--primary action--lg" id="sendProposal" type="button">ENVIAR PROPUESTA →</button>
+            </div>`}
+        <div class="section-title"><div><span>EN LA MESA</span><b>${w.proposals.length} temas propuestos</b></div></div>
+        <div class="proposal-list">${sorted.map(p=>proposalRowMarkup(p,w,phase,maxVotes)).join('')}</div>`;
+      const send=$('#sendProposal');if(send)send.onclick=submitProposal;
+      return;
+    }
+
+    if(phase==='elect'){
+      body.innerHTML=`${rail}
+        <section class="panel-hero">
+          <span class="eyebrow">MIÉRCOLES · DÍA DE ELECCIÓN</span>
+          <h1>ELIGE EL TEMA<br>DE LA SEMANA.</h1>
+          <p>${w.votedProposalId?'Ya has votado. El más votado se abrirá mañana como debate.':'Un voto por persona. El más votado se abre mañana como debate.'}</p>
+        </section>
+        <div class="proposal-list">${sorted.map(p=>proposalRowMarkup(p,w,phase,maxVotes)).join('')}</div>`;
+      $$('[data-prop]',body).forEach(b=>b.onclick=()=>voteProposal(b.dataset.prop));
+      return;
+    }
+
+    const c=weeklyCase(w),voted=c&&state.votes[c.id],v=c?caseVotes(c):null,p=v?percentage(v):null;
+    body.innerHTML=`${rail}
+      <section class="weekly-debate">
+        <span class="eyebrow">EL TEMA GANADOR · JUEVES A DOMINGO</span>
+        <h1>${c?escapeHtml(c.q):'TODAVÍA NO HAY TEMA'}</h1>
+        <div class="weekly-clock">CIERRA EN ${timeLeft(weekEnd()-Date.now())}</div>
+        ${voted&&p?`<div class="result-bars">${resultBar('A',p.a,'var(--cyan)',voted.choice==='a')}${resultBar('AMBOS',p.both,'var(--signal)',voted.choice==='both')}${resultBar('B',p.b,'var(--coral)',voted.choice==='b')}</div>
+          <div class="weekly-voted">YA HAS VOTADO · ${sideLabel(voted.choice)}</div>`
+        :`<button class="action action--primary action--xl" id="enterDebate" type="button">ENTRAR AL DEBATE →</button>`}
+      </section>
+      ${state.weeklyHistory.length?`<div class="section-title"><div><span>SEMANAS ANTERIORES</span><b>Lo que ya se zanjó</b></div></div>
+        <div class="proposal-list">${state.weeklyHistory.map(h=>`<article class="proposal is-past"><div class="proposal__body"><b>${escapeHtml(h.q)}</b><span class="proposal__meta">Semana del ${escapeHtml(h.key)}${h.myVote?` · votaste ${sideLabel(h.myVote)}`:''}</span></div></article>`).join('')}</div>`:''}`;
+    const enter=$('#enterDebate');if(enter)enter.onclick=startWeeklyDebate;
+  }
 
   /* ---------------- Activity / Profile ---------------- */
-  function seedActivities(){if(state.activities.length)return;state.activities=[{id:1,type:'closed',title:'Un caso que juzgaste ha sido ZANJADO',detail:'“¿Puedes ver solo una serie?” · B gana 72%',at:Date.now()-1800000},{id:2,type:'clash',title:'Lucía te ha retado a un Choque',detail:'7 casos · todavía no has respondido',at:Date.now()-7200000},{id:3,type:'b',title:'Bando B ha respondido',detail:'Tu caso ya puede abrirse al jurado',at:Date.now()-86400000}];save()}
-  function renderActivity(){seedActivities();state.unread=0;save();updateHome();const list=$('#activityList');list.innerHTML=state.activities.map(x=>`<article class="activity-item"><div class="activity-icon activity-icon--${x.type}">${x.type==='closed'?'✓':x.type==='clash'?'×':x.type==='achievement'?'✦':x.type==='streak'?'🔥':x.type==='pulse'?'◎':x.type==='created'?'+':'B'}</div><div class="activity-copy"><b>${escapeHtml(x.title)}</b><span>${escapeHtml(x.detail)}</span></div><button data-activity="${x.type}">VER →</button></article>`).join('');$$('[data-activity]',list).forEach(b=>b.onclick=()=>{if(b.dataset.activity==='clash')showScreen('clashSetup');else if(b.dataset.activity==='created'||b.dataset.activity==='closed')startArena();else toast('ACTIVIDAD REVISADA')})}
-  function renderProfile(){const agree=state.judged?Math.round(state.majorityMatches/state.judged*100):null;$('#profileAgreement').textContent=agree==null?'—':`${agree}%`;$('#profileLevel').textContent=getLevel();$('#profileLevelFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#profileXpText').textContent=`${state.xp} XP`;const metrics=[['CASOS',state.judged],['RACHA',`🔥 ${state.streak}`],['PULSOS',state.pulsePlayed],['CHOQUES',state.clashes]];$('#metricGrid').innerHTML=metrics.map(([a,b])=>`<div class="metric-card"><strong>${b}</strong><span>${a}</span></div>`).join('');const total=Math.max(1,state.judged),pc={a:Math.round(state.choiceCounts.a/total*100),both:Math.round(state.choiceCounts.both/total*100)};pc.b=state.judged?100-pc.a-pc.both:0;$('#criterionBars').innerHTML=[['A',pc.a,'var(--cyan)'],['AMBOS',pc.both,'var(--signal)'],['B',pc.b,'var(--coral)']].map(([l,p,c])=>`<div class="criterion-bar" style="--pct:${p}%;--color:${c}"><span>${l}</span><b>${p}%</b></div>`).join('');let label='Aún estamos conociéndote';if(state.judged>=20){if(agree<45)label='Tiendes a ir a contracorriente';else if(agree>72)label='Lees bastante bien al jurado';else if(pc.both>22)label='Buscas mucho el punto medio';else label='Tienes criterio propio'}$('#criterionLabel').textContent=label;checkAchievements();const featured=ACHIEVEMENTS.slice(0,3).map(a=>achievementMini(a));$('#achievementStrip').innerHTML=featured.join('');$('#historyJudged').textContent=state.judged;$('#historyCreated').textContent=state.created;$('#historyClashes').textContent=state.clashes}
-  const MEDAL_IDS=new Set(['jury50','jury500','long','oracle','jury100']);
+  function seedActivities(){if(state.activities.length)return;state.activities=[{id:1,type:'closed',title:'Un caso que juzgaste ha sido ZANJADO',detail:'“¿Puedes ver solo una serie?” · B gana 72%',at:Date.now()-1800000},{id:2,type:'verify',title:'Hay casos esperando verificación',detail:'La comunidad ha denunciado 3 casos',at:Date.now()-7200000},{id:3,type:'b',title:'Bando B ha respondido',detail:'Tu caso ya puede abrirse al jurado',at:Date.now()-86400000}];save()}
+  function renderActivity(){seedActivities();state.unread=0;save();updateHome();const list=$('#activityList');list.innerHTML=state.activities.map(x=>`<article class="activity-item"><div class="activity-icon activity-icon--${x.type}">${x.type==='closed'?'✓':x.type==='verify'?'⚖':x.type==='report'?'⚑':x.type==='achievement'?'✦':x.type==='streak'?'🔥':x.type==='weekly'?'W':x.type==='created'?'+':'B'}</div><div class="activity-copy"><b>${escapeHtml(x.title)}</b><span>${escapeHtml(x.detail)}</span></div><button data-activity="${x.type}">VER →</button></article>`).join('');$$('[data-activity]',list).forEach(b=>b.onclick=()=>{const t=b.dataset.activity;if(t==='verify'||t==='report')showScreen('verify',{nav:'activity'});else if(t==='created')showScreen('mine',{nav:'activity'});else if(t==='weekly')openWeekly();else if(t==='closed')startArena();else toast('ACTIVIDAD REVISADA')})}
+  function renderProfile(){const agree=state.judged?Math.round(state.majorityMatches/state.judged*100):null;$('#profileAgreement').textContent=agree==null?'—':`${agree}%`;$('#profileLevel').textContent=getLevel();$('#profileLevelFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#profileXpText').textContent=`${state.xp} XP`;const metrics=[['JUZGADOS',state.judged],['RACHA',`🔥 ${state.streak}`],['MIS ZANJAS',state.created],['VERIFICADAS',state.verifiedCount]];$('#metricGrid').innerHTML=metrics.map(([a,b])=>`<div class="metric-card"><strong>${b}</strong><span>${a}</span></div>`).join('');const total=Math.max(1,state.judged),pc={a:Math.round(state.choiceCounts.a/total*100),both:Math.round(state.choiceCounts.both/total*100)};pc.b=state.judged?100-pc.a-pc.both:0;$('#criterionBars').innerHTML=[['A',pc.a,'var(--cyan)'],['AMBOS',pc.both,'var(--signal)'],['B',pc.b,'var(--coral)']].map(([l,p,c])=>`<div class="criterion-bar" style="--pct:${p}%;--color:${c}"><span>${l}</span><b>${p}%</b></div>`).join('');let label='Aún estamos conociéndote';if(state.judged>=20){if(agree<45)label='Tiendes a ir a contracorriente';else if(agree>72)label='Lees bastante bien al jurado';else if(pc.both>22)label='Buscas mucho el punto medio';else label='Tienes criterio propio'}$('#criterionLabel').textContent=label;checkAchievements();const featured=ACHIEVEMENTS.slice(0,3).map(a=>achievementMini(a));$('#achievementStrip').innerHTML=featured.join('');$('#historyJudged').textContent=state.judged;$('#historyCreated').textContent=state.created;$('#historyVerified').textContent=state.verifiedCount}
+  const MEDAL_IDS=new Set(['jury50','jury500','long','firm','jury100']);
   function achievementMini(a){const u=state.unlocked.includes(a.id);return `<button class="achievement-mini ${u?'':'is-locked'}" data-ach="${a.id}" type="button"><i class="${MEDAL_IDS.has(a.id)?'is-medal':''}">${a.icon}</i><b>${a.name}</b><span>${u?'DESBLOQUEADO':'BLOQUEADO'}</span></button>`}
   function renderAchievements(){checkAchievements();$('#achievementGrid').innerHTML=ACHIEVEMENTS.map(a=>{const u=state.unlocked.includes(a.id);return `<article class="achievement-card ${u?'':'is-locked'}"><i class="${MEDAL_IDS.has(a.id)?'is-medal':''}">${a.icon}</i><b>${a.name}</b><p>${a.desc}</p><span>${u?'DESBLOQUEADO':'AÚN NO'}</span></article>`}).join('')}
 
   /* ---------------- Shared interactions ---------------- */
   function bindVoteButtons(cb){$$('.vote-button',els.playStage).forEach(b=>b.addEventListener('click',()=>{sound('tap');cb(b.dataset.vote)}))}
-  function bindVs(cb){const vs=$('#vsControl'),rail=$('#vsRail'),shell=$('.case-shell',els.playStage)||$('.clash-play-shell',els.playStage),label=$('#dragLabel');if(!vs||!rail||!shell)return;let pid=null,sx=0,sy=0,target=null,last=null;const maxX=90,maxY=88;const choose=(dx,dy)=>{const ax=Math.abs(dx),ay=Math.abs(dy);if(ax<32&&ay<28)return null;if(ax>38&&ax>ay*.86)return'both';if(ay>34)return dy<0?'a':'b';return null};const reset=()=>{vs.style.transition='transform .22s var(--ease-spring)';vs.style.setProperty('--drag-x','0px');vs.style.setProperty('--drag-y','0px');setTimeout(()=>vs.style.transition='',230);rail.classList.remove('is-active');vs.classList.remove('is-dragging');shell.classList.remove('is-a-target','is-b-target','is-both-target');$$('.field',shell).forEach(x=>x.classList.remove('is-target','is-dimmed'));clearWash();if(label)label.textContent='ELIGE'};vs.onpointerdown=e=>{if(vs.disabled)return;audio.unlock();pid=e.pointerId;sx=e.clientX;sy=e.clientY;target=last=null;vs.setPointerCapture(pid);vs.classList.add('is-dragging');rail.classList.add('is-active');sound('pickup');haptic(9);e.preventDefault()};vs.onpointermove=e=>{if(e.pointerId!==pid)return;const dx=clamp(e.clientX-sx,-maxX,maxX),dy=clamp(e.clientY-sy,-maxY,maxY);vs.style.setProperty('--drag-x',`${dx}px`);vs.style.setProperty('--drag-y',`${dy}px`);target=choose(dx,dy);shell.classList.toggle('is-a-target',target==='a');shell.classList.toggle('is-b-target',target==='b');shell.classList.toggle('is-both-target',target==='both');const a=$('[data-side="a"]',shell),b=$('[data-side="b"]',shell);a?.classList.toggle('is-target',target==='a');b?.classList.toggle('is-target',target==='b');a?.classList.toggle('is-dimmed',target==='b');b?.classList.toggle('is-dimmed',target==='a');if(target){setWash(target,clamp(Math.max(Math.abs(dx)/maxX,Math.abs(dy)/maxY)*.2,0,.2));if(label)label.textContent=target==='both'?'VOTAS AMBOS':`VOTAS ${target.toUpperCase()}`}else{clearWash();if(label)label.textContent='ELIGE'}if(target&&target!==last){sound(target);haptic(11);last=target}};const finish=e=>{if(e.pointerId!==pid)return;try{vs.releasePointerCapture(pid)}catch{}pid=null;const t=target;reset();if(t)setTimeout(()=>cb(t),60)};vs.onpointerup=finish;vs.onpointercancel=finish}
+  function bindVs(cb){const vs=$('#vsControl'),rail=$('#vsRail'),shell=$('.case-shell',els.playStage),label=$('#dragLabel');if(!vs||!rail||!shell)return;let pid=null,sx=0,sy=0,target=null,last=null;const maxX=90,maxY=88;const choose=(dx,dy)=>{const ax=Math.abs(dx),ay=Math.abs(dy);if(ax<32&&ay<28)return null;if(ax>38&&ax>ay*.86)return'both';if(ay>34)return dy<0?'a':'b';return null};const reset=()=>{vs.style.transition='transform .22s var(--ease-spring)';vs.style.setProperty('--drag-x','0px');vs.style.setProperty('--drag-y','0px');setTimeout(()=>vs.style.transition='',230);rail.classList.remove('is-active');vs.classList.remove('is-dragging');shell.classList.remove('is-a-target','is-b-target','is-both-target');$$('.field',shell).forEach(x=>x.classList.remove('is-target','is-dimmed'));clearWash();if(label)label.textContent='ELIGE'};vs.onpointerdown=e=>{if(vs.disabled)return;audio.unlock();pid=e.pointerId;sx=e.clientX;sy=e.clientY;target=last=null;vs.setPointerCapture(pid);vs.classList.add('is-dragging');rail.classList.add('is-active');sound('pickup');haptic(9);e.preventDefault()};vs.onpointermove=e=>{if(e.pointerId!==pid)return;const dx=clamp(e.clientX-sx,-maxX,maxX),dy=clamp(e.clientY-sy,-maxY,maxY);vs.style.setProperty('--drag-x',`${dx}px`);vs.style.setProperty('--drag-y',`${dy}px`);target=choose(dx,dy);shell.classList.toggle('is-a-target',target==='a');shell.classList.toggle('is-b-target',target==='b');shell.classList.toggle('is-both-target',target==='both');const a=$('[data-side="a"]',shell),b=$('[data-side="b"]',shell);a?.classList.toggle('is-target',target==='a');b?.classList.toggle('is-target',target==='b');a?.classList.toggle('is-dimmed',target==='b');b?.classList.toggle('is-dimmed',target==='a');if(target){setWash(target,clamp(Math.max(Math.abs(dx)/maxX,Math.abs(dy)/maxY)*.2,0,.2));if(label)label.textContent=target==='both'?'VOTAS AMBOS':`VOTAS ${target.toUpperCase()}`}else{clearWash();if(label)label.textContent='ELIGE'}if(target&&target!==last){sound(target);haptic(11);last=target}};const finish=e=>{if(e.pointerId!==pid)return;try{vs.releasePointerCapture(pid)}catch{}pid=null;const t=target;reset();if(t)setTimeout(()=>cb(t),60)};vs.onpointerup=finish;vs.onpointercancel=finish}
   function openShare(title,text,payload){$('#shareTitle').textContent=title;const url=payload?`${location.origin}${location.pathname}?z=${encodePayload(payload)}`:`${location.origin}${location.pathname}`;$('#shareBody').innerHTML=`<div class="share-preview"><p>${escapeHtml(text)}</p><div class="share-url">${escapeHtml(url)}</div></div><div class="share-actions"><button class="action action--primary action--xl" id="shareNative">COMPARTIR →</button><button class="action action--secondary action--lg" id="shareCopy">COPIAR ENLACE</button></div>`;els.share.showModal();$('#shareNative').onclick=async()=>{if(navigator.share){try{await navigator.share({title:'ZANJA',text,url})}catch{}}else copyText(url)};$('#shareCopy').onclick=()=>copyText(url)}
-  function myName(){if(!state.displayName){const n=(typeof prompt==='function')?prompt('¿Cómo te llamas? Lo verá quien reciba tu reto.'):null;state.displayName=(n&&n.trim())?n.trim().slice(0,20):'Alguien';save()}return state.displayName}
   async function copyText(t){try{await navigator.clipboard.writeText(t);toast('ENLACE COPIADO')}catch{toast('COPIA EL ENLACE MANUALMENTE')}}
   function toggleSound(){state.sound=!state.sound;save();toast(state.sound?'SONIDO ACTIVADO':'SONIDO SILENCIADO');updateSoundButtons()}
   function updateSoundButtons(){$$('.icon-button--sound').forEach(b=>b.style.opacity=state.sound?'1':'.5')}
@@ -284,11 +642,21 @@
     $$('[data-mode]').forEach(b=>b.onclick=()=>openMode(b.dataset.mode));$('#dailyCaseCard').onclick=startDaily;$('#dailyGoal').onclick=()=>openMode('arena');
     $('#playBack').onclick=()=>{clearCountdown();showScreen('home')};$('#soundToggle').onclick=toggleSound;$('#activitySoundToggle').onclick=toggleSound;$('#profileSoundToggle').onclick=toggleSound;
     $$('[data-nav]').forEach(b=>b.onclick=()=>showScreen(b.dataset.nav,{nav:b.dataset.nav}));$('#activityShortcut').onclick=()=>showScreen('activity',{nav:'activity'});$('#profileShortcut').onclick=()=>showScreen('profile',{nav:'profile'});
-    $('#startClash').onclick=()=>{const n=$('#clashName').value.trim();if(!n){toast('ESCRIBE EL NOMBRE DE LA OTRA PERSONA');return}startClash(n)};$('#demoClash').onclick=()=>startClash('Lucía');
     $('#createClose').onclick=()=>showScreen('home');$('#createBack').onclick=()=>{if(createPublished){createPublished=false;createStep=3;renderCreate()}else if(createStep>0){createStep--;renderCreate()}else showScreen('home')};
     $('#viewAllAchievements').onclick=()=>showScreen('achievements',{nav:'profile'});$('#achievementsBack').onclick=()=>showScreen('profile',{nav:'profile'});
     $('#shareClose').onclick=()=>els.share.close();els.share.addEventListener('click',e=>{if(e.target===els.share)els.share.close()});
-    $$('.history-actions button').forEach(b=>b.onclick=()=>toast(b.dataset.history==='judged'?'HISTORIAL DE VOTOS · PRÓXIMA FASE':b.dataset.history==='created'?'TUS ZANJAS ESTÁN EN ARENA':'TUS CHOQUES SE GUARDAN AQUÍ'));
+    $$('.history-actions button').forEach(b=>b.onclick=()=>{const h=b.dataset.history;if(h==='created')showScreen('mine',{nav:'profile'});else if(h==='verified')showScreen('verify',{nav:'profile'});else startArena()});
+    $('#mineBack').onclick=()=>showScreen('home');$('#verifyBack').onclick=()=>showScreen('home');$('#weeklyBack').onclick=()=>showScreen('home');
+    $('#mineCreate').onclick=openCreate;
+    $('#reportClose').onclick=()=>els.report.close();els.report.addEventListener('click',e=>{if(e.target===els.report)els.report.close()});
+    $('#photoClose').onclick=()=>els.photo.close();els.photo.addEventListener('click',e=>{if(e.target===els.photo)els.photo.close()});
+    $('#photoInput').onchange=async e=>{
+      const f=e.target.files&&e.target.files[0];e.target.value='';
+      if(!f)return;
+      keepStoryDraft();
+      try{draft.photo=await downscaleImage(f);sound('pickup');haptic(10);toast('PRUEBA AÑADIDA');renderCreate()}
+      catch{toast('NO SE PUDO LEER LA IMAGEN')}
+    };
     document.addEventListener('pointerdown',()=>audio.unlock(),{once:true});
   }
 
@@ -313,17 +681,6 @@
       showScreen('create',{nav:'home'});renderCreate();
       return true;
     }
-    if(data.t==='clash'){
-      const ids=Array.isArray(data.ids)?data.ids:[],votes=Array.isArray(data.votes)?data.votes:[];
-      const pool=allCases(),queue=ids.map(id=>pool.find(c=>c.id===id)).filter(Boolean);
-      if(queue.length!==7||votes.length!==7)return false;
-      state.onboarded=true;save();
-      clash={name:String(data.name||'Alguien').slice(0,20)||'Alguien',queue,votes:[],otherVotes:votes.slice(0,7)};
-      currentMode='clash';currentIndex=0;
-      els.playMode.textContent=`CHOQUE · ${clash.name.toUpperCase()}`;
-      showScreen('play',{nav:'home'});renderPlayDots(7,0);renderClashCase();
-      return true;
-    }
     return false;
   }
   function tryConsumeSharedLink(){
@@ -334,6 +691,6 @@
     if(!ok)toast('ENLACE NO VÁLIDO O CADUCADO');
     return ok;
   }
-  function init(){seedActivities();bind();updateSoundButtons();const consumed=tryConsumeSharedLink();if(!consumed){if(state.onboarded)showScreen('home');else showScreen('onboarding')}updateHome();checkAchievements()}
+  function init(){seedActivities();seedVerifyQueue();ensureWeekly();bind();updateSoundButtons();const consumed=tryConsumeSharedLink();if(!consumed){if(state.onboarded)showScreen('home');else showScreen('onboarding')}updateHome();checkAchievements()}
   init();
 })();

@@ -33,7 +33,7 @@
       <div class="onboarding-copy">
         <span class="eyebrow">DOS BANDOS · UN JURADO</span>
         <h1>ZANJA</h1>
-        <p>Juzga situaciones, lee a la gente y lleva tus propias discusiones al jurado.</p>
+        <p>Juzga situaciones, lleva tus propias discusiones al jurado y ayuda a decidir qué se queda.</p>
       </div>
       <button class="action action--primary action--xl" id="onboardingStart" type="button">PRUÉBALO <span>→</span></button>
       <button class="link-action" id="onboardingSkip" type="button">YA SÉ CÓMO FUNCIONA</button>
@@ -50,12 +50,13 @@
             <span class="xp-pod__track"><i id="homeXpFill"></i></span>
             <small id="homeXpText">0 / 150 XP</small>
           </span>
+          <span class="xp-pod__streak"><i aria-hidden="true">🔥</i><b id="homeStreak">0</b></span>
         </button>
         <button class="icon-button icon-button--notification" id="activityShortcut" type="button" aria-label="Actividad"><span id="homeUnread">3</span></button>
       </header>
 
       <button class="quest-bar" id="dailyGoal" type="button" aria-label="Misión diaria">
-        <span class="quest-bar__streak"><b id="homeStreak">0</b><i>DÍAS</i></span>
+        <span class="quest-bar__icon" aria-hidden="true">◎</span>
         <span class="quest-bar__body">
           <span class="quest-bar__head"><b>MISIÓN DIARIA</b><i id="dailyGoalText">Haz una actividad</i></span>
           <span class="quest-bar__track"><i id="dailyGoalFill"></i></span>
@@ -80,19 +81,25 @@
           </span>
         </button>
 
+        <button class="weekly-card" data-mode="weekly" type="button">
+          <span class="weekly-card__head"><b id="weeklyPhase">FASE 1 · PROPUESTAS</b><i aria-hidden="true">7D</i></span>
+          <strong id="weeklyTitle">¿QUÉ DEBATIMOS ESTA SEMANA?</strong>
+          <span class="weekly-card__foot"><span id="weeklyMeta">6 temas en la mesa</span><i id="weeklyCta">PROPONER TEMA →</i></span>
+        </button>
+
         <div class="lobby-duo">
-          <button class="mode-tile mode-tile--pulse" data-mode="pulse" type="button">
-            <span class="mode-tile__art mode-tile__art--pulse" aria-hidden="true"><i></i><b>?</b></span>
-            <strong>PULSO</strong>
-            <p>Predice qué votará la mayoría.</p>
-            <span class="mode-tile__foot">MEJOR MARCA <b id="pulseBest">—</b></span>
+          <button class="mode-tile mode-tile--mine" data-mode="mine" type="button">
+            <span class="mode-tile__art mode-tile__art--mine" aria-hidden="true"><i></i><i></i><i></i></span>
+            <strong>MIS ZANJAS</strong>
+            <p>Sigue tus casos y su veredicto.</p>
+            <span class="mode-tile__foot" id="mineCount">Aún ninguna</span>
           </button>
 
-          <button class="mode-tile mode-tile--clash" data-mode="clash" type="button">
-            <span class="mode-tile__art mode-tile__art--clash" aria-hidden="true"><span>TÚ</span><b>×</b><span>?</span></span>
-            <strong>CHOQUE</strong>
-            <p>Compara tu criterio con alguien.</p>
-            <span class="mode-tile__foot" id="clashHomeStatus">Reta a un amigo</span>
+          <button class="mode-tile mode-tile--verify" id="verifyTile" data-mode="verify" type="button">
+            <span class="mode-tile__art mode-tile__art--verify" aria-hidden="true"><b>⚖</b></span>
+            <strong>VERIFICAR</strong>
+            <p>Revisa los casos denunciados.</p>
+            <span class="mode-tile__foot" id="verifyCount">NIVEL 5 PARA ENTRAR</span>
           </button>
         </div>
 
@@ -128,21 +135,20 @@
       <section class="play-stage" id="playStage" aria-live="polite"></section>
     </section>
 
-    <section class="screen screen--panel" id="clashSetupScreen" aria-label="Preparar Choque">
-      <header class="panel-header"><button class="icon-button icon-button--back" data-nav="home" type="button">‹</button><span>CHOQUE</span><span></span></header>
-      <div class="panel-center">
-      <section class="panel-hero panel-hero--clash">
-        <span class="eyebrow">TÚ CONTRA ALGUIEN</span>
-        <h1>¿PENSÁIS<br>IGUAL DE VERDAD?</h1>
-        <p>Los dos votáis los mismos 7 casos sin ver las respuestas del otro. Al final, ZANJA os enseña dónde chocáis.</p>
-      </section>
-      <section class="choice-panel">
-        <label class="field-label" for="clashName">¿CON QUIÉN JUEGAS?</label>
-        <input class="text-input text-input--big" id="clashName" type="text" maxlength="20" placeholder="Nombre, por ejemplo: Lucía" />
-        <button class="action action--clash action--xl" id="startClash" type="button">CREAR CHOQUE <span>→</span></button>
-        <button class="action action--secondary action--lg" id="demoClash" type="button">PROBAR CON LUCÍA · DEMO</button>
-      </section>
-      </div>
+    <section class="screen screen--panel" id="weeklyScreen" aria-label="Debate semanal">
+      <header class="panel-header"><button class="icon-button icon-button--back" id="weeklyBack" type="button">‹</button><span>DEBATE SEMANAL</span><span></span></header>
+      <section class="panel-body" id="weeklyBody"></section>
+    </section>
+
+    <section class="screen screen--panel" id="myCasesScreen" aria-label="Mis Zanjas">
+      <header class="panel-header"><button class="icon-button icon-button--back" id="mineBack" type="button">‹</button><span>MIS ZANJAS</span><button class="icon-button icon-button--add" id="mineCreate" type="button" aria-label="Crear un caso">+</button></header>
+      <p class="panel-summary" id="mineSummary">Todavía no has publicado nada</p>
+      <section class="panel-body" id="myCasesList"></section>
+    </section>
+
+    <section class="screen screen--panel" id="verifyScreen" aria-label="Verificación">
+      <header class="panel-header panel-header--wide"><button class="icon-button icon-button--back" id="verifyBack" type="button">‹</button><span>VERIFICACIÓN</span><span class="panel-stat" id="verifyStat"></span></header>
+      <section class="panel-body" id="verifyBody"></section>
     </section>
 
     <section class="screen screen--panel" id="createScreen" aria-label="Crear un caso">
@@ -173,7 +179,7 @@
       </section>
       <section class="profile-section profile-section--history">
         <div class="section-title"><div><span>HISTORIAL</span><b>Lo que ya has hecho</b></div></div>
-        <div class="history-actions"><button data-history="judged" type="button">JUZGADOS <span id="historyJudged">0</span></button><button data-history="created" type="button">MIS ZANJAS <span id="historyCreated">0</span></button><button data-history="clashes" type="button">CHOQUES <span id="historyClashes">0</span></button></div>
+        <div class="history-actions"><button data-history="judged" type="button">JUZGADOS <span id="historyJudged">0</span></button><button data-history="created" type="button">MIS ZANJAS <span id="historyCreated">0</span></button><button data-history="verified" type="button">VERIFICADAS <span id="historyVerified">0</span></button></div>
       </section>
     </section>
 
@@ -194,6 +200,25 @@
         <div id="shareBody"></div>
       </section>
     </dialog>
+
+    <dialog class="sheet" id="reportSheet">
+      <section class="sheet-card">
+        <header><div><span class="eyebrow">DENUNCIAR</span><h2>¿QUÉ NORMA<br>NO RESPETA?</h2></div><button class="icon-button icon-button--close" id="reportClose" type="button">×</button></header>
+        <p class="report-question" id="reportQuestion"></p>
+        <div class="report-reasons" id="reportBody"></div>
+        <p class="report-note">Lo revisan verificadores de nivel 5 o superior. A partir de 3 denuncias el caso sale de Arena mientras se decide.</p>
+      </section>
+    </dialog>
+
+    <dialog class="sheet" id="photoDialog">
+      <section class="sheet-card sheet-card--photo">
+        <header><div><span class="eyebrow">PRUEBA ADJUNTA</span></div><button class="icon-button icon-button--close" id="photoClose" type="button">×</button></header>
+        <img id="photoImage" alt="Prueba adjunta al caso" />
+        <p id="photoCaption"></p>
+      </section>
+    </dialog>
+
+    <input type="file" id="photoInput" accept="image/*" hidden />
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </main>
