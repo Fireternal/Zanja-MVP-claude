@@ -332,6 +332,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 @keyframes fillUp{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
 @keyframes countdown5{to{transform:scaleX(0)}}
 
+.filter-chip{flex:0 0 auto;max-width:132px;height:20px;padding:0 9px;border-radius:999px;border:1px solid #3A497D;background:#141C3D;color:#C6CCE6;font-size:8px;font-weight:800;letter-spacing:.07em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.filter-chip:active{transform:translateY(1px)}
+.filter-list{display:grid;gap:7px;margin-top:14px}
+.filter-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:0 15px;border-radius:14px;border:1px solid #33427A;background:#141C3D;color:var(--snow);cursor:pointer}
+.filter-row b{font-size:13px;font-weight:800;letter-spacing:.05em}
+.filter-row span{min-width:30px;height:24px;display:grid;place-items:center;border-radius:8px;background:#202A53;font-size:11px;font-weight:800;color:var(--mist)}
+.filter-row.is-on{border-color:var(--signal);background:rgba(255,213,74,.1)}
+.filter-row.is-on span{background:var(--signal);color:var(--ink-900)}
+.filter-row.is-empty{opacity:.42}
+.own-actions{display:grid;gap:7px}
+
 /* arena sin casos pendientes */
 .done-card{width:min(100%,430px);margin:auto;display:grid;gap:13px;justify-items:center;text-align:center;padding:26px 20px;border-radius:28px;border:2px solid #3D4D82;background:linear-gradient(145deg,#171F44,#10172F);box-shadow:var(--shadow-hard)}
 .done-card__mark{width:66px;height:66px;border-radius:22px;display:grid;place-items:center;font-size:32px;background:rgba(145,230,108,.14);border:2px solid rgba(145,230,108,.45);color:var(--green)}

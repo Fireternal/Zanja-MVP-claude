@@ -4,7 +4,7 @@ Frontend completo de ZANJA. Esta build sustituye los dos modos de juego de la 0.
 
 ## Qué incluye
 
-**Arena Live.** Casos abiertos de la comunidad. Votas A / AMBOS / B manteniendo el VS y arrastrando, o tocando. Resultado provisional y siguiente caso a los 5 s.
+**Arena Live.** Casos abiertos de la comunidad. Se vota **arrastrando la carta**: a la izquierda das la razón al bando A, a la derecha al B, hacia arriba a los dos. También valen los tres botones. Puedes filtrar por tema (convivencia, pareja, trabajo…) y, cuando no queda nada por juzgar, la app lo dice en vez de repetirte casos.
 
 **Caso del Día.** Un caso único para todos, 24 h, como ritual diario.
 
@@ -16,7 +16,7 @@ Frontend completo de ZANJA. Esta build sustituye los dos modos de juego de la 0.
 
 **Zanjar.** Flujo de creación en cuatro pasos, con captura de una prueba fotográfica opcional y elección de audiencia y duración (15 min / 1 h / 24 h).
 
-**Mis Zanjas.** Historial de tus casos: si están zanjándose o ya zanjados, cuántos votos llevan, el reparto A / AMBOS / B y el veredicto al cerrar.
+**Mis Zanjas.** Historial de tus casos: si están zanjándose o ya zanjados, cuántos votos llevan, el reparto A / AMBOS / B y el veredicto al cerrar. Tocar uno lo abre a pantalla completa con la votación en vivo, desde donde se comparte el veredicto.
 
 **Denuncias y verificación.** Cualquier caso se puede denunciar desde la propia vista de votación. A la primera denuncia queda marcado *en revisión*; a la tercera sale de Arena. El panel de verificación se desbloquea en el nivel 5 y decide por mayoría simple al quinto voto.
 

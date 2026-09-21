@@ -23,6 +23,9 @@ Sin errores de página en ninguno:
 5. **Debate semanal.** Las tres fases verificadas forzando el reloj del navegador: propuestas (lunes), elección (miércoles, votar deja el candidato marcado y retira el resto de botones) y debate (viernes y domingo, votar da +25 XP).
 6. **Prueba fotográfica.** Captura → reescalado → vista previa → publicación → aparece en Mis Zanjas con su chip → el visor abre la imagen.
 7. **Misión diaria.** Visible sin completar, oculta al completarse, con la racha intacta en la cabecera.
+8. **Filtro por tema.** Elegir PAREJA deja sólo casos de ese tema; agotarlo muestra un final específico que ofrece volver a la cola completa.
+9. **Compartir.** Un caso abierto ofrece pedir más votos; uno cerrado, compartir el veredicto con el bando ganador y su porcentaje.
+10. **Invitación a B.** En el mismo dispositivo B ve la prueba; simulando otro navegador, la app avisa de que la imagen no viaja en el enlace en vez de callarlo.
 
 ## Responsive
 Home del veterano medido en Chromium:
@@ -36,11 +39,23 @@ Home del veterano medido en Chromium:
 
 Las pantallas de panel (semanal, mis zanjas, verificación) hacen scroll controlado, como permite el Design System para pantallas que no son de juego.
 
+## Interacción de voto
+
+Se sustituyó el puck VS central por el arrastre de la carta entera, con los bandos en
+horizontal para que el eje del gesto coincida con dónde está dibujado cada uno. Verificado
+en Chromium que las tres direcciones marcan el bando correcto, muestran su sello y
+registran el voto, y que el tutorial del gesto aparece una sola vez y se recuerda.
+
 ## Fallos encontrados y corregidos durante el QA
 - Añadir o quitar una prueba fotográfica re-renderizaba el paso 1 de Zanjar y borraba el texto ya escrito.
 - `percentage()` devolvía `NaN` con un caso recién publicado y 0 votos.
 - La cabecera del panel de verificación desbordaba con el contador de verificaciones.
 - Concordancia de plural en «1 zanjada» y «1 caso creado».
+- Arena reciclaba la cola entera al agotarse, incluidos los casos ya votados, que reaparecían mostrando sólo su resultado y la cuenta atrás.
+- Con el gesto atado uno a uno al dedo, elegir un bando desplazaba la carta hasta sacar de pantalla ese mismo bando.
+- Atenuar el bando no elegido con `saturate`+`brightness` convertía el coral en marrón; ahora se realza el elegido en vez de apagar el otro.
+- Los candidatos del debate semanal se votaban a ciegas: sólo se veía la pregunta, no las dos defensas.
+- La prueba fotográfica no llegaba a B por el enlace.
 
 ## Qué es real en esta beta frontend
 - Los cuatro modos y sus reglas.

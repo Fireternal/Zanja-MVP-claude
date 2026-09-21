@@ -119,7 +119,7 @@ No mezclar múltiples estilos de sombra sin función.
 - Countdown: 5 s exactos.
 
 ### Por modo
-- **Arena:** choque / split.
+- **Arena:** la carta se inclina hacia el bando elegido, que se realza; al soltar sale despedida en esa dirección.
 - **Semanal:** fases que avanzan de izquierda a derecha.
 - **Zanjar:** piezas que se ensamblan.
 - **Verificación:** balanza, sin dramatismo.
@@ -153,9 +153,11 @@ Todos deben funcionar también en silencio. Haptics se degradan con seguridad en
 - WeeklyCard y PhaseRail
 - DailyCaseCard
 - CaseQuestion (con chips de prueba y denuncia)
-- Battlefield
-- VSControl
+- CaseCard (dos bandos en horizontal, arrastrable)
+- Stamp (sello A / AMBOS / B al arrastrar)
+- SwipeCoach
 - VoteButtons
+- FilterChip / FilterSheet
 - ResultBars
 - CountdownButton
 - ActionButton

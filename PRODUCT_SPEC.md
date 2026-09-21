@@ -23,9 +23,11 @@ El Caso del Día y el Debate Semanal son rituales transversales que dan motivo p
 **Job:** «Quiero opinar.»
 - Casos abiertos de comunidad.
 - Pregunta: «¿A quién das la razón?»
+- Se vota arrastrando la carta hacia el bando: izquierda A, derecha B, arriba AMBOS. El recorrido del dedo va desacoplado del de la carta para que el bando elegido nunca salga de pantalla. La primera vez se explica el gesto.
+- Filtro por tema, con el recuento de lo que queda sin juzgar en cada uno.
 - No existe score de acierto.
 - Voto → resultado provisional → 5 s → siguiente.
-- Quedan fuera de la cola: los que ya votaste, los que denunciaste, los retirados y los que acumulan 3 denuncias.
+- Quedan fuera de la cola: los que ya votaste, los que denunciaste, los retirados y los que acumulan 3 denuncias. La cola no se recicla: al agotarse se dice y se propone qué hacer.
 - Arena Daily Goal: 5 votos protegen la racha.
 
 ### 2. Zanjar
@@ -44,6 +46,7 @@ Regla: B redacta sin ver la defensa A en el producto final.
 - Estado: **zanjándose** (con cuenta atrás), **zanjado** (con veredicto) o **retirado**.
 - Reparto A / AMBOS / B y total de votos.
 - Aviso visible si el caso está en revisión por denuncias.
+- Tocar un caso lo abre a pantalla completa con su votación en vivo y permite compartir el veredicto.
 
 ### 4. Verificación
 **Job:** «Que esto no se llene de basura.»

@@ -60,7 +60,7 @@
     onboarded:false,sound:true,haptics:true,xp:0,streak:0,lastActiveDate:null,daily:{date:todayKey(),arenaVotes:0,done:false},
     judged:0,majorityMatches:0,choiceCounts:{a:0,both:0,b:0},votes:{},customCases:[],created:0,createdVotePeak:0,closeCalls:0,
     weekly:null,weeklyHistory:[],weeklyPlayed:0,proposalsMade:0,
-    reported:{},verifyQueue:[],verifiedCount:0,coachDone:false,invites:{},
+    reported:{},verifyQueue:[],verifiedCount:0,coachDone:false,invites:{},arenaFilter:null,
     unlocked:[],activities:[],unread:3,displayName:null
   };
   const STORAGE='zanja-beta-07';
@@ -74,7 +74,7 @@
   const screens={
     onboarding:$('#onboardingScreen'),home:$('#homeScreen'),play:$('#playScreen'),create:$('#createScreen'),weekly:$('#weeklyScreen'),mine:$('#myCasesScreen'),verify:$('#verifyScreen'),activity:$('#activityScreen'),profile:$('#profileScreen'),achievements:$('#achievementsScreen')
   };
-  const els={bottom:$('#bottomNav'),playStage:$('#playStage'),playMode:$('#playModeLabel'),playProgress:$('#playProgress'),wash:$('#ambientWash'),toast:$('#toast'),share:$('#shareSheet'),report:$('#reportSheet'),photo:$('#photoDialog')};
+  const els={bottom:$('#bottomNav'),playStage:$('#playStage'),playMode:$('#playModeLabel'),playProgress:$('#playProgress'),wash:$('#ambientWash'),toast:$('#toast'),share:$('#shareSheet'),report:$('#reportSheet'),photo:$('#photoDialog'),filter:$('#filterSheet')};
 
   function loadState(){
     try{
@@ -103,6 +103,7 @@
   const DURATION_MS={'15 min':9e5,'1 h':36e5,'24 h':864e5};
   const REPORT_REASONS=['Ataque personal o acoso','Datos privados de alguien','Contenido sexual o violento','Spam o publicidad','Otro motivo'];
   const SINGLE_CASE_MODES=['daily','weekly','shared'];
+  const CATEGORIES=['CONVIVENCIA','PAREJA','TRABAJO','AMIGOS','COMIDA','ETIQUETA','VIAJES'];
 
   // A published case has no real jury behind it in this beta, so its vote count is
   // derived from how far it is through its own open window.
@@ -119,6 +120,9 @@
   function isUnderReview(c){const r=reportFor(c.id);return !!(r&&!r.resolved)}
   function isHidden(c){const r=reportFor(c.id);return !!(c.removed||(r&&!r.resolved&&r.reportCount>=REPORT_HIDE_AT))}
   function arenaPool(){return allCases().filter(c=>!isHidden(c)&&!state.reported[c.id]&&caseState(c)==='open')}
+  function arenaUnvoted(){return arenaPool().filter(c=>!state.votes[c.id])}
+  function arenaQueue(){const f=state.arenaFilter;return arenaUnvoted().filter(c=>!f||c.tag===f)}
+  function categoryCounts(){const m={};for(const c of arenaUnvoted())m[c.tag]=(m[c.tag]||0)+1;return m}
   function timeLeft(ms){
     if(ms<=0)return 'CERRADO';
     const m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);
@@ -207,7 +211,8 @@
     if(currentMode!=='arena'){els.playProgress.innerHTML='';return}
     const total=currentQueue.length,left=Math.max(0,total-currentIndex);
     const pct=total?Math.round(currentIndex/total*100):0;
-    els.playProgress.innerHTML=`<span class="play-bar"><i style="width:${pct}%"></i></span><b>${left} sin juzgar</b>`;
+    els.playProgress.innerHTML=`<button class="filter-chip" id="arenaFilter" type="button">${state.arenaFilter||'TODOS LOS TEMAS'} ▾</button><span class="play-bar"><i style="width:${pct}%"></i></span><b>${left}</b>`;
+    $('#arenaFilter').onclick=openFilter;
   }
 
   function sideMarkup(side,args){
@@ -350,7 +355,7 @@
         ${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}
         ${resultBar('B',p.b,'var(--coral)',choice==='b')}
       </div>
-      ${own?`<button class="result-next" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label}</b></button>`
+      ${own?`<div class="own-actions"><button class="action action--secondary action--lg" id="shareVerdict" type="button">${caseState(c)==='closed'?'COMPARTIR VEREDICTO':'PEDIR MÁS VOTOS'}</button><button class="result-next" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label}</b></button></div>`
         :`<button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button>`}
     </div>`;
   }
@@ -380,19 +385,26 @@
     const label=btn.dataset.label||'SIGUIENTE';
     const go=()=>{clearCountdown();advanceArena()};
     btn.addEventListener('click',go);
-    if(currentMode==='own')return;            // el autor decide cuándo salir
+    if(currentMode==='own'){
+      const sh=$('#shareVerdict');if(sh)sh.onclick=()=>shareVerdict(currentCase);
+      return;                                 // el autor decide cuándo salir
+    }
     let r=5;const out=$('#resultCountdown');
     countdownInterval=setInterval(()=>{r=Math.max(0,r-1);if(out)out.textContent=`${label} · ${r}s`},1000);
     countdownTimer=setTimeout(go,5000);
   }
 
   function arenaExhaustedMarkup(){
+    const filtered=!!state.arenaFilter,elsewhere=arenaUnvoted().length;
     return `<section class="done-card">
       <div class="done-card__mark">✓</div>
-      <span class="eyebrow">ARENA AL DÍA</span>
-      <h2>YA LOS HAS<br>JUZGADO TODOS.</h2>
-      <p>No quedan casos abiertos que no hayas votado. Vuelve cuando la comunidad publique más, o mueve tú la siguiente ficha.</p>
-      <button class="action action--primary action--xl" id="doneCreate" type="button">PUBLICAR UN CASO →</button>
+      <span class="eyebrow">${filtered?'TEMA AL DÍA':'ARENA AL DÍA'}</span>
+      <h2>${filtered?'NO QUEDA NADA<br>EN ESTE TEMA.':'YA LOS HAS<br>JUZGADO TODOS.'}</h2>
+      <p>${filtered
+        ?(elsewhere?`Has juzgado todo lo de <b>${escapeHtml(state.arenaFilter)}</b>. Quedan ${elsewhere} casos en otros temas.`:`Has juzgado todo lo de <b>${escapeHtml(state.arenaFilter)}</b>, y tampoco queda nada en el resto de temas.`)
+        :'No queda ningún caso abierto que no hayas votado. Vuelve cuando la comunidad publique más, o mueve tú la siguiente ficha.'}</p>
+      ${filtered&&elsewhere?'<button class="action action--primary action--xl" id="doneAll" type="button">VER TODOS LOS TEMAS →</button>':''}
+      <button class="action ${filtered&&elsewhere?'action--secondary action--lg':'action--primary action--xl'}" id="doneCreate" type="button">PUBLICAR UN CASO →</button>
       <button class="action action--secondary action--lg" id="doneWeekly" type="button">IR AL DEBATE SEMANAL</button>
       <button class="link-action" id="doneHome" type="button">VOLVER AL INICIO</button>
     </section>`;
@@ -400,6 +412,7 @@
   function showArenaExhausted(){
     clearCountdown();currentMode=null;els.playProgress.innerHTML='';
     els.playStage.innerHTML=arenaExhaustedMarkup();
+    const all=$('#doneAll');if(all)all.onclick=()=>{state.arenaFilter=null;save();startArena()};
     $('#doneCreate').onclick=openCreate;
     $('#doneWeekly').onclick=openWeekly;
     $('#doneHome').onclick=()=>showScreen('home');
@@ -423,14 +436,34 @@
     },330);
   }
 
+  function openFilter(){
+    const counts=categoryCounts(),total=arenaUnvoted().length;
+    $('#filterBody').innerHTML=[['',	'TODOS LOS TEMAS',total],...CATEGORIES.map(t=>[t,t,counts[t]||0])]
+      .map(([v,label,n])=>`<button class="filter-row${(state.arenaFilter||'')===v?' is-on':''}${n?'':' is-empty'}" data-cat="${escapeHtml(v)}" type="button"><b>${escapeHtml(label)}</b><span>${n}</span></button>`).join('');
+    els.filter.showModal();
+    $$('[data-cat]',els.filter).forEach(b=>b.onclick=()=>{
+      const v=b.dataset.cat||null,n=v?(counts[v]||0):total;
+      if(!n){toast('NO QUEDAN CASOS DE ESE TEMA');return}
+      els.filter.close();state.arenaFilter=v;save();sound('tap');haptic(8);startArena();
+    });
+  }
+
   function startArena(tutorial=false){
     currentMode=tutorial?'tutorial':'arena';
-    currentQueue=shuffle(arenaPool().filter(c=>!state.votes[c.id]));
+    currentQueue=shuffle(arenaQueue());
     currentIndex=0;
     els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';
     showScreen('play',{nav:'home'});
     if(!currentQueue.length){showArenaExhausted();return}
     renderArenaCase(currentQueue[0],tutorial);
+  }
+
+  function shareVerdict(c){
+    const v=caseVotes(c),p=percentage(v),closed=caseState(c)==='closed';
+    const text=closed&&p.total
+      ?`El jurado ha zanjado: "${c.q}" · gana ${sideLabel(getWinner(v))} con ${Math.max(p.a,p.both,p.b)}%.`
+      :`Estoy zanjando esto y necesito jurado: "${c.q}". ¿Tú de quién eres?`;
+    openShare(closed?'VEREDICTO':'TU ZANJA',text,{t:'case',tag:c.tag,q:c.q,a:c.a,b:c.b});
   }
 
   function openOwnCase(id){
@@ -847,6 +880,7 @@
     $('#mineCreate').onclick=openCreate;
     $('#reportClose').onclick=()=>els.report.close();els.report.addEventListener('click',e=>{if(e.target===els.report)els.report.close()});
     $('#photoClose').onclick=()=>els.photo.close();els.photo.addEventListener('click',e=>{if(e.target===els.photo)els.photo.close()});
+    $('#filterClose').onclick=()=>els.filter.close();els.filter.addEventListener('click',e=>{if(e.target===els.filter)els.filter.close()});
     $('#photoInput').onchange=async e=>{
       const f=e.target.files&&e.target.files[0];e.target.value='';
       if(!f)return;
