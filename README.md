@@ -4,7 +4,7 @@ Frontend completo de ZANJA. Esta build sustituye los dos modos de juego de la 0.
 
 ## Qué incluye
 
-**Arena Live.** Casos abiertos de la comunidad. Se vota **arrastrando la carta**: a la izquierda das la razón al bando A, a la derecha al B, hacia arriba a los dos. También valen los tres botones. Puedes filtrar por tema (convivencia, pareja, trabajo…) y, cuando no queda nada por juzgar, la app lo dice en vez de repetirte casos.
+**Arena Live.** Casos abiertos de la comunidad. Se vota **arrastrando sobre la carta**: hacia arriba das la razón al bando A, hacia abajo al B, y a un lado a los dos. La carta no se mueve; responden el sello y el realce del bando. También valen los tres botones. Puedes filtrar por tema (convivencia, pareja, trabajo…) y, cuando no queda nada por juzgar, la app lo dice en vez de repetirte casos.
 
 **Caso del Día.** Un caso único para todos, 24 h, como ritual diario.
 

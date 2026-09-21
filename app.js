@@ -203,9 +203,9 @@
   }
 
   /* ---------------- PANTALLA DE VOTO ---------------- */
-  // A la izquierda, B a la derecha, AMBOS arriba: el gesto coincide con dónde está
-  // dibujado cada bando, que es lo que hacía incomprensible arrastrar un puck central.
-  const SWIPE_X=44,SWIPE_Y=52;
+  // A arriba, B abajo, AMBOS a los lados: el gesto coincide con dónde está dibujado cada
+  // bando, y apilarlos deja a cada argumento el ancho entero de la carta.
+  const SWIPE_X=52,SWIPE_Y=44;
 
   function renderPlayMeta(){
     if(currentMode!=='arena'){els.playProgress.innerHTML='';return}
@@ -216,10 +216,9 @@
   }
 
   function sideMarkup(side,args){
-    const label=side==='a'?'BANDO A':'BANDO B';
+    const S=side.toUpperCase();
     return `<section class="side side--${side}">
-      <span class="side__crest">${side.toUpperCase()}</span>
-      <span class="side__label">${label}</span>
+      <span class="side__head"><span class="side__crest">${S}</span><span class="side__label">BANDO ${S}</span></span>
       <ul class="side__args">${args.slice(0,3).filter(Boolean).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>
     </section>`;
   }
@@ -237,7 +236,7 @@
         <div class="coach__inner">
           <span class="coach__hand" aria-hidden="true"></span>
           <b>ARRASTRA LA CARTA</b>
-          <span>Izquierda si das la razón a <i>A</i>, derecha si se la das a <i>B</i>, arriba si la tienen <i>los dos</i>.</span>
+          <span>Hacia <i>arriba</i> si das la razón a A, hacia <i>abajo</i> si se la das a B, y a <i>un lado</i> si la tienen los dos.</span>
           <button class="coach__ok" id="coachOk" type="button">ENTENDIDO</button>
         </div>
       </div>`}
@@ -247,7 +246,7 @@
   function voteDockMarkup(prompt){
     return `<div class="vote-dock">
       <div class="vote-dock__prompt">${prompt}</div>
-      <div class="swipe-legend"><span>← DAS LA RAZÓN A <b>A</b></span><span><b>AMBOS</b> ↑</span><span><b>B</b> →</span></div>
+      <div class="swipe-legend">ARRASTRA LA CARTA · <b class="is-a">↑ A</b> · <b class="is-b">↓ B</b> · <b class="is-both">↔ AMBOS</b></div>
       <div class="vote-buttons">
         <button class="vote-button vote-button--a" data-vote="a" type="button"><span>A</span></button>
         <button class="vote-button vote-button--both" data-vote="both" type="button"><span>AMBOS</span></button>
@@ -284,24 +283,19 @@
     const stamps={a:$('#stampA'),b:$('#stampB'),both:$('#stampBoth')};
     let pid=null,sx=0,sy=0,target=null,last=null;
     const pick=(dx,dy)=>{
-      if(dy<-SWIPE_Y&&Math.abs(dy)>Math.abs(dx))return 'both';
-      if(dx<-SWIPE_X&&Math.abs(dx)>Math.abs(dy))return 'a';
-      if(dx>SWIPE_X&&Math.abs(dx)>Math.abs(dy))return 'b';
+      const ax=Math.abs(dx),ay=Math.abs(dy);
+      if(ay>SWIPE_Y&&ay>=ax)return dy<0?'a':'b';
+      if(ax>SWIPE_X&&ax>ay)return 'both';
       return null;
     };
     const paint=(dx,dy)=>{
-      card.style.setProperty('--dx',`${clamp(dx*.2,-18,18)}px`);
-      card.style.setProperty('--dy',`${clamp(dy*.2,-20,10)}px`);
-      card.style.setProperty('--rot',`${clamp(dx/34,-3.5,3.5)}deg`);
-      stamps.a.style.opacity=clamp(-dx/SWIPE_X,0,1);
-      stamps.b.style.opacity=clamp(dx/SWIPE_X,0,1);
-      stamps.both.style.opacity=clamp(-dy/SWIPE_Y,0,1);
+      stamps.a.style.opacity=clamp(-dy/SWIPE_Y,0,1);
+      stamps.b.style.opacity=clamp(dy/SWIPE_Y,0,1);
+      stamps.both.style.opacity=clamp(Math.abs(dx)/SWIPE_X,0,1);
     };
     const reset=()=>{
-      card.classList.add('is-settling');
       paint(0,0);
       card.classList.remove('is-a','is-b','is-both');
-      setTimeout(()=>card.classList.remove('is-settling'),220);
       clearWash();
     };
     card.onpointerdown=e=>{
@@ -330,11 +324,7 @@
       const t=target;target=null;
       if(!t){reset();return}
       card.dataset.locked='1';
-      card.classList.add('is-flying');
-      card.style.setProperty('--dx',`${t==='a'?-520:t==='b'?520:0}px`);
-      card.style.setProperty('--dy',`${t==='both'?-560:0}px`);
-      card.style.setProperty('--rot',`${t==='a'?-14:t==='b'?14:0}deg`);
-      setTimeout(()=>cb(t),150);
+      cb(t);
     };
     card.onpointerup=finish;card.onpointercancel=finish;
   }

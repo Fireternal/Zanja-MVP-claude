@@ -119,7 +119,7 @@ No mezclar múltiples estilos de sombra sin función.
 - Countdown: 5 s exactos.
 
 ### Por modo
-- **Arena:** la carta se inclina hacia el bando elegido, que se realza; al soltar sale despedida en esa dirección.
+- **Arena:** la carta permanece fija; el bando al que apunta el gesto se realza y aparece su sello.
 - **Semanal:** fases que avanzan de izquierda a derecha.
 - **Zanjar:** piezas que se ensamblan.
 - **Verificación:** balanza, sin dramatismo.
@@ -153,7 +153,7 @@ Todos deben funcionar también en silencio. Haptics se degradan con seguridad en
 - WeeklyCard y PhaseRail
 - DailyCaseCard
 - CaseQuestion (con chips de prueba y denuncia)
-- CaseCard (dos bandos en horizontal, arrastrable)
+- CaseCard (dos bandos apilados, fija; lee el arrastre)
 - Stamp (sello A / AMBOS / B al arrastrar)
 - SwipeCoach
 - VoteButtons

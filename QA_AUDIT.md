@@ -41,9 +41,10 @@ Las pantallas de panel (semanal, mis zanjas, verificación) hacen scroll control
 
 ## Interacción de voto
 
-Se sustituyó el puck VS central por el arrastre de la carta entera, con los bandos en
-horizontal para que el eje del gesto coincida con dónde está dibujado cada uno. Verificado
-en Chromium que las tres direcciones marcan el bando correcto, muestran su sello y
+Se sustituyó el puck VS central por el arrastre sobre la carta entera. Los bandos siguen
+apilados, que es lo que deja a cada argumento el ancho completo, y la carta no se desplaza:
+moverla taparía el texto que hay que leer para decidir. Verificado en Chromium que las tres
+direcciones (arriba A, abajo B, lateral AMBOS) marcan el bando correcto, muestran su sello y
 registran el voto, y que el tutorial del gesto aparece una sola vez y se recuerda.
 
 ## Fallos encontrados y corregidos durante el QA
@@ -52,7 +53,7 @@ registran el voto, y que el tutorial del gesto aparece una sola vez y se recuerd
 - La cabecera del panel de verificación desbordaba con el contador de verificaciones.
 - Concordancia de plural en «1 zanjada» y «1 caso creado».
 - Arena reciclaba la cola entera al agotarse, incluidos los casos ya votados, que reaparecían mostrando sólo su resultado y la cuenta atrás.
-- Con el gesto atado uno a uno al dedo, elegir un bando desplazaba la carta hasta sacar de pantalla ese mismo bando.
+- Probada una disposición horizontal de los bandos: cada uno se quedaba con media pantalla de ancho y los argumentos se rompían en cuatro líneas. Descartada.
 - Atenuar el bando no elegido con `saturate`+`brightness` convertía el coral en marrón; ahora se realza el elegido en vez de apagar el otro.
 - Los candidatos del debate semanal se votaban a ciegas: sólo se veía la pregunta, no las dos defensas.
 - La prueba fotográfica no llegaba a B por el enlace.
