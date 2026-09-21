@@ -60,7 +60,7 @@
     onboarded:false,sound:true,haptics:true,xp:0,streak:0,lastActiveDate:null,daily:{date:todayKey(),arenaVotes:0,done:false},
     judged:0,majorityMatches:0,choiceCounts:{a:0,both:0,b:0},votes:{},customCases:[],created:0,createdVotePeak:0,closeCalls:0,
     weekly:null,weeklyHistory:[],weeklyPlayed:0,proposalsMade:0,
-    reported:{},verifyQueue:[],verifiedCount:0,
+    reported:{},verifyQueue:[],verifiedCount:0,coachDone:false,invites:{},
     unlocked:[],activities:[],unread:3,displayName:null
   };
   const STORAGE='zanja-beta-07';
@@ -88,7 +88,7 @@
   }
   let quotaWarned=false;
   function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state));quotaWarned=false}catch{if(!quotaWarned){quotaWarned=true;toast('SIN ESPACIO LOCAL · BORRA ALGUNA PRUEBA')}}}
-  function freshDraft(){return {story:'',question:'',tag:'TU ZANJA',photo:null,a:['','',''],b:['','',''],bReady:false,inviteMode:false,audience:'public',duration:'1 h'};}
+  function freshDraft(){return {story:'',question:'',tag:'TU ZANJA',photo:null,photoPromised:false,a:['','',''],b:['','',''],bReady:false,inviteMode:false,audience:'public',duration:'1 h'};}
   function ratio(a,b){return b? a/b:0}
   function levelOf(xp){return Math.floor(xp/150)+1}
   function getLevel(){return levelOf(state.xp)}
@@ -156,7 +156,8 @@
     $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=lvl;
     $('#homeXpFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#homeXpText').textContent=`${state.xp%150} / 150 XP`;
     $('#createHomeStatus').textContent=state.created?`${state.created} caso${state.created===1?'':'s'} creado${state.created===1?'':'s'}`:'Crea tu primer caso';
-    $('#arenaOpenCount').textContent=arenaPool().length;
+    $('#arenaOpenCount').textContent=arenaPool().filter(c=>!state.votes[c.id]).length;
+    $('#homeSectionLevel').textContent=lvl;
 
     const openMine=state.customCases.filter(c=>caseState(c)==='open').length;
     $('#mineCount').textContent=state.created?(openMine?`${openMine} abierta${openMine===1?'':'s'}`:'Todas zanjadas'):'Aún ninguna';
@@ -169,7 +170,7 @@
     $('#weeklyPhase').textContent=w.badge;$('#weeklyTitle').textContent=w.title;$('#weeklyMeta').textContent=w.meta;$('#weeklyCta').textContent=w.cta;
 
     const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
-    const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);$('#dailyCountdown').textContent=`CIERRA ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);$('#dailyCountdown').textContent=`CIERRA EN ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
     // Once the daily mission is done it stops taking space at the top.
     const daily=state.daily,goal=$('#dailyGoal');
@@ -197,72 +198,251 @@
     if(mode==='arena')startArena();else if(mode==='weekly')openWeekly();else if(mode==='mine')showScreen('mine',{nav:'home'});else if(mode==='verify')showScreen('verify',{nav:'home'});else if(mode==='create')openCreate();
   }
 
-  /* ---------------- ARENA / DAILY ---------------- */
-  function startArena(tutorial=false){
-    currentMode=tutorial?'tutorial':'arena';const pool=arenaPool();currentQueue=shuffle(pool.filter(c=>!state.votes[c.id]));if(currentQueue.length<6)currentQueue=shuffle(pool.length?pool:allCases());currentIndex=0;els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';els.playProgress.innerHTML='';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],tutorial);
+  /* ---------------- PANTALLA DE VOTO ---------------- */
+  // A la izquierda, B a la derecha, AMBOS arriba: el gesto coincide con dónde está
+  // dibujado cada bando, que es lo que hacía incomprensible arrastrar un puck central.
+  const SWIPE_X=44,SWIPE_Y=52;
+
+  function renderPlayMeta(){
+    if(currentMode!=='arena'){els.playProgress.innerHTML='';return}
+    const total=currentQueue.length,left=Math.max(0,total-currentIndex);
+    const pct=total?Math.round(currentIndex/total*100):0;
+    els.playProgress.innerHTML=`<span class="play-bar"><i style="width:${pct}%"></i></span><b>${left} sin juzgar</b>`;
   }
-  function startDaily(){currentMode='daily';currentQueue=[dailyCase()];currentIndex=0;els.playMode.textContent='CASO DEL DÍA';els.playProgress.innerHTML='<i class="is-current"></i>';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],false,true)}
+
+  function sideMarkup(side,args){
+    const label=side==='a'?'BANDO A':'BANDO B';
+    return `<section class="side side--${side}">
+      <span class="side__crest">${side.toUpperCase()}</span>
+      <span class="side__label">${label}</span>
+      <ul class="side__args">${args.slice(0,3).filter(Boolean).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>
+    </section>`;
+  }
+
+  function caseCardMarkup(c,locked){
+    return `<div class="case-card${locked?' is-locked':''}" id="caseCard"${locked?' data-locked="1"':''}>
+      ${sideMarkup('a',c.a)}
+      <span class="case-card__seam" aria-hidden="true"></span>
+      <span class="case-card__vs" aria-hidden="true">VS</span>
+      ${sideMarkup('b',c.b)}
+      <span class="stamp stamp--a" id="stampA" aria-hidden="true">A</span>
+      <span class="stamp stamp--b" id="stampB" aria-hidden="true">B</span>
+      <span class="stamp stamp--both" id="stampBoth" aria-hidden="true">AMBOS</span>
+      ${state.coachDone||locked?'':`<div class="coach" id="coach">
+        <div class="coach__inner">
+          <span class="coach__hand" aria-hidden="true"></span>
+          <b>ARRASTRA LA CARTA</b>
+          <span>Izquierda si das la razón a <i>A</i>, derecha si se la das a <i>B</i>, arriba si la tienen <i>los dos</i>.</span>
+          <button class="coach__ok" id="coachOk" type="button">ENTENDIDO</button>
+        </div>
+      </div>`}
+    </div>`;
+  }
+
+  function voteDockMarkup(prompt){
+    return `<div class="vote-dock">
+      <div class="vote-dock__prompt">${prompt}</div>
+      <div class="swipe-legend"><span>← DAS LA RAZÓN A <b>A</b></span><span><b>AMBOS</b> ↑</span><span><b>B</b> →</span></div>
+      <div class="vote-buttons">
+        <button class="vote-button vote-button--a" data-vote="a" type="button"><span>A</span></button>
+        <button class="vote-button vote-button--both" data-vote="both" type="button"><span>AMBOS</span></button>
+        <button class="vote-button vote-button--b" data-vote="b" type="button"><span>B</span></button>
+      </div>
+    </div>`;
+  }
+
   function renderArenaCase(c,tutorial=false,daily=false){
-    clearCountdown();currentCase=c;transitionBusy=false;clearWash();const existing=state.votes[c.id];
+    clearCountdown();currentCase=c;transitionBusy=false;clearWash();
+    const existing=state.votes[c.id],readonly=currentMode==='own';
+    renderPlayMeta();
     els.playStage.innerHTML=`<article class="case-shell">
-      <header class="case-question">${caseMetaMarkup(c,daily)}<h2>${escapeHtml(c.q)}</h2>${tutorial?'<div class="case-subline">Lee los dos bandos. Luego mantén el VS o toca una opción.</div>':''}</header>
-      ${battlefieldMarkup(c,existing)}
-      <section class="vote-zone" id="voteZone">${existing?arenaResultMarkup(c,existing.choice):voteMarkup(daily?'¿A QUIÉN DAS LA RAZÓN?':'¿A QUIÉN DAS LA RAZÓN?')}</section>
+      <header class="case-question">${caseMetaMarkup(c,daily)}<h2>${escapeHtml(c.q)}</h2></header>
+      ${caseCardMarkup(c,!!existing||readonly)}
+      <section class="vote-zone" id="voteZone">${existing||readonly?resultMarkup(c,existing&&existing.choice):voteDockMarkup(tutorial?'TU PRIMERA DECISIÓN':'¿A QUIÉN DAS LA RAZÓN?')}</section>
     </article>`;
     bindCaseMeta(c);
-    fitQuestionHeading($('.case-question h2',els.playStage));
-    if(!existing){bindVoteButtons(choice=>commitArenaVote(choice));bindVs(choice=>commitArenaVote(choice))}else bindResultNext();
+    if(existing||readonly)bindResultNext();
+    else{
+      bindVoteButtons(choice=>commitArenaVote(choice));
+      bindSwipe(choice=>commitArenaVote(choice));
+      const ok=$('#coachOk');if(ok)ok.onclick=dismissCoach;
+    }
   }
-  function fitQuestionHeading(h2){
-    if(!h2)return;
-    const shell=h2.closest('.case-shell');
-    h2.classList.remove('is-long','is-longer');
-    if(!shell)return;
-    const vs=shell.querySelector('.vs-control');
-    const listA=shell.querySelector('.field--a .argument-list'),listB=shell.querySelector('.field--b .argument-list');
-    if(!vs||!listA)return;
-    const prevAnim=vs.style.animation;
-    vs.style.animation='none';
-    const fits=()=>{
-      const vsBox=vs.getBoundingClientRect();
-      const pad=6;
-      const lastA=listA.lastElementChild,firstB=listB&&listB.firstElementChild;
-      const aOk=!lastA||lastA.getBoundingClientRect().bottom<=vsBox.top-pad;
-      const bOk=!firstB||firstB.getBoundingClientRect().top>=vsBox.bottom+pad;
-      return aOk&&bOk;
+
+  function dismissCoach(){
+    state.coachDone=true;save();
+    const el=$('#coach');if(el)el.remove();
+  }
+
+  function bindSwipe(cb){
+    const card=$('#caseCard');if(!card)return;
+    const stamps={a:$('#stampA'),b:$('#stampB'),both:$('#stampBoth')};
+    let pid=null,sx=0,sy=0,target=null,last=null;
+    const pick=(dx,dy)=>{
+      if(dy<-SWIPE_Y&&Math.abs(dy)>Math.abs(dx))return 'both';
+      if(dx<-SWIPE_X&&Math.abs(dx)>Math.abs(dy))return 'a';
+      if(dx>SWIPE_X&&Math.abs(dx)>Math.abs(dy))return 'b';
+      return null;
     };
-    const battlefield=shell.querySelector('.battlefield');
-    if(battlefield)battlefield.classList.remove('is-tight');
-    let guard=0;
-    while(!fits()&&guard<3){h2.classList.add(guard===0?'is-long':guard===1?'is-longer':'is-longest');guard++}
-    if(!fits()&&battlefield)battlefield.classList.add('is-tight');
-    vs.style.animation=prevAnim;
+    const paint=(dx,dy)=>{
+      card.style.setProperty('--dx',`${clamp(dx*.2,-18,18)}px`);
+      card.style.setProperty('--dy',`${clamp(dy*.2,-20,10)}px`);
+      card.style.setProperty('--rot',`${clamp(dx/34,-3.5,3.5)}deg`);
+      stamps.a.style.opacity=clamp(-dx/SWIPE_X,0,1);
+      stamps.b.style.opacity=clamp(dx/SWIPE_X,0,1);
+      stamps.both.style.opacity=clamp(-dy/SWIPE_Y,0,1);
+    };
+    const reset=()=>{
+      card.classList.add('is-settling');
+      paint(0,0);
+      card.classList.remove('is-a','is-b','is-both');
+      setTimeout(()=>card.classList.remove('is-settling'),220);
+      clearWash();
+    };
+    card.onpointerdown=e=>{
+      if(card.dataset.locked)return;
+      if($('#coach'))dismissCoach();
+      audio.unlock();pid=e.pointerId;sx=e.clientX;sy=e.clientY;target=last=null;
+      try{card.setPointerCapture(pid)}catch{}
+      card.classList.add('is-dragging');sound('pickup');haptic(8);e.preventDefault();
+    };
+    card.onpointermove=e=>{
+      if(e.pointerId!==pid)return;
+      const dx=e.clientX-sx,dy=e.clientY-sy;
+      paint(dx,dy);
+      target=pick(dx,dy);
+      card.classList.toggle('is-a',target==='a');
+      card.classList.toggle('is-b',target==='b');
+      card.classList.toggle('is-both',target==='both');
+      if(target)setWash(target,clamp(Math.max(Math.abs(dx)/SWIPE_X,Math.abs(dy)/SWIPE_Y)*.18,0,.2));
+      else clearWash();
+      if(target!==last){if(target){sound(target);haptic(11)}last=target}
+    };
+    const finish=e=>{
+      if(e.pointerId!==pid)return;
+      try{card.releasePointerCapture(pid)}catch{}
+      pid=null;card.classList.remove('is-dragging');
+      const t=target;target=null;
+      if(!t){reset();return}
+      card.dataset.locked='1';
+      card.classList.add('is-flying');
+      card.style.setProperty('--dx',`${t==='a'?-520:t==='b'?520:0}px`);
+      card.style.setProperty('--dy',`${t==='both'?-560:0}px`);
+      card.style.setProperty('--rot',`${t==='a'?-14:t==='b'?14:0}deg`);
+      setTimeout(()=>cb(t),150);
+    };
+    card.onpointerup=finish;card.onpointercancel=finish;
   }
-  function battlefieldMarkup(c,locked=false){
-    return `<div class="battlefield">
-      ${fieldMarkup('a',c.a)}${fieldMarkup('b',c.b)}
-      <div class="vs-rail" id="vsRail"><div class="drag-hints"><span class="drag-hint drag-hint--a">A ↑</span><span class="drag-hint drag-hint--b">B ↓</span><span class="drag-hint drag-hint--l">← AMBOS</span><span class="drag-hint drag-hint--r">AMBOS →</span></div><span class="drag-label" id="dragLabel">ELIGE</span><button class="vs-control ${locked?'is-locked':''}" id="vsControl" type="button" ${locked?'disabled':''}><span>VS</span></button></div>
-    </div>`
+
+  function resultMarkup(c,choice){
+    const counts=caseVotes(c);
+    if(choice)counts[choice]=(counts[choice]||0)+1;
+    const p=percentage(counts),winner=getWinner(counts);
+    const sorted=Object.entries(counts).sort((x,y)=>y[1]-x[1]);
+    const tight=p.total&&(sorted[0][1]-sorted[1][1])/p.total<.04;
+    let title=!choice?'CÓMO VA AHORA':tight?'PARTIDO EN DOS':choice===winner?'ESTÁS CON LA MAYORÍA':'EL JURADO VA POR OTRO LADO';
+    const own=currentMode==='own';
+    const label=own?'VOLVER A MIS ZANJAS':SINGLE_CASE_MODES.includes(currentMode)?'VOLVER AL INICIO':'SIGUIENTE CASO';
+    return `<div class="scoreboard">
+      <div class="scoreboard__head"><strong>${title}</strong><span>${p.total?`${fmt.format(p.total)} votos`:'sin votos todavía'}</span></div>
+      <div class="result-bars">
+        ${resultBar('A',p.a,'var(--cyan)',choice==='a')}
+        ${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}
+        ${resultBar('B',p.b,'var(--coral)',choice==='b')}
+      </div>
+      ${own?`<button class="result-next" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label}</b></button>`
+        :`<button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button>`}
+    </div>`;
   }
-  function fieldMarkup(side,args){return `<section class="field field--${side}" data-side="${side}" style="--side-color:${side==='a'?'var(--cyan)':'var(--coral)'}"><span class="field-ghost">${side.toUpperCase()}</span><div class="field-content"><div class="side-badge">${side.toUpperCase()}</div><div class="side-copy"><span class="side-label">BANDO ${side.toUpperCase()}</span><ul class="argument-list">${args.slice(0,3).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div></div></section>`}
-  function voteMarkup(prompt='¿A QUIÉN DAS LA RAZÓN?'){return `<div class="vote-question">${prompt}</div><div class="vote-buttons"><button class="vote-button vote-button--a" data-vote="a" type="button"><span>A</span></button><button class="vote-button vote-button--both" data-vote="both" type="button"><span>AMBOS</span></button><button class="vote-button vote-button--b" data-vote="b" type="button"><span>B</span></button></div><div class="vote-helper"><b>MANTÉN EL VS</b> Y ARRASTRA · O TOCA UNA OPCIÓN</div>`}
-  function arenaResultMarkup(c,choice){const counts=caseVotes(c);counts[choice]=(counts[choice]||0)+1;const p=percentage(counts),winner=getWinner(counts);let title=choice===winner?'ESTÁS CON LA MAYORÍA':'EL JURADO VA POR OTRO LADO';const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);if((sorted[0][1]-sorted[1][1])/p.total<.04)title='PARTIDO EN DOS';const label=SINGLE_CASE_MODES.includes(currentMode)?'VOLVER AL INICIO':'SIGUIENTE CASO';return `<div class="result-panel"><div class="result-head"><strong>${title}</strong><span>RESULTADO AHORA</span></div><div class="result-bars">${resultBar('A',p.a,'var(--cyan)',choice==='a')}${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}${resultBar('B',p.b,'var(--coral)',choice==='b')}</div><button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button></div>`}
-  function resultBar(label,pct,color,selected){return `<div class="result-bar ${selected?'is-selected':''}" style="--pct:${pct}%;--bar:${color}"><span>${label}</span><strong>${pct}%</strong></div>`}
+
   function commitArenaVote(choice){
-    if(!currentCase||transitionBusy||state.votes[currentCase.id])return;const counts=caseVotes(currentCase);counts[choice]++;const winner=getWinner(counts);state.votes[currentCase.id]={choice,at:Date.now()};state.judged++;state.choiceCounts[choice]++;if(choice===winner)state.majorityMatches++;
+    if(!currentCase||transitionBusy||state.votes[currentCase.id])return;
+    const counts=caseVotes(currentCase);counts[choice]++;
+    const winner=getWinner(counts);
+    state.votes[currentCase.id]={choice,at:Date.now()};
+    state.judged++;state.choiceCounts[choice]++;
+    if(choice===winner)state.majorityMatches++;
     const spread=Object.values(counts).sort((x,y)=>y-x),tally=spread.reduce((s,n)=>s+n,0);
     if(tally&&(spread[0]-spread[1])/tally<.03)state.closeCalls++;
     const kind=currentMode==='daily'?'daily':currentMode==='weekly'?'weekly':'arena';
     addXp(XP[kind]||XP.arena);
     if(kind==='weekly'){state.weeklyPlayed++;const w=ensureWeekly();w.debateVote=choice}
-    markDaily(kind);save();checkAchievements();sound('vote',choice);haptic([12,15,20]);setWash(choice,.18);const z=$('#voteZone');z.innerHTML=arenaResultMarkup(currentCase,choice);$('#vsControl')?.classList.add('is-locked');setTimeout(()=>{sound('reveal');setWash(choice,.06)},150);bindResultNext();
+    markDaily(kind);save();checkAchievements();
+    sound('vote',choice);haptic([12,15,20]);setWash(choice,.18);
+    const z=$('#voteZone');z.innerHTML=resultMarkup(currentCase,choice);
+    const card=$('#caseCard');if(card){card.dataset.locked='1';card.classList.add('is-locked')}
+    setTimeout(()=>{sound('reveal');setWash(choice,.06)},150);
+    bindResultNext();
   }
+
   function bindResultNext(){
-    const btn=$('#resultNext');if(!btn)return;clearCountdown();let r=5;const label=btn.dataset.label||'SIGUIENTE';const out=$('#resultCountdown');const go=()=>{clearCountdown();advanceArena()};btn.addEventListener('click',go);countdownInterval=setInterval(()=>{r=Math.max(0,r-1);if(out)out.textContent=`${label} · ${r}s`},1000);countdownTimer=setTimeout(go,5000)
+    const btn=$('#resultNext');if(!btn)return;clearCountdown();
+    const label=btn.dataset.label||'SIGUIENTE';
+    const go=()=>{clearCountdown();advanceArena()};
+    btn.addEventListener('click',go);
+    if(currentMode==='own')return;            // el autor decide cuándo salir
+    let r=5;const out=$('#resultCountdown');
+    countdownInterval=setInterval(()=>{r=Math.max(0,r-1);if(out)out.textContent=`${label} · ${r}s`},1000);
+    countdownTimer=setTimeout(go,5000);
   }
+
+  function arenaExhaustedMarkup(){
+    return `<section class="done-card">
+      <div class="done-card__mark">✓</div>
+      <span class="eyebrow">ARENA AL DÍA</span>
+      <h2>YA LOS HAS<br>JUZGADO TODOS.</h2>
+      <p>No quedan casos abiertos que no hayas votado. Vuelve cuando la comunidad publique más, o mueve tú la siguiente ficha.</p>
+      <button class="action action--primary action--xl" id="doneCreate" type="button">PUBLICAR UN CASO →</button>
+      <button class="action action--secondary action--lg" id="doneWeekly" type="button">IR AL DEBATE SEMANAL</button>
+      <button class="link-action" id="doneHome" type="button">VOLVER AL INICIO</button>
+    </section>`;
+  }
+  function showArenaExhausted(){
+    clearCountdown();currentMode=null;els.playProgress.innerHTML='';
+    els.playStage.innerHTML=arenaExhaustedMarkup();
+    $('#doneCreate').onclick=openCreate;
+    $('#doneWeekly').onclick=openWeekly;
+    $('#doneHome').onclick=()=>showScreen('home');
+  }
+
   function advanceArena(){
-    clearCountdown();if(transitionBusy)return;transitionBusy=true;$('.case-shell',els.playStage)?.classList.add('is-leaving');sound('whoosh');haptic(6);setTimeout(()=>{clearWash();if(SINGLE_CASE_MODES.includes(currentMode)){showScreen('home');return}if(currentMode==='tutorial'){state.onboarded=true;save();showScreen('home');toast('YA SABES USAR ZANJA');return}currentIndex++;if(currentIndex>=currentQueue.length){currentQueue=shuffle(allCases());currentIndex=0}renderArenaCase(currentQueue[currentIndex])},330)
+    clearCountdown();
+    if(transitionBusy)return;transitionBusy=true;
+    $('.case-shell',els.playStage)?.classList.add('is-leaving');
+    sound('whoosh');haptic(6);
+    setTimeout(()=>{
+      clearWash();
+      if(currentMode==='own'){showScreen('mine',{nav:'home'});return}
+      if(SINGLE_CASE_MODES.includes(currentMode)){showScreen('home');return}
+      if(currentMode==='tutorial'){state.onboarded=true;save();showScreen('home');toast('YA SABES USAR ZANJA');return}
+      currentIndex++;
+      // Nunca reciclar: un caso ya votado sólo mostraría su resultado y la cuenta atrás.
+      while(currentIndex<currentQueue.length&&state.votes[currentQueue[currentIndex].id])currentIndex++;
+      if(currentIndex>=currentQueue.length){showArenaExhausted();return}
+      renderArenaCase(currentQueue[currentIndex]);
+    },330);
   }
+
+  function startArena(tutorial=false){
+    currentMode=tutorial?'tutorial':'arena';
+    currentQueue=shuffle(arenaPool().filter(c=>!state.votes[c.id]));
+    currentIndex=0;
+    els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';
+    showScreen('play',{nav:'home'});
+    if(!currentQueue.length){showArenaExhausted();return}
+    renderArenaCase(currentQueue[0],tutorial);
+  }
+
+  function openOwnCase(id){
+    const c=state.customCases.find(x=>x.id===id);if(!c)return;
+    sound('open');haptic(8);clearCountdown();clearWash();
+    currentMode='own';currentQueue=[c];currentIndex=0;
+    els.playMode.textContent=caseState(c)==='closed'?'TU ZANJA · ZANJADA':'TU ZANJA · EN DIRECTO';
+    showScreen('play',{nav:'home'});
+    renderArenaCase(c);
+  }
+  function startDaily(){currentMode='daily';currentQueue=[dailyCase()];currentIndex=0;els.playMode.textContent='CASO DEL DÍA';showScreen('play',{nav:'home'});renderArenaCase(currentQueue[0],false,true)}
+  function resultBar(label,pct,color,selected){return `<div class="result-bar ${selected?'is-selected':''}" style="--pct:${pct}%;--bar:${color}"><span>${label}</span><strong>${pct}%</strong></div>`}
 
   /* ---------------- ZANJAR ---------------- */
   function openCreate(){createStep=0;createPublished=false;draft=freshDraft();showScreen('create',{nav:'home'});renderCreate()}
@@ -276,12 +456,18 @@
     if(createPublished){body.innerHTML=`<section class="create-step"><div class="published-card"><div class="published-card__mark">✓</div><span class="eyebrow">CASO PUBLICADO</span><h2>YA ESTÁ EN<br>EL JURADO.</h2><p>${escapeHtml(draft.question)}</p></div><div class="create-actions"><button class="action action--primary action--xl" id="publishedArena">VER EN ARENA →</button><button class="action action--secondary action--lg" id="publishedShare">COMPARTIR CON AMIGOS</button><button class="link-action" id="publishedHome">VOLVER AL INICIO</button></div></section>`;$('#publishedArena').onclick=startArena;$('#publishedShare').onclick=()=>openShare('TU ZANJA',draft.question,{t:'case',tag:draft.tag||'TU ZANJA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b.filter(Boolean)});$('#publishedHome').onclick=()=>showScreen('home');return}
     if(createStep===0){body.innerHTML=`<section class="create-step"><span class="eyebrow">PASO 1 · CUÉNTALO</span><h1>¿QUÉ HA<br>PASADO?</h1><p>No pienses en redactarlo perfecto. Cuéntalo como te salga y ZANJA lo ordena.</p><textarea class="text-area" id="storyInput" maxlength="650" placeholder="Ej.: Mi compañero dice que si avisa 10 minutos antes, llegar 20 minutos tarde ya no cuenta como llegar tarde…">${escapeHtml(draft.story)}</textarea><div class="create-tools"><button class="tool-button" id="dictateBtn" type="button">🎙 DICTAR</button><button class="tool-button${draft.photo?' is-on':''}" id="evidenceBtn" type="button">📷 ${draft.photo?'CAMBIAR PRUEBA':'AÑADIR PRUEBA'}</button></div>${draft.photo?`<figure class="evidence-preview"><img src="${draft.photo}" alt="Prueba adjunta al caso" /><button class="evidence-remove" id="removeEvidence" type="button">QUITAR PRUEBA</button></figure>`:''}<button class="action action--primary action--xl" id="createNext">ORDENAR MI CASO →</button></section>`;$('#createNext').onclick=()=>{draft.story=$('#storyInput').value.trim();if(draft.story.length<12){toast('CUÉNTAME UN POCO MÁS');return}autoBuildDraft();createStep=1;renderCreate()};$('#dictateBtn').onclick=()=>toast('DICTADO · LISTO PARA CONECTAR EN APP NATIVA');$('#evidenceBtn').onclick=()=>$('#photoInput').click();const rm=$('#removeEvidence');if(rm)rm.onclick=()=>{keepStoryDraft();draft.photo=null;renderCreate()}}
     else if(createStep===1){body.innerHTML=`<section class="create-step"><span class="eyebrow">PASO 2 · TU DEFENSA</span><h1>ASÍ LO VERÁ<br>EL JURADO.</h1><p>Edita lo que haga falta. El caso debe entenderse en pocos segundos.</p><div class="case-builder"><div class="builder-question"><label>PREGUNTA</label><textarea id="draftQuestion">${escapeHtml(draft.question)}</textarea></div><div class="builder-side"><div class="builder-side__head"><strong>BANDO A</strong><span>TU POSICIÓN</span></div>${draft.a.map((x,i)=>`<input class="argument-input" data-a="${i}" value="${escapeHtml(x)}" placeholder="Argumento ${i+1}" />`).join('')}</div></div><button class="action action--primary action--xl" id="createNext">ESTA ES MI DEFENSA →</button></section>`;$('#createNext').onclick=()=>{draft.question=$('#draftQuestion').value.trim();draft.a=$$('[data-a]').map(i=>i.value.trim()).filter(Boolean).slice(0,3);while(draft.a.length<3)draft.a.push('');if(!draft.question||!draft.a[0]){toast('FALTA LA PREGUNTA O TU DEFENSA');return}createStep=2;renderCreate()}}
-    else if(createStep===2){const bWritten=draft.b.some(Boolean);body.innerHTML=draft.bReady?`<section class="create-step"><span class="eyebrow">PASO 3 · BANDO B</span><h1>${bWritten?'EL OTRO LADO<br>YA ESTÁ LISTO.':'AHORA ESCRIBE<br>TU DEFENSA.'}</h1><div class="builder-question"><label>SOBRE QUÉ VOTA EL JURADO</label><textarea readonly>${escapeHtml(draft.question)}</textarea></div><div class="builder-side builder-side--b"><div class="builder-side__head"><strong>BANDO B</strong><span>SU DEFENSA</span></div>${draft.b.map((x,i)=>`<input class="argument-input" data-b="${i}" value="${escapeHtml(x)}" placeholder="Argumento ${i+1}" />`).join('')}</div><div class="info-box">A y B se han escrito <b>sin ver la defensa del otro</b>. El caso ya puede abrirse al jurado.</div><button class="action action--primary action--xl" id="createNext">${draft.inviteMode?'LISTO · GENERAR ENLACE →':'PREPARAR PUBLICACIÓN →'}</button></section>`:`<section class="create-step"><span class="eyebrow">PASO 3 · FALTA EL OTRO LADO</span><h1>AHORA LE TOCA<br>A B.</h1><p>B debe escribir su defensa sin ver la tuya. Así reducimos respuestas estratégicas.</p><div class="invite-hero"><b>VS</b></div><div class="create-actions"><button class="action action--primary action--xl" id="inviteB">ENVIAR INVITACIÓN →</button><button class="action action--secondary action--lg" id="localB">RESPONDER COMO B AQUÍ · BETA</button></div><div class="info-box"><b>B recibe un enlace y responde sin instalar nada.</b> Al terminar, le genera otro enlace para devolvértelo.</div></section>`;
+    else if(createStep===2){const bWritten=draft.b.some(Boolean);body.innerHTML=draft.bReady?`<section class="create-step"><span class="eyebrow">PASO 3 · BANDO B</span><h1>${bWritten?'EL OTRO LADO<br>YA ESTÁ LISTO.':'AHORA ESCRIBE<br>TU DEFENSA.'}</h1><div class="builder-question"><label>SOBRE QUÉ VOTA EL JURADO</label><textarea readonly>${escapeHtml(draft.question)}</textarea></div>${draft.photo?`<button class="evidence-button" id="seeInviteEvidence" type="button">VER LA PRUEBA QUE ADJUNTÓ A</button>`:draft.photoPromised?'<div class="info-box info-box--warn">A adjuntó una prueba, pero <b>las imágenes no viajan dentro del enlace</b> en esta beta. La verás cuando el caso tenga servidor.</div>':''}<div class="builder-side builder-side--b"><div class="builder-side__head"><strong>BANDO B</strong><span>SU DEFENSA</span></div>${draft.b.map((x,i)=>`<input class="argument-input" data-b="${i}" value="${escapeHtml(x)}" placeholder="Argumento ${i+1}" />`).join('')}</div><div class="info-box">A y B se han escrito <b>sin ver la defensa del otro</b>. El caso ya puede abrirse al jurado.</div><button class="action action--primary action--xl" id="createNext">${draft.inviteMode?'LISTO · GENERAR ENLACE →':'PREPARAR PUBLICACIÓN →'}</button></section>`:`<section class="create-step"><span class="eyebrow">PASO 3 · FALTA EL OTRO LADO</span><h1>AHORA LE TOCA<br>A B.</h1><p>B debe escribir su defensa sin ver la tuya. Así reducimos respuestas estratégicas.</p><div class="invite-hero"><b>VS</b></div><div class="create-actions"><button class="action action--primary action--xl" id="inviteB">ENVIAR INVITACIÓN →</button><button class="action action--secondary action--lg" id="localB">RESPONDER COMO B AQUÍ · BETA</button></div><div class="info-box"><b>B recibe un enlace y responde sin instalar nada.</b> Al terminar, le genera otro enlace para devolvértelo.</div></section>`;
       if(draft.bReady){
-        if(draft.inviteMode){$('#createNext').onclick=()=>{draft.b=$$('[data-b]').map(i=>i.value.trim()).filter(Boolean).slice(0,3);if(!draft.b.length){toast('ESCRIBE AL MENOS UN ARGUMENTO');return}const id='shared-'+Date.now(),c={id,tag:draft.tag||'ZANJA COMPARTIDA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b,counts:{a:9,both:3,b:8},custom:true};state.customCases.unshift(c);save();openShare('CASO COMPLETO','Ya escribí mi defensa. Puedes votarlo o mandárselo a quien te retó.',{t:'case',tag:c.tag,q:c.q,a:c.a,b:c.b})}}
+        const ev=$('#seeInviteEvidence');if(ev)ev.onclick=()=>openPhoto(draft.photo,draft.question);
+        if(draft.inviteMode){$('#createNext').onclick=()=>{draft.b=$$('[data-b]').map(i=>i.value.trim()).filter(Boolean).slice(0,3);if(!draft.b.length){toast('ESCRIBE AL MENOS UN ARGUMENTO');return}const id='shared-'+Date.now(),now=Date.now(),c={id,tag:draft.tag||'ZANJA COMPARTIDA',q:draft.question,a:draft.a.filter(Boolean),b:draft.b,photo:draft.photo||null,counts:{a:0,both:0,b:0},mix:newMix(),reach:60+Math.floor(Math.random()*340),createdAt:now,closesAt:now+DURATION_MS['24 h'],custom:true};state.customCases.unshift(c);save();openShare('CASO COMPLETO','Ya escribí mi defensa. Puedes votarlo o mandárselo a quien te retó.',{t:'case',tag:c.tag,q:c.q,a:c.a,b:c.b})}}
         else{$('#createNext').onclick=()=>{draft.b=$$('[data-b]').map(i=>i.value.trim()).slice(0,3);createStep=3;renderCreate()}}
       }else{
-        $('#inviteB').onclick=()=>openShare('INVITACIÓN A B',`Te han invitado a defender el Bando B en: ${draft.question}`,{t:'invite',tag:draft.tag,q:draft.question,a:draft.a});
+        $('#inviteB').onclick=()=>{
+          let key=null;
+          if(draft.photo){key='inv-'+Date.now();state.invites[key]={photo:draft.photo,at:Date.now()};
+            state.invites=Object.fromEntries(Object.entries(state.invites).slice(-6));save()}
+          openShare('INVITACIÓN A B',`Te han invitado a defender el Bando B en: ${draft.question}`,{t:'invite',tag:draft.tag,q:draft.question,a:draft.a,k:key,ph:!!draft.photo});
+        };
         $('#localB').onclick=()=>{draft.bReady=true;draft.b=['','',''];renderCreate()}
       }
     }
@@ -328,7 +514,7 @@
     const review=isUnderReview(c);
     return `<div class="case-meta">
       <span class="case-tag">${escapeHtml(c.tag)}</span>
-      <span class="case-live"><i></i>${daily?'HOY':currentMode==='weekly'?'SEMANAL':'VEREDICTO LIVE'}</span>
+      <span class="case-live"><i></i>${daily?'HOY':currentMode==='weekly'?'SEMANAL':currentMode==='own'?(caseState(c)==='closed'?'ZANJADO':'EN DIRECTO'):'VEREDICTO LIVE'}</span>
       <span class="case-meta__gap"></span>
       ${c.photo?'<button class="case-chip case-chip--photo" id="caseEvidence" type="button" aria-label="Ver la prueba adjunta">PRUEBA</button>':''}
       <button class="case-chip case-chip--report" id="caseReport" type="button" aria-label="Denunciar este caso">⚑</button>
@@ -458,7 +644,7 @@
       const foot=st==='open'?`CIERRA EN ${timeLeft(c.closesAt-Date.now())}`
         :st==='removed'?'RETIRADO POR VERIFICACIÓN'
         :p.total?`GANA ${sideLabel(getWinner(v))}`:'CERRÓ SIN VOTOS';
-      return `<article class="mine-card${st==='removed'?' is-dimmed':''}">
+      return `<article class="mine-card${st==='removed'?' is-dimmed':''}" data-open="${escapeHtml(c.id)}" role="button" tabindex="0">
         <div class="mine-card__head">
           <span class="state-chip ${chip[1]}">${chip[0]}</span>
           ${review?'<span class="state-chip is-review">EN REVISIÓN</span>':''}
@@ -471,7 +657,12 @@
         <div class="mine-card__foot"><span>${p.total?`${fmt.format(p.total)} votos`:'Sin votos todavía'}</span><i>${foot}</i></div>
       </article>`;
     }).join('');
-    $$('[data-mphoto]',body).forEach(b=>b.onclick=()=>{const c=state.customCases.find(x=>x.id===b.dataset.mphoto);if(c)openPhoto(c.photo,c.q)});
+    $$('[data-mphoto]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();const c=state.customCases.find(x=>x.id===b.dataset.mphoto);if(c)openPhoto(c.photo,c.q)});
+    $$('[data-open]',body).forEach(el=>{
+      const go=()=>openOwnCase(el.dataset.open);
+      el.onclick=go;
+      el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+    });
   }
 
   /* ---------------- DEBATE SEMANAL ---------------- */
@@ -550,13 +741,20 @@
   }
   function proposalRowMarkup(p,w,phase,maxVotes){
     const chosen=w.votedProposalId===p.id,pct=maxVotes?Math.round(p.votes/maxVotes*100):0;
+    const first=(arr)=>escapeHtml((arr&&arr.find(Boolean))||'Sin argumento todavía');
     return `<article class="proposal${chosen?' is-chosen':''}${p.mine?' is-mine':''}">
       <div class="proposal__bar" style="width:${pct}%"></div>
-      <div class="proposal__body">
+      <div class="proposal__main">
         <b>${escapeHtml(p.q)}</b>
-        <span class="proposal__meta">${p.mine?'Tu propuesta':`Propuesto por ${escapeHtml(p.author)}`} · ${fmt.format(p.votes)} votos</span>
+        <div class="proposal__sides">
+          <div class="proposal__side proposal__side--a"><span>A</span><p>${first(p.a)}</p></div>
+          <div class="proposal__side proposal__side--b"><span>B</span><p>${first(p.b)}</p></div>
+        </div>
+        <div class="proposal__foot">
+          <span class="proposal__meta">${p.mine?'Tu propuesta':`Propuesto por ${escapeHtml(p.author)}`} · ${fmt.format(p.votes)} votos</span>
+          ${phase==='elect'&&!w.votedProposalId?`<button class="proposal__vote" data-prop="${escapeHtml(p.id)}" type="button">ELEGIR ESTE</button>`:chosen?'<span class="proposal__check">✓ TU VOTO</span>':''}
+        </div>
       </div>
-      ${phase==='elect'&&!w.votedProposalId?`<button class="proposal__vote" data-prop="${escapeHtml(p.id)}" type="button">VOTAR</button>`:chosen?'<span class="proposal__check">✓</span>':''}
     </article>`;
   }
   function renderWeekly(){
@@ -630,7 +828,6 @@
 
   /* ---------------- Shared interactions ---------------- */
   function bindVoteButtons(cb){$$('.vote-button',els.playStage).forEach(b=>b.addEventListener('click',()=>{sound('tap');cb(b.dataset.vote)}))}
-  function bindVs(cb){const vs=$('#vsControl'),rail=$('#vsRail'),shell=$('.case-shell',els.playStage),label=$('#dragLabel');if(!vs||!rail||!shell)return;let pid=null,sx=0,sy=0,target=null,last=null;const maxX=90,maxY=88;const choose=(dx,dy)=>{const ax=Math.abs(dx),ay=Math.abs(dy);if(ax<32&&ay<28)return null;if(ax>38&&ax>ay*.86)return'both';if(ay>34)return dy<0?'a':'b';return null};const reset=()=>{vs.style.transition='transform .22s var(--ease-spring)';vs.style.setProperty('--drag-x','0px');vs.style.setProperty('--drag-y','0px');setTimeout(()=>vs.style.transition='',230);rail.classList.remove('is-active');vs.classList.remove('is-dragging');shell.classList.remove('is-a-target','is-b-target','is-both-target');$$('.field',shell).forEach(x=>x.classList.remove('is-target','is-dimmed'));clearWash();if(label)label.textContent='ELIGE'};vs.onpointerdown=e=>{if(vs.disabled)return;audio.unlock();pid=e.pointerId;sx=e.clientX;sy=e.clientY;target=last=null;vs.setPointerCapture(pid);vs.classList.add('is-dragging');rail.classList.add('is-active');sound('pickup');haptic(9);e.preventDefault()};vs.onpointermove=e=>{if(e.pointerId!==pid)return;const dx=clamp(e.clientX-sx,-maxX,maxX),dy=clamp(e.clientY-sy,-maxY,maxY);vs.style.setProperty('--drag-x',`${dx}px`);vs.style.setProperty('--drag-y',`${dy}px`);target=choose(dx,dy);shell.classList.toggle('is-a-target',target==='a');shell.classList.toggle('is-b-target',target==='b');shell.classList.toggle('is-both-target',target==='both');const a=$('[data-side="a"]',shell),b=$('[data-side="b"]',shell);a?.classList.toggle('is-target',target==='a');b?.classList.toggle('is-target',target==='b');a?.classList.toggle('is-dimmed',target==='b');b?.classList.toggle('is-dimmed',target==='a');if(target){setWash(target,clamp(Math.max(Math.abs(dx)/maxX,Math.abs(dy)/maxY)*.2,0,.2));if(label)label.textContent=target==='both'?'VOTAS AMBOS':`VOTAS ${target.toUpperCase()}`}else{clearWash();if(label)label.textContent='ELIGE'}if(target&&target!==last){sound(target);haptic(11);last=target}};const finish=e=>{if(e.pointerId!==pid)return;try{vs.releasePointerCapture(pid)}catch{}pid=null;const t=target;reset();if(t)setTimeout(()=>cb(t),60)};vs.onpointerup=finish;vs.onpointercancel=finish}
   function openShare(title,text,payload){$('#shareTitle').textContent=title;const url=payload?`${location.origin}${location.pathname}?z=${encodePayload(payload)}`:`${location.origin}${location.pathname}`;$('#shareBody').innerHTML=`<div class="share-preview"><p>${escapeHtml(text)}</p><div class="share-url">${escapeHtml(url)}</div></div><div class="share-actions"><button class="action action--primary action--xl" id="shareNative">COMPARTIR →</button><button class="action action--secondary action--lg" id="shareCopy">COPIAR ENLACE</button></div>`;els.share.showModal();$('#shareNative').onclick=async()=>{if(navigator.share){try{await navigator.share({title:'ZANJA',text,url})}catch{}}else copyText(url)};$('#shareCopy').onclick=()=>copyText(url)}
   async function copyText(t){try{await navigator.clipboard.writeText(t);toast('ENLACE COPIADO')}catch{toast('COPIA EL ENLACE MANUALMENTE')}}
   function toggleSound(){state.sound=!state.sound;save();toast(state.sound?'SONIDO ACTIVADO':'SONIDO SILENCIADO');updateSoundButtons()}
@@ -676,6 +873,9 @@
       const a=(Array.isArray(data.a)?data.a:['','','']);
       state.onboarded=true;save();draft=freshDraft();
       draft.question=q;draft.tag=String(data.tag||'ZANJA COMPARTIDA').slice(0,24);draft.a=a;
+      const stored=data.k&&state.invites[data.k];
+      draft.photo=stored?stored.photo:null;
+      draft.photoPromised=!!data.ph&&!draft.photo;
       draft.bReady=true;draft.b=['','',''];draft.inviteMode=true;
       createStep=2;createPublished=false;
       showScreen('create',{nav:'home'});renderCreate();

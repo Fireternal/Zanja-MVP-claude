@@ -64,11 +64,17 @@
         <span class="quest-bar__go" aria-hidden="true">→</span>
       </button>
 
-      <div class="lobby-section">
-        <span>ELIGE TU MODO</span><i aria-hidden="true"></i><b><span id="arenaOpenCount">20</span> CASOS ABIERTOS</b>
-      </div>
+      <div class="lobby-section"><span>HOY</span><i aria-hidden="true"></i><b id="dailyCountdown">CIERRA HOY</b></div>
 
-      <section class="lobby-modes" aria-label="Modos de ZANJA">
+      <button class="daily-case-card" id="dailyCaseCard" type="button">
+        <span class="daily-case-card__head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b>+15 XP</b></span>
+        <span class="daily-case-card__question" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
+        <span class="daily-case-card__foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
+      </button>
+
+      <div class="lobby-section"><span>JUZGAR</span><i aria-hidden="true"></i><b><span id="arenaOpenCount">20</span> SIN JUZGAR</b></div>
+
+      <section class="lobby-modes" aria-label="Modos de juicio">
         <button class="lobby-hero" data-mode="arena" type="button">
           <span class="lobby-hero__copy">
             <span class="mode-signal mode-signal--live"><i aria-hidden="true"></i>EN DIRECTO</span>
@@ -86,6 +92,20 @@
           <strong id="weeklyTitle">¿QUÉ DEBATIMOS ESTA SEMANA?</strong>
           <span class="weekly-card__foot"><span id="weeklyMeta">6 temas en la mesa</span><i id="weeklyCta">PROPONER TEMA →</i></span>
         </button>
+      </section>
+
+      <div class="lobby-section"><span>LO TUYO</span><i aria-hidden="true"></i><b>NIVEL <span id="homeSectionLevel">1</span></b></div>
+
+      <section class="lobby-modes" aria-label="Tus casos y moderación">
+        <button class="lobby-band" data-mode="create" type="button">
+          <span class="lobby-band__icon" aria-hidden="true">+</span>
+          <span class="lobby-band__copy">
+            <span class="mode-signal">TU DISCUSIÓN</span>
+            <strong>ZANJAR</strong>
+            <p id="createHomeStatus">Crea tu primer caso</p>
+          </span>
+          <span class="lobby-band__go" aria-hidden="true">→</span>
+        </button>
 
         <div class="lobby-duo">
           <button class="mode-tile mode-tile--mine" data-mode="mine" type="button">
@@ -102,23 +122,7 @@
             <span class="mode-tile__foot" id="verifyCount">NIVEL 5 PARA ENTRAR</span>
           </button>
         </div>
-
-        <button class="lobby-band" data-mode="create" type="button">
-          <span class="lobby-band__icon" aria-hidden="true">+</span>
-          <span class="lobby-band__copy">
-            <span class="mode-signal">TU DISCUSIÓN</span>
-            <strong>ZANJAR</strong>
-            <p id="createHomeStatus">Crea tu primer caso</p>
-          </span>
-          <span class="lobby-band__go" aria-hidden="true">→</span>
-        </button>
       </section>
-
-      <button class="daily-case-card" id="dailyCaseCard" type="button">
-        <span class="daily-case-card__head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b id="dailyCountdown">CIERRA HOY</b></span>
-        <span class="daily-case-card__question" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
-        <span class="daily-case-card__foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
-      </button>
 
       <p class="home-rule">JUZGAMOS SITUACIONES. <b>NO PERSONAS.</b></p>
     </section>
