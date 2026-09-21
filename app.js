@@ -122,11 +122,12 @@
   function clearCountdown(){if(countdownTimer)clearTimeout(countdownTimer);if(countdownInterval)clearInterval(countdownInterval);countdownTimer=countdownInterval=null}
 
   function updateHome(){
-    $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=getLevel();$('#pulseBest').textContent=state.pulsePlayed?`${state.pulseBest}/7`:'—';$('#createHomeStatus').textContent=state.created?`${state.created} casos creados`:'Crea tu primer caso';$('#clashHomeStatus').textContent=state.clashes?`${state.clashes} Choques completados`:'Reta a un amigo';$('#arenaOpenCount').textContent=CASES.length+state.customCases.length;
+    $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=getLevel();$('#pulseBest').textContent=state.pulsePlayed?`${state.pulseBest}/7`:'—';$('#createHomeStatus').textContent=state.created?`${state.created} caso${state.created===1?'':'s'} creado${state.created===1?'':'s'}`:'Crea tu primer caso';$('#clashHomeStatus').textContent=state.clashes?`${state.clashes} JUGADOS`:'RETA A UN AMIGO';$('#arenaOpenCount').textContent=CASES.length+state.customCases.length;
+    $('#homeXpFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#homeXpText').textContent=`${state.xp%150} / 150 XP`;
     const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
     const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);$('#dailyCountdown').textContent=`CIERRA ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    const daily=state.daily;let txt='Haz una actividad',pct=0;if(daily.done){txt='Racha protegida ✓';pct=100}else if(daily.arenaVotes>0){txt=`Arena ${daily.arenaVotes}/5 votos`;pct=daily.arenaVotes/5*100}$('#dailyGoalText').textContent=txt;$('#dailyGoalFill').style.width=`${pct}%`;
-    $('#activityBadge').textContent=state.unread;$('#activityBadge').style.display=state.unread?'grid':'none';
+    const daily=state.daily;let txt='Haz una actividad',pct=0;if(daily.done){txt='Racha protegida ✓';pct=100}else if(daily.arenaVotes>0){txt=`Arena ${daily.arenaVotes}/5 votos`;pct=daily.arenaVotes/5*100}$('#dailyGoalText').textContent=txt;$('#dailyGoalFill').style.width=`${pct}%`;$('#dailyGoal').classList.toggle('is-done',daily.done);
+    for(const b of [$('#activityBadge'),$('#homeUnread')]){b.textContent=state.unread;b.style.display=state.unread?'grid':'none'}
   }
 
   function addActivity(type,title,detail){state.activities.unshift({id:Date.now()+Math.random(),type,title,detail,at:Date.now()});state.activities=state.activities.slice(0,20);state.unread=Math.min(9,state.unread+1);save()}
@@ -280,7 +281,7 @@
   /* ---------------- bindings ---------------- */
   function bind(){
     $('#onboardingStart').onclick=()=>{state.onboarded=true;save();startArena(true)};$('#onboardingSkip').onclick=()=>{state.onboarded=true;save();showScreen('home')};
-    $$('[data-mode]').forEach(b=>b.onclick=()=>openMode(b.dataset.mode));$('#dailyPlay').onclick=startDaily;$('#dailyCaseCard').onclick=e=>{if(e.target.closest('button'))return;startDaily()};
+    $$('[data-mode]').forEach(b=>b.onclick=()=>openMode(b.dataset.mode));$('#dailyCaseCard').onclick=startDaily;$('#dailyGoal').onclick=()=>openMode('arena');
     $('#playBack').onclick=()=>{clearCountdown();showScreen('home')};$('#soundToggle').onclick=toggleSound;$('#activitySoundToggle').onclick=toggleSound;$('#profileSoundToggle').onclick=toggleSound;
     $$('[data-nav]').forEach(b=>b.onclick=()=>showScreen(b.dataset.nav,{nav:b.dataset.nav}));$('#activityShortcut').onclick=()=>showScreen('activity',{nav:'activity'});$('#profileShortcut').onclick=()=>showScreen('profile',{nav:'profile'});
     $('#startClash').onclick=()=>{const n=$('#clashName').value.trim();if(!n){toast('ESCRIBE EL NOMBRE DE LA OTRA PERSONA');return}startClash(n)};$('#demoClash').onclick=()=>startClash('Lucía');
