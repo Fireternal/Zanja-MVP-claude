@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#10152B" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="ZANJA — Dos bandos. Un jurado. Zánjalo." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,600..800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>ZANJA — Alpha 0.6.2 Arena Split</title>
+</head>
+<body>
+  <main class="app-shell" id="app">
+    <div class="ambient" aria-hidden="true">
+      <div class="ambient__glow"></div>
+      <div class="ambient__pattern"></div>
+      <div class="choice-wash" id="choiceWash"></div>
+    </div>
+
+    <section class="screen screen--home is-active" id="homeScreen" aria-label="Inicio">
+      <header class="home-topbar">
+        <button class="brand" id="brandButton" aria-label="ZANJA, inicio">
+          <span class="brand__word">ZANJA</span><span class="brand__cut" aria-hidden="true"></span>
+        </button>
+        <div class="home-meta">
+          <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="true" aria-label="Desactivar sonido">
+            <span class="sound-toggle__icon" aria-hidden="true"></span>
+          </button>
+          <button class="player-chip" id="profileButton" type="button" aria-label="Abrir tu perfil">
+            <span class="player-chip__streak">🔥 <b id="homeStreak">0</b></span>
+            <span class="player-chip__level">NIV <b id="homeLevel">1</b></span>
+          </button>
+        </div>
+      </header>
+
+      <div class="lobby-copy">
+        <span class="eyebrow">EL JURADO ESTÁ ABIERTO</span>
+        <h1>¿QUÉ QUIERES<br><em>ZANJAR</em> HOY?</h1>
+      </div>
+
+      <div class="lobby-grid" id="lobbyGrid">
+        <button class="mode-card mode-card--express" data-mode="express" type="button">
+          <span class="mode-card__flare" aria-hidden="true"></span>
+          <span class="mode-card__kicker">1 MIN · 5 CASOS</span>
+          <strong>RONDA<br>EXPRESS</strong>
+          <span class="mode-card__desc">Cinco decisiones. Cero rodeos.</span>
+          <span class="mode-card__cta">JUGAR <i aria-hidden="true">→</i></span>
+          <span class="mode-card__progress" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>
+
+        <button class="mode-card mode-card--arena" data-mode="arena" type="button">
+          <span class="mode-card__icon mode-card__icon--arena" aria-hidden="true"><i></i></span>
+          <span class="mode-card__kicker">SIN FIN</span>
+          <strong>ARENA</strong>
+          <span class="mode-card__desc">Juzga hasta que quieras.</span>
+          <span class="mode-card__mini-cta">ENTRAR</span>
+        </button>
+
+        <button class="mode-card mode-card--create" data-mode="create" type="button">
+          <span class="mode-card__icon mode-card__icon--create" aria-hidden="true">+</span>
+          <span class="mode-card__kicker">TU CASO</span>
+          <strong>ZANJAR</strong>
+          <span class="mode-card__desc">Dos versiones. Un jurado.</span>
+          <span class="mode-card__mini-cta">CREAR</span>
+        </button>
+
+        <button class="mode-card mode-card--daily" data-mode="daily" type="button">
+          <div class="daily-head">
+            <span class="mode-card__kicker"><i class="live-dot" aria-hidden="true"></i> CASO DEL DÍA</span>
+            <span class="daily-time" id="dailyCountdown">HOY</span>
+          </div>
+          <strong id="dailyTeaser">¿Se puede reservar una tumbona con una toalla?</strong>
+          <span class="daily-foot"><b>TODO EL MUNDO JUZGA EL MISMO</b><i aria-hidden="true">→</i></span>
+        </button>
+      </div>
+
+      <footer class="home-footer">JUZGAMOS SITUACIONES. <b>NO PERSONAS.</b></footer>
+    </section>
+
+    <section class="screen screen--play" id="playScreen" aria-label="Juzgar">
+      <header class="play-topbar">
+        <button class="icon-button icon-button--back" id="playBack" type="button" aria-label="Volver al inicio">‹</button>
+        <div class="play-context">
+          <span class="play-context__mode" id="playModeLabel">RONDA EXPRESS</span>
+          <div class="round-progress" id="roundProgress" aria-label="Progreso de la ronda"></div>
+        </div>
+        <button class="sound-toggle sound-toggle--small" id="playSoundToggle" type="button" aria-pressed="true" aria-label="Desactivar sonido">
+          <span class="sound-toggle__icon" aria-hidden="true"></span>
+        </button>
+      </header>
+
+      <section class="case-stage" id="caseStage" aria-live="polite"></section>
+    </section>
+
+    <section class="screen screen--round-end" id="roundEndScreen" aria-label="Ronda completada">
+      <div class="round-end-card">
+        <div class="round-end-burst" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="eyebrow">RONDA COMPLETADA</span>
+        <h2>EL JURADO<br>HA HABLADO.</h2>
+        <div class="xp-badge"><span>+</span><b id="roundXp">60</b><small>XP</small></div>
+        <div class="level-track" aria-label="Progreso de nivel"><i id="levelFill"></i></div>
+        <div class="round-end-stats">
+          <div><strong id="roundMajority">3/5</strong><span>CON LA MAYORÍA</span></div>
+          <div><strong id="roundStreak">🔥 1</strong><span>RACHA</span></div>
+        </div>
+        <button class="big-action" id="anotherRound" type="button">OTRA RONDA <span aria-hidden="true">→</span></button>
+        <button class="text-action" id="goArena" type="button">SEGUIR EN ARENA</button>
+        <button class="text-action text-action--muted" id="roundHome" type="button">VOLVER AL INICIO</button>
+      </div>
+    </section>
+
+    <dialog class="create-flow" id="createFlow">
+      <form method="dialog" class="flow-shell" id="createForm">
+        <header class="flow-head">
+          <button type="button" class="icon-button" id="flowBack" aria-label="Paso anterior">‹</button>
+          <div class="flow-title">ZANJAR</div>
+          <button type="button" class="icon-button" id="flowClose" aria-label="Cerrar">×</button>
+        </header>
+        <div class="flow-progress" id="flowProgress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <section class="flow-body" id="flowBody"></section>
+      </form>
+    </dialog>
+
+    <dialog class="profile-sheet" id="profileSheet">
+      <section class="profile-card">
+        <header class="sheet-head">
+          <div>
+            <span class="eyebrow">TU INSTINTO</span>
+            <h2>ASÍ JUZGAS.</h2>
+          </div>
+          <button class="icon-button" id="profileClose" type="button" aria-label="Cerrar">×</button>
+        </header>
+        <div class="profile-hero-stat">
+          <strong id="profileAgreement">—</strong>
+          <span>COINCIDENCIA CON EL JURADO</span>
+        </div>
+        <div class="stats-grid">
+          <div><strong id="profileJudged">0</strong><span>CASOS</span></div>
+          <div><strong id="profileRounds">0</strong><span>RONDAS</span></div>
+          <div><strong id="profileStreak">0</strong><span>RACHA</span></div>
+          <div><strong id="profileXp">0</strong><span>XP</span></div>
+        </div>
+        <div class="settings-list">
+          <button class="setting-row" id="profileSound" type="button" aria-pressed="true"><span>SONIDO</span><b>ON</b></button>
+          <button class="setting-row" id="profileHaptics" type="button" aria-pressed="true"><span>VIBRACIÓN</span><b>ON</b></button>
+        </div>
+        <p class="profile-note">El nivel refleja participación, no “aciertos”. ZANJA no premia votar con la mayoría.</p>
+      </section>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script src="app.js"></script><script>setTimeout(()=>document.querySelector('[data-mode="arena"]').click(),150);</script>
+</body>
+</html>
