@@ -40,61 +40,78 @@
     </section>
 
     <section class="screen screen--main" id="homeScreen" aria-label="Inicio">
-      <header class="app-header">
+      <header class="lobby-bar">
         <button class="brand" data-nav="home" type="button" aria-label="Inicio ZANJA">
           <span>ZANJA</span><i aria-hidden="true"></i>
         </button>
-        <div class="app-header__actions">
-          <button class="icon-button icon-button--notification" id="activityShortcut" type="button" aria-label="Actividad"><span>3</span></button>
-          <button class="level-chip" id="profileShortcut" type="button" aria-label="Tu perfil"><b>🔥 <span id="homeStreak">0</span></b><i>NIV <span id="homeLevel">1</span></i></button>
-        </div>
+        <button class="xp-pod" id="profileShortcut" type="button" aria-label="Tu perfil y progreso">
+          <span class="xp-pod__level"><b id="homeLevel">1</b><i>NIV</i></span>
+          <span class="xp-pod__meter">
+            <span class="xp-pod__track"><i id="homeXpFill"></i></span>
+            <small id="homeXpText">0 / 150 XP</small>
+          </span>
+        </button>
+        <button class="icon-button icon-button--notification" id="activityShortcut" type="button" aria-label="Actividad"><span id="homeUnread">3</span></button>
       </header>
 
-      <section class="home-intro">
-        <div>
-          <span class="eyebrow">EL JURADO ESTÁ ABIERTO</span>
-          <h1>¿QUÉ TE APETECE<br><em>HOY?</em></h1>
+      <button class="quest-bar" id="dailyGoal" type="button" aria-label="Misión diaria">
+        <span class="quest-bar__streak"><b id="homeStreak">0</b><i>DÍAS</i></span>
+        <span class="quest-bar__body">
+          <span class="quest-bar__head"><b>MISIÓN DIARIA</b><i id="dailyGoalText">Haz una actividad</i></span>
+          <span class="quest-bar__track"><i id="dailyGoalFill"></i></span>
+        </span>
+        <span class="quest-bar__go" aria-hidden="true">→</span>
+      </button>
+
+      <div class="lobby-section">
+        <span>ELIGE TU MODO</span><i aria-hidden="true"></i><b><span id="arenaOpenCount">20</span> CASOS ABIERTOS</b>
+      </div>
+
+      <section class="lobby-modes" aria-label="Modos de ZANJA">
+        <button class="lobby-hero" data-mode="arena" type="button">
+          <span class="lobby-hero__copy">
+            <span class="mode-signal mode-signal--live"><i aria-hidden="true"></i>EN DIRECTO</span>
+            <strong>ARENA LIVE</strong>
+            <p>Da tu opinión y ayuda a cerrar casos reales.</p>
+            <span class="mode-cta">ENTRAR <i aria-hidden="true">→</i></span>
+          </span>
+          <span class="lobby-hero__art" aria-hidden="true">
+            <span class="chip chip--a">A</span><b>VS</b><span class="chip chip--b">B</span>
+          </span>
+        </button>
+
+        <div class="lobby-duo">
+          <button class="mode-tile mode-tile--pulse" data-mode="pulse" type="button">
+            <span class="mode-tile__art mode-tile__art--pulse" aria-hidden="true"><i></i><b>?</b></span>
+            <strong>PULSO</strong>
+            <p>Predice qué votará la mayoría.</p>
+            <span class="mode-tile__foot">MEJOR MARCA <b id="pulseBest">—</b></span>
+          </button>
+
+          <button class="mode-tile mode-tile--clash" data-mode="clash" type="button">
+            <span class="mode-tile__art mode-tile__art--clash" aria-hidden="true"><span>TÚ</span><b>×</b><span>?</span></span>
+            <strong>CHOQUE</strong>
+            <p>Compara tu criterio con alguien.</p>
+            <span class="mode-tile__foot" id="clashHomeStatus">Reta a un amigo</span>
+          </button>
         </div>
-        <div class="daily-goal" id="dailyGoal">
-          <span>RACHA DIARIA</span><b id="dailyGoalText">Haz una actividad</b><i><span id="dailyGoalFill"></span></i>
-        </div>
-      </section>
 
-      <section class="mode-grid" aria-label="Modos de ZANJA">
-        <button class="mode-card mode-card--arena" data-mode="arena" type="button">
-          <span class="mode-card__signal"><i></i> EN DIRECTO</span>
-          <div class="mode-card__art mode-card__art--arena" aria-hidden="true"><span>A</span><b>VS</b><span>B</span></div>
-          <div class="mode-card__copy"><strong>ARENA LIVE</strong><p>Da tu opinión y ayuda a cerrar casos reales.</p></div>
-          <div class="mode-card__foot"><span><b id="arenaOpenCount">20</b> casos necesitan jurado</span><i>ENTRAR →</i></div>
-        </button>
-
-        <button class="mode-card mode-card--pulse" data-mode="pulse" type="button">
-          <span class="mode-card__signal">7 CASOS · PUNTUACIÓN</span>
-          <div class="mode-card__art mode-card__art--pulse" aria-hidden="true"><i></i><b>?</b></div>
-          <div class="mode-card__copy"><strong>PULSO</strong><p>Predice qué votará la mayoría.</p></div>
-          <div class="mode-card__foot"><span>Tu mejor marca: <b id="pulseBest">—</b></span><i>JUGAR →</i></div>
-        </button>
-
-        <button class="mode-card mode-card--clash" data-mode="clash" type="button">
-          <span class="mode-card__signal">TÚ CONTRA ALGUIEN</span>
-          <div class="mode-card__art mode-card__art--clash" aria-hidden="true"><span>TÚ</span><b>×</b><span>?</span></div>
-          <div class="mode-card__copy"><strong>CHOQUE</strong><p>Compara vuestro criterio en 7 casos.</p></div>
-          <div class="mode-card__foot"><span id="clashHomeStatus">Reta a un amigo</span><i>EMPEZAR →</i></div>
-        </button>
-
-        <button class="mode-card mode-card--create" data-mode="create" type="button">
-          <span class="mode-card__signal">TU DISCUSIÓN</span>
-          <div class="mode-card__art mode-card__art--create" aria-hidden="true"><i></i><b>+</b></div>
-          <div class="mode-card__copy"><strong>ZANJAR</strong><p>Dos versiones. Un jurado.</p></div>
-          <div class="mode-card__foot"><span id="createHomeStatus">Crea tu primer caso</span><i>CREAR →</i></div>
+        <button class="lobby-band" data-mode="create" type="button">
+          <span class="lobby-band__icon" aria-hidden="true">+</span>
+          <span class="lobby-band__copy">
+            <span class="mode-signal">TU DISCUSIÓN</span>
+            <strong>ZANJAR</strong>
+            <p id="createHomeStatus">Crea tu primer caso</p>
+          </span>
+          <span class="lobby-band__go" aria-hidden="true">→</span>
         </button>
       </section>
 
-      <section class="daily-case-card" id="dailyCaseCard">
-        <div class="daily-case-card__head"><span><i></i> CASO DEL DÍA</span><b id="dailyCountdown">CIERRA HOY</b></div>
-        <h2 id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</h2>
-        <div class="daily-case-card__foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><button id="dailyPlay" type="button">JUZGAR →</button></div>
-      </section>
+      <button class="daily-case-card" id="dailyCaseCard" type="button">
+        <span class="daily-case-card__head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b id="dailyCountdown">CIERRA HOY</b></span>
+        <span class="daily-case-card__question" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
+        <span class="daily-case-card__foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
+      </button>
 
       <p class="home-rule">JUZGAMOS SITUACIONES. <b>NO PERSONAS.</b></p>
     </section>
