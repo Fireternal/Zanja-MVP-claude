@@ -146,6 +146,8 @@ Todos deben funcionar también en silencio. Haptics se degradan con seguridad en
 ## 12. Componentes oficiales
 - AppHeader (marca + XP pod + racha)
 - TodayBlock (misión diaria + Caso del Día en un mismo marco; la misión se oculta al completarse)
+- FixtureBand (A vs B con sus escudos, dentro del Caso del Día)
+- PhaseRail (las tres fases del debate semanal, con la actual encendida)
 - BottomNav de cinco ranuras, con NavCreate elevado en el centro
 - WeeklyCard y PhaseRail
 - OpenCasesNudge (aviso, no entrada de menú)

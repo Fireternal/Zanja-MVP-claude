@@ -54,7 +54,7 @@
         </span>
       </header>
 
-      <div class="lobby-section"><span>HOY</span><i aria-hidden="true"></i><b id="dailyCountdown">CIERRA HOY</b></div>
+      <div class="lobby-section lobby-section--today"><span>HOY</span><i aria-hidden="true"></i><b id="dailyCountdown">CIERRA HOY</b></div>
 
       <section class="today">
         <div class="today__quest" id="dailyGoal">
@@ -62,17 +62,36 @@
           <span class="today__quest-track"><i id="dailyGoalFill"></i></span>
         </div>
         <button class="today__case" id="dailyCaseCard" type="button">
-          <span class="today__case-head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b>+15 XP</b></span>
+          <span class="today__beam" aria-hidden="true"></span>
+          <span class="today__case-head">
+            <span class="today__tag" id="dailyTag">CONVIVENCIA</span>
+            <span class="today__live">CASO DEL DÍA</span>
+            <b class="today__xp">+15 XP</b>
+          </span>
           <span class="today__case-q" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
-          <span class="today__case-foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
+          <span class="today__fixture" aria-hidden="true">
+            <i class="today__crest today__crest--a">A</i>
+            <b>VS</b>
+            <i class="today__crest today__crest--b">B</i>
+          </span>
+          <span class="today__case-foot">
+            <span class="today__jury"><b id="dailyJuryCount">1.240</b> JURADOS DENTRO</span>
+            <span class="today__cta">JUZGAR <i aria-hidden="true">→</i></span>
+          </span>
         </button>
       </section>
 
-      <div class="lobby-section"><span>ESTA SEMANA</span><i aria-hidden="true"></i><b id="weeklyDays">7D</b></div>
+      <div class="lobby-section lobby-section--week"><span>ESTA SEMANA</span><i aria-hidden="true"></i><b id="weeklyDays">7D</b></div>
 
       <button class="weekly-card" data-mode="weekly" type="button">
+        <span class="weekly-card__glow" aria-hidden="true"></span>
         <span class="weekly-card__head"><b id="weeklyPhase">FASE 1 · PROPUESTAS</b><i aria-hidden="true">7D</i></span>
         <strong id="weeklyTitle">¿QUÉ DEBATIMOS ESTA SEMANA?</strong>
+        <span class="phase-rail" id="weeklyRail" aria-hidden="true">
+          <i data-phase="propose"><b></b>PROPONER</i>
+          <i data-phase="elect"><b></b>ELEGIR</i>
+          <i data-phase="debate"><b></b>DEBATIR</i>
+        </span>
         <span class="weekly-card__foot"><span id="weeklyMeta">6 temas en la mesa</span><i id="weeklyCta">PROPONER TEMA →</i></span>
       </button>
 
@@ -82,7 +101,7 @@
         <span class="open-cases__go" aria-hidden="true">→</span>
       </button>
 
-      <div class="lobby-section"><span>TUS VEREDICTOS</span><i aria-hidden="true"></i><b id="recentMeta"></b></div>
+      <div class="lobby-section lobby-section--you"><span>TUS VEREDICTOS</span><i aria-hidden="true"></i><b id="recentMeta"></b></div>
 
       <div class="recent" id="recentList"></div>
 

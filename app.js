@@ -215,7 +215,7 @@
     $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=lvl;
     $('#homeXpFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#homeXpText').textContent=`${state.xp%150} / 150 XP`;
 
-    const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
+    const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyTag').textContent=d.tag;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
     const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
     $('#dailyCountdown').textContent=`CIERRA EN ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
@@ -227,6 +227,8 @@
     const w=weeklySummary();
     $('#weeklyPhase').textContent=w.badge;$('#weeklyTitle').textContent=w.title;$('#weeklyMeta').textContent=w.meta;$('#weeklyCta').textContent=w.cta;
     $('#weeklyDays').textContent=timeLeft(weekEnd()-Date.now());
+    const phases=['propose','elect','debate'],now_=phases.indexOf(weeklyPhase());
+    for(const el of $$('#weeklyRail i')){const i=phases.indexOf(el.dataset.phase);el.classList.toggle('is-done',i<now_);el.classList.toggle('is-now',i===now_)}
 
     // No es una entrada de menú: sólo aparece cuando tienes algo abierto de verdad.
     const open=state.customCases.filter(c=>caseState(c)==='open').sort((x,y)=>x.closesAt-y.closesAt);
@@ -248,10 +250,14 @@
   function recentRowMarkup(c,v){
     const counts=caseVotes(c);counts[v.choice]=(counts[v.choice]||0)+1;
     const p=percentage(counts),winner=getWinner(counts),mine=sideLabel(v.choice);
+    const letter=v.choice==='both'?'=':v.choice.toUpperCase();
     return `<button class="recent-row" data-case="${c.id}" type="button">
-      <span class="recent-row__q">${escapeHtml(c.q)}</span>
-      <span class="recent-row__bar" aria-hidden="true"><i class="is-a" style="width:${p.a}%"></i><i class="is-both" style="width:${p.both}%"></i><i class="is-b" style="width:${p.b}%"></i></span>
-      <span class="recent-row__foot"><b class="is-${v.choice}">TU VOTO · ${mine}</b><i class="${v.choice===winner?'is-match':''}">${v.choice===winner?'CON LA MAYORÍA':'EN MINORÍA'}</i></span>
+      <span class="recent-row__crest is-${v.choice}" aria-hidden="true">${letter}</span>
+      <span class="recent-row__body">
+        <span class="recent-row__q">${escapeHtml(c.q)}</span>
+        <span class="recent-row__bar" aria-hidden="true"><i class="is-a" style="width:${p.a}%"></i><i class="is-both" style="width:${p.both}%"></i><i class="is-b" style="width:${p.b}%"></i></span>
+        <span class="recent-row__foot"><b class="is-${v.choice}">TU VOTO · ${mine}</b><i class="${v.choice===winner?'is-match':''}">${v.choice===winner?'CON LA MAYORÍA':'EN MINORÍA'}</i></span>
+      </span>
     </button>`;
   }
 
