@@ -41,11 +41,20 @@ Las pantallas de panel (semanal, mis zanjas, verificación) hacen scroll control
 
 ## Interacción de voto
 
-Se sustituyó el puck VS central por el arrastre sobre la carta entera. Los bandos siguen
-apilados, que es lo que deja a cada argumento el ancho completo, y la carta no se desplaza:
-moverla taparía el texto que hay que leer para decidir. Verificado en Chromium que las tres
-direcciones (arriba A, abajo B, lateral AMBOS) marcan el bando correcto, muestran su sello y
-registran el voto, y que el tutorial del gesto aparece una sola vez y se recuerda.
+Se retiró el arrastre por completo: cada bando es un botón y se vota tocándolo; AMBOS es un
+botón ancho bajo la carta. Los bandos siguen apilados, que es lo que deja a cada argumento el
+ancho completo. Verificado en Chromium que los tres destinos (`[data-side="a"]`,
+`[data-side="b"]`, `[data-vote="both"]`) registran el voto correcto y muestran el marcador, y
+que la carta ya no captura punteros (`touch-action:auto`).
+
+## Reestructuración de navegación
+
+Barra de cinco ranuras con botón central de creación. Verificado: ARENA abre la votación
+manteniendo la barra visible y la pestaña marcada; el botón central abre Zanjar desde Arena;
+el aviso de casos abiertos en Inicio aparece sólo si los hay y lleva a Mis Zanjas; TÚ muestra
+Verificación bloqueada con barra de progreso por debajo del nivel 5 y abierta por encima;
+Inicio cierra con los tres últimos veredictos, o con una llamada a Arena si aún no hay
+ninguno. Sin errores de consola en 320×568, 375×667, 390×844 y 430×932.
 
 ## Fallos encontrados y corregidos durante el QA
 - Añadir o quitar una prueba fotográfica re-renderizaba el paso 1 de Zanjar y borraba el texto ya escrito.
@@ -57,6 +66,9 @@ registran el voto, y que el tutorial del gesto aparece una sola vez y se recuerd
 - Atenuar el bando no elegido con `saturate`+`brightness` convertía el coral en marrón; ahora se realza el elegido en vez de apagar el otro.
 - Los candidatos del debate semanal se votaban a ciegas: sólo se veía la pregunta, no las dos defensas.
 - La prueba fotográfica no llegaba a B por el enlace.
+- Con la barra inferior visible en Arena, el botón central tapaba el botón AMBOS: la pantalla de voto no reservaba sitio para la barra.
+- La carta repartía su alto en dos mitades fijas y aplastaba los bandos por debajo de 700 px de alto (el bando B llegaba a quedar fuera). Ahora la carta se mide por su contenido y la pantalla se desplaza antes que recortar.
+- Al abrir un veredicto antiguo desde Inicio el botón anunciaba una cuenta atrás que no existía.
 
 ## Qué es real en esta beta frontend
 - Los cuatro modos y sus reglas.

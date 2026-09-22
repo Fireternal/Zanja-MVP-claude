@@ -71,7 +71,7 @@ Registradas en el objeto `screens` y conmutadas por `showScreen(name, {nav})`.
 | Clave | Id en el HTML | Qué es |
 |---|---|---|
 | `onboarding` | `#onboardingScreen` | Primera apertura |
-| `home` | `#homeScreen` | Menú, agrupado en HOY / JUZGAR / LO TUYO |
+| `home` | `#homeScreen` | Tablero del día: HOY · ESTA SEMANA · TUS VEREDICTOS |
 | `play` | `#playScreen` | Votación. La usan arena, daily, weekly, shared y own |
 | `create` | `#createScreen` | Flujo Zanjar, 4 pasos |
 | `weekly` | `#weeklyScreen` | Debate semanal, según fase |
@@ -83,12 +83,29 @@ Registradas en el objeto `screens` y conmutadas por `showScreen(name, {nav})`.
 
 `showScreen` llama al render correspondiente. Si añades pantalla, añade su rama ahí.
 
+### Navegación
+
+Barra de cinco ranuras: `INICIO · ARENA · (+) · ACTIVIDAD · TÚ`. Cada una tiene un trabajo
+distinto —hoy, juzgar, crear, lo que ha pasado, lo tuyo— y el centro es un botón elevado
+(`#navCreate`) que abre Zanjar desde cualquier pantalla.
+
+La barra sigue visible durante Arena (es una pestaña, no una pantalla modal), y `showScreen`
+marca entonces `has-nav` en la pantalla de voto para que reserve sitio y el botón central no
+tape el dock. En los modos de un solo caso —daily, weekly, shared, own, review— la barra
+desaparece: se sale por la flecha de la cabecera.
+
+Mis Zanjas y Verificación **no están en la barra**: no son actividades, son historial y rol.
+Viven dentro de TÚ, en `renderHub()`. Verificación no aparece como tile gris bloqueado sino
+como una línea de progreso hasta el nivel 5, para que desbloquearla sea un acontecimiento y
+no el final de una molestia.
+
 ### `currentMode`
 
 La pantalla de juego se comporta distinto según `currentMode`:
 
 - `arena` — cola larga, avanza sola a los 5 s
-- `daily`, `weekly`, `shared` — un solo caso, vuelven a inicio (`SINGLE_CASE_MODES`)
+- `daily`, `weekly`, `shared`, `review` — un solo caso, vuelven a inicio (`SINGLE_CASE_MODES`)
+- `review` — un veredicto tuyo de hace rato, abierto desde Inicio: sin cuenta atrás
 - `own` — tu propio caso en vivo: carta bloqueada, sin cuenta atrás, con compartir
 - `tutorial` — primer caso tras el onboarding
 
@@ -102,7 +119,7 @@ cambiarlo borraría el progreso de quien ya tenga la app). `loadState()` mezcla 
 
 ```js
 {
-  onboarded, sound, haptics, coachDone,      // preferencias y tutoriales vistos
+  onboarded, sound, haptics,                 // preferencias
   xp, streak, lastActiveDate, daily{},       // progresión
   judged, majorityMatches, choiceCounts{},   // perfil de criterio
   votes{},                                   // caseId -> {choice, at}
@@ -190,26 +207,30 @@ no toques la lógica.
 
 ## 6. La pantalla de voto
 
-Es el corazón de la app y ya se rehízo dos veces. Lee esto antes de tocarla.
+Es el corazón de la app y ya se rehízo tres veces. Lee esto antes de tocarla.
 
-**Cómo funciona ahora:** los bandos van **apilados** (A arriba, B abajo) y se vota
-**arrastrando sobre la carta**: arriba A, abajo B, a un lado AMBOS. Umbrales en
-`SWIPE_X=52` y `SWIPE_Y=44` píxeles de recorrido del dedo. También valen los tres botones
-de abajo. La primera vez se muestra un tutorial del gesto (`coachDone`).
+**Cómo funciona ahora:** los bandos van **apilados** (A arriba, B abajo) y **cada bando es
+un botón**: se vota tocando la ventana del bando con el que estás de acuerdo. Debajo, un
+único botón ancho para `AMBOS TIENEN RAZÓN`. Todo el enlace lo hace `bindVote()`, que lee
+`data-side` o `data-vote` y confirma con un realce blanco (`.is-picked`) antes de resolver.
 
-**La carta no se mueve.** Al arrastrar responden el sello del bando, su realce en blanco y
-el tinte de fondo — nada se desplaza.
+**El dock queda pegado abajo** (`.vote-zone` es `position:sticky`). Si el caso no cabe —
+pasa en pantallas de 320 y 375 px de alto con la barra inferior visible — el caso se
+desplaza por debajo y los tres destinos del voto siguen siempre a la vista, por encima del
+botón central de la barra.
 
 **Por qué, para que no se vuelva a intentar:**
 
 - El diseño original arrastraba un *puck* VS de 72 px en el centro. Nadie adivinaba que
   fuera arrastrable, y el eje del gesto no coincidía con dónde estaba dibujado cada bando.
-  Lo que había que cambiar era **qué se arrastra**, no el eje.
 - Se probó ponerlos en horizontal, estilo Tinder. No funciona: cada bando se quedaba con
   media pantalla de ancho y los argumentos se rompían en cuatro líneas. Tinder puede mover
   la carta porque es una foto; aquí hay texto que hay que **leer** para decidir.
-- Por ese mismo motivo la carta tampoco se desplaza: mover el texto mientras se intenta leer
-  es contraproducente, y el gesto se entiende igual con el sello y el realce.
+- Se probó arrastrar sobre la carta entera sin moverla, con sello y realce. Seguía sin
+  entenderse: el gesto no se anuncia solo, hacía falta un tutorial para explicarlo, y un
+  tutorial que explica un gesto es la señal de que el gesto sobra.
+- Tocar el bando no necesita explicación: el objetivo del toque **es** la respuesta. Por eso
+  ya no existe `bindSwipe`, ni umbrales de gesto, ni `coachDone` en el estado.
 
 ---
 
@@ -267,6 +288,9 @@ de reemplazo.
   importar el repositorio en Vercel (el `vercel.json` ya está listo).
 - `AUDIT.md` documenta la Alpha 0.6.9 y describe una geometría que ya no existe. Está
   obsoleto: o se borra o se marca como histórico.
+- Hay 67 casos sembrados en `CASES`. Con Arena a un toque desde cualquier pantalla se agotan
+  antes; la pantalla de «ya los has juzgado todos» existe y está probada, pero el techo real
+  es de contenido, no de navegación.
 - `qa-case.html`, `qa-result.html` y los `qa-*.png` son restos de una sesión de QA antigua.
 
 ---

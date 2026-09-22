@@ -23,7 +23,8 @@ El Caso del Día y el Debate Semanal son rituales transversales que dan motivo p
 **Job:** «Quiero opinar.»
 - Casos abiertos de comunidad.
 - Pregunta: «¿A quién das la razón?»
-- Se vota arrastrando sobre la carta hacia el bando: arriba A, abajo B, a un lado AMBOS. Los bandos van apilados para que cada argumento disponga del ancho entero, y la carta permanece fija: la respuesta al gesto es el sello y el realce del bando, no un desplazamiento que taparía el texto. La primera vez se explica el gesto.
+- Se vota **tocando la ventana del bando** al que das la razón. Los bandos van apilados para que cada argumento disponga del ancho entero, y debajo hay un botón ancho para AMBOS. No hay gesto que aprender: el objetivo del toque es la respuesta.
+- El dock de voto queda fijo en la parte baja de la pantalla; si el caso no cabe, se desplaza por detrás y las tres opciones siguen siempre visibles.
 - Filtro por tema, con el recuento de lo que queda sin juzgar en cada uno.
 - No existe score de acierto.
 - Voto → resultado provisional → 5 s → siguiente.

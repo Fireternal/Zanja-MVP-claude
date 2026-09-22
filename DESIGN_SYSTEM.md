@@ -16,7 +16,7 @@ La firma visual principal es la **grieta / corte**: dos campos que compiten y se
 | Ink 700 | `#202A53` | superficies elevadas |
 | Snow | `#F8F9FF` | texto principal |
 | Mist | `#ADB5D8` | texto secundario |
-| ZANJA Violet | `#7456FF` | marca, Pulso, sistema |
+| ZANJA Violet | `#7456FF` | marca, debate semanal, sistema |
 | A Cyan | `#27C9E8` | Bando A |
 | B Coral | `#FF625D` | Bando B |
 | Signal Yellow | `#FFD54A` | AMBOS, CTA, recompensa, VS |
@@ -127,12 +127,10 @@ No mezclar múltiples estilos de sombra sin función.
 ## 10. Sonido y haptics
 No música continua. Solo sonido ligado a acción.
 - tap
-- pickup VS
-- zona A/B/AMBOS
+- toque sobre un bando
 - voto
 - reveal
-- acierto/fallo Pulso
-- final de modo
+- final de cola
 - ZÁNJALO
 - logro
 
@@ -147,16 +145,15 @@ Todos deben funcionar también en silencio. Haptics se degradan con seguridad en
 
 ## 12. Componentes oficiales
 - AppHeader (marca + XP pod + racha)
-- QuestBar (misión diaria; se oculta al completarse)
-- BottomNav
-- ModeHero / ModeTile / ModeBand
+- TodayBlock (misión diaria + Caso del Día en un mismo marco; la misión se oculta al completarse)
+- BottomNav de cinco ranuras, con NavCreate elevado en el centro
 - WeeklyCard y PhaseRail
-- DailyCaseCard
+- OpenCasesNudge (aviso, no entrada de menú)
+- RecentRow (veredicto juzgado: pregunta, reparto del jurado y tu voto)
+- HubRow (Mis Zanjas / Verificación, con su candado de nivel)
 - CaseQuestion (con chips de prueba y denuncia)
-- CaseCard (dos bandos apilados, fija; lee el arrastre)
-- Stamp (sello A / AMBOS / B al arrastrar)
-- SwipeCoach
-- VoteButtons
+- CaseCard (dos bandos apilados; cada bando es el botón de voto)
+- VoteDock (fijo abajo, con el botón ancho de AMBOS)
 - FilterChip / FilterSheet
 - ResultBars
 - CountdownButton

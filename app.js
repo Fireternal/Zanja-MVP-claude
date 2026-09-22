@@ -34,7 +34,60 @@
     {id:'leftovers',tag:'COMIDA',q:'¿Está mal llevarte las sobras de una cena a la que te han invitado?',a:['Iban a tirarlas.','Me dijeron que cogiera lo que quisiera.','Evita desperdiciar comida.'],b:['La invitación era a cenar allí.','No preguntaste por las sobras.','Pareció que estabas haciendo acopio.'],counts:{a:1137,both:264,b:646}},
     {id:'voice',tag:'AMIGOS',q:'¿Un audio de 6 minutos debería resumirse en texto?',a:['Era más rápido contarlo hablando.','Puedes escucharlo cuando quieras.','Necesitaba explicar contexto.'],b:['Seis minutos es demasiado.','No siempre puedo escuchar audios.','Se podía resumir en cuatro líneas.'],counts:{a:533,both:123,b:1429}},
     {id:'phone',tag:'PAREJA',q:'¿Mirar el móvil durante una cena juntos es una falta de respeto?',a:['Solo contesté algo urgente.','Fueron menos de dos minutos.','No ignoré la conversación.'],b:['Era nuestro rato juntos.','Podías esperar.','Rompe completamente la atención.'],counts:{a:422,both:152,b:1543}},
-    {id:'queue',tag:'ETIQUETA',q:'¿Puedes colarte con un amigo que ya está haciendo cola?',a:['Vamos juntos.','Solo se añade una persona.','Él guardó sitio por los dos.'],b:['El resto lleva esperando.','Tu amigo no puede reservarte turno.','Si llegas tarde, vas al final.'],counts:{a:287,both:68,b:1756}}
+    {id:'queue',tag:'ETIQUETA',q:'¿Puedes colarte con un amigo que ya está haciendo cola?',a:['Vamos juntos.','Solo se añade una persona.','Él guardó sitio por los dos.'],b:['El resto lleva esperando.','Tu amigo no puede reservarte turno.','Si llegas tarde, vas al final.'],counts:{a:287,both:68,b:1756}},
+    {id:'toalla',tag:'ETIQUETA',q:'¿Se puede reservar una tumbona con una toalla a las 7 de la mañana?',a:['Madrugué para conseguirla.','Es lo que hace todo el mundo.','Vuelvo en un rato.'],b:['Una toalla no ocupa la tumbona.','Hay gente esperando de pie.','Si no estás, está libre.'],counts:{a:604,both:118,b:1622}},
+    {id:'altavoz',tag:'CONVIVENCIA',q:'¿Puedes poner música en el baño compartido a las 7 de la mañana?',a:['Me despierta y me anima.','Está bajita.','Es mi rutina de siempre.'],b:['Los demás siguen durmiendo.','Las paredes son finas.','Existen los auriculares.'],counts:{a:389,both:96,b:1481}},
+    {id:'nevera2',tag:'CONVIVENCIA',q:'¿Hay que reponer lo que te bebes de la nevera común aunque sea un vaso?',a:['Es un vaso de nada.','Luego lo compenso.','Nadie lleva la cuenta.'],b:['No era tuyo.','Ese vaso le faltará a alguien.','Reponer cuesta poco.'],counts:{a:512,both:187,b:1290}},
+    {id:'ducha',tag:'CONVIVENCIA',q:'¿Veinte minutos de ducha son demasiados si hay cola?',a:['Es mi único rato tranquilo.','No hay hora fijada.','Tampoco tardo siempre.'],b:['Hay gente esperando.','El agua caliente se acaba.','Diez minutos bastan.'],counts:{a:433,both:214,b:1198}},
+    {id:'friegaplatos',tag:'CONVIVENCIA',q:'¿Dejar un plato en el fregadero cuenta como recoger?',a:['Lo lavo luego.','Está en remojo.','No molesta a nadie.'],b:['El siguiente se lo encuentra.','Siempre es "luego".','Se lava en un minuto.'],counts:{a:298,both:141,b:1533}},
+    {id:'visita',tag:'CONVIVENCIA',q:'¿Hay que avisar antes de traer a alguien a dormir al piso compartido?',a:['Es mi habitación.','Pago lo mismo que ellos.','No molestamos.'],b:['El baño y la cocina son comunes.','Te la encuentras de mañana.','Avisar cuesta un mensaje.'],counts:{a:487,both:203,b:1354}},
+    {id:'termostato',tag:'CONVIVENCIA',q:'¿Puede cada uno tocar el termostato sin consultar?',a:['Estaba pasando frío.','Se vuelve a bajar.','No es para tanto.'],b:['La factura es de todos.','Cada uno lo mueve a su gusto.','Se habla y se acuerda.'],counts:{a:401,both:329,b:964}},
+    {id:'ruido',tag:'CONVIVENCIA',q:'¿Puedes hacer obras en casa un sábado a las 9 de la mañana?',a:['Es el único día que tengo.','Está dentro del horario.','Termino pronto.'],b:['Es fin de semana.','El sábado se duerme.','Podía esperar a las 11.'],counts:{a:624,both:192,b:1117}},
+
+    {id:'movilmesa',tag:'PAREJA',q:'¿Está mal dejar el móvil boca arriba durante una cena de pareja?',a:['Espero algo importante.','No lo estoy mirando.','Es una manía tonta.'],b:['Distrae cada vez que se ilumina.','Marca que hay algo más urgente.','Boca abajo cuesta lo mismo.'],counts:{a:451,both:176,b:1288}},
+    {id:'exredes',tag:'PAREJA',q:'¿Seguir a tu ex en redes es faltar a tu pareja actual?',a:['No significa nada.','Acabamos bien.','Bloquear sería exagerado.'],b:['Incomoda y lo sabes.','Sigues viendo su vida.','Dejar de seguir no duele.'],counts:{a:702,both:284,b:1003}},
+    {id:'plantones',tag:'PAREJA',q:'¿Cancelar un plan por cansancio dos veces seguidas es una falta de respeto?',a:['Estaba reventado de verdad.','Avisé con tiempo.','No fue a propósito.'],b:['Dos veces ya es un patrón.','El otro se organizó para eso.','Cansado se puede estar juntos.'],counts:{a:588,both:301,b:1049}},
+    {id:'cuentas',tag:'PAREJA',q:'¿Hay que pagar a medias si uno cobra el doble que el otro?',a:['A medias es lo justo.','Cada uno lleva lo suyo.','Si no, se desequilibra.'],b:['Proporcional es más justo.','El esfuerzo no es el mismo.','Medias castiga al que menos gana.'],counts:{a:661,both:398,b:876}},
+    {id:'suegros',tag:'PAREJA',q:'¿Puedes decir que no a comer con los suegros todos los domingos?',a:['Todos los domingos es mucho.','También tengo mi familia.','Una vez al mes basta.'],b:['Es una hora de tu semana.','Para ellos significa mucho.','Cuesta poco y evita conflicto.'],counts:{a:1118,both:267,b:622}},
+    {id:'clave',tag:'PAREJA',q:'¿Tener la contraseña del móvil del otro es normal en una pareja?',a:['Si no ocultas nada, da igual.','Es una muestra de confianza.','Nunca la uso.'],b:['La intimidad no se negocia.','Tenerla ya cambia la relación.','Confiar es no necesitarla.'],counts:{a:498,both:212,b:1284}},
+    {id:'regalo2',tag:'PAREJA',q:'¿Regalar dinero en un aniversario es un detalle pobre?',a:['Así compra lo que quiera.','Acertar es difícil.','Vale lo mismo.'],b:['Un regalo se piensa.','Dinero es no haberlo pensado.','El gesto era el punto.'],counts:{a:534,both:246,b:1183}},
+
+    {id:'correo',tag:'TRABAJO',q:'¿Hay que responder un correo de trabajo durante las vacaciones?',a:['Era una respuesta de un minuto.','Evita un lío a la vuelta.','No me cuesta nada.'],b:['Las vacaciones son vacaciones.','Responder crea precedente.','Para eso está el sustituto.'],counts:{a:387,both:159,b:1611}},
+    {id:'camara',tag:'TRABAJO',q:'¿Se puede obligar a llevar la cámara encendida en las reuniones?',a:['Ayuda a que la reunión fluya.','Demuestra atención.','Es lo normal en presencial.'],b:['Es tu casa, no la oficina.','Cansa y no aporta.','Se atiende igual sin cámara.'],counts:{a:495,both:228,b:1329}},
+    {id:'creditos',tag:'TRABAJO',q:'¿Presentar en una reunión una idea de un compañero sin citarlo es robarla?',a:['La idea se mejoró entre varios.','No dio tiempo a nombrar a nadie.','Lo importante es que salga.'],b:['El mérito tiene dueño.','Citar cuesta tres palabras.','Así se pierde la confianza.'],counts:{a:214,both:132,b:1798}},
+    {id:'horaextra',tag:'TRABAJO',q:'¿Quedarse media hora más cada día debería contar como horas extra?',a:['Media hora no es nada.','Entra en la flexibilidad.','Yo también llego tarde a veces.'],b:['Media hora al día son días al año.','El tiempo se paga.','Si es habitual, es jornada.'],counts:{a:312,both:198,b:1614}},
+    {id:'cumple',tag:'TRABAJO',q:'¿Está mal no poner dinero para el regalo de cumpleaños de un compañero?',a:['No tengo relación con él.','Se acumulan muchos al año.','Es voluntario.'],b:['Son tres euros.','Queda fatal ser el único.','Es un gesto de equipo.'],counts:{a:806,both:341,b:797}},
+    {id:'enfermo',tag:'TRABAJO',q:'¿Hay que ir a trabajar con un resfriado leve si se puede teletrabajar?',a:['Puedo trabajar igual.','No quiero gastar un día.','Es solo un resfriado.'],b:['Se contagia a la oficina.','El cuerpo pide parar.','Para eso está el teletrabajo.'],counts:{a:389,both:214,b:1379}},
+    {id:'grupo',tag:'TRABAJO',q:'¿Es aceptable escribir al grupo de trabajo un domingo por la tarde?',a:['Es para el lunes temprano.','Nadie tiene que contestar.','Lo escribo cuando lo pienso.'],b:['Suena el móvil de todos.','Programa el envío.','El domingo no es laborable.'],counts:{a:402,both:187,b:1502}},
+
+    {id:'boda',tag:'AMIGOS',q:'¿Se puede rechazar una invitación de boda por lo que cuesta ir?',a:['Es un gasto enorme.','El regalo más el viaje no compensa.','Lo celebro con ellos otro día.'],b:['Es un día único.','Se avisa con un año.','Lo importante es estar.'],counts:{a:1204,both:298,b:589}},
+    {id:'prestamo',tag:'AMIGOS',q:'¿Hay que recordar a un amigo que te debe 20 euros de hace meses?',a:['El dinero es dinero.','Se le habrá olvidado.','Un recordatorio no ofende.'],b:['Por 20 euros no vale la pena.','Queda mal reclamar.','Ya se acordará.'],counts:{a:1341,both:214,b:538}},
+    {id:'grupoamigos',tag:'AMIGOS',q:'¿Está feo salir de un grupo de WhatsApp sin decir nada?',a:['Nadie tiene que dar explicaciones.','El grupo estaba muerto.','Evita una conversación incómoda.'],b:['Sale un aviso para todos.','Parece un portazo.','Un mensaje breve lo arregla.'],counts:{a:687,both:243,b:1074}},
+    {id:'cumpleamigo',tag:'AMIGOS',q:'¿Contar un secreto a tu pareja rompe la confianza de un amigo?',a:['A mi pareja se lo cuento todo.','No va a salir de ahí.','No era tan grave.'],b:['Te lo contó a ti, no a dos.','Ya se ha escapado una vez.','Un secreto es de uno.'],counts:{a:276,both:167,b:1701}},
+    {id:'llegartarde',tag:'AMIGOS',q:'¿El que siempre llega tarde debería pagar algo del plan?',a:['Es una broma que funciona.','Así deja de hacerlo.','Lo acordamos entre todos.'],b:['Castigar con dinero es raro.','Se habla y ya está.','Acaba creando mal rollo.'],counts:{a:594,both:271,b:1088}},
+    {id:'mudanza',tag:'AMIGOS',q:'¿Se puede decir que no a ayudar en una mudanza?',a:['Es un sábado entero.','No soy el único amigo.','Tengo mis planes.'],b:['Para eso están los amigos.','Tú también te mudarás.','Son cuatro horas.'],counts:{a:812,both:304,b:842}},
+    {id:'fotos',tag:'AMIGOS',q:'¿Hay que pedir permiso antes de subir una foto de grupo?',a:['Salimos todos bien.','Es una foto normal.','Si molesta, la quito.'],b:['No todos quieren aparecer.','Preguntar cuesta nada.','Ya está subida cuando avisas.'],counts:{a:418,both:236,b:1301}},
+
+    {id:'propina',tag:'COMIDA',q:'¿Es obligatorio dejar propina si el servicio ha sido normal?',a:['El sueldo no depende de mí.','Normal es lo esperado.','Ya pago el precio de la carta.'],b:['Es parte de la cuenta.','Redondear cuesta poco.','Se agradece siempre.'],counts:{a:1087,both:376,b:611}},
+    {id:'compartir',tag:'COMIDA',q:'¿Se puede pedir un plato para compartir y comerse la mitad grande?',a:['Yo tenía más hambre.','Nadie lo midió.','Se pidió otro después.'],b:['Compartir es a partes.','El otro se quedó corto.','Se nota mucho.'],counts:{a:312,both:198,b:1487}},
+    {id:'reserva',tag:'COMIDA',q:'¿Está mal no avisar si cancelas una reserva de restaurante?',a:['Surgió un imprevisto.','Rellenan la mesa igual.','No cobran nada.'],b:['Esa mesa se le negó a alguien.','Una llamada cuesta un minuto.','Hace daño a un negocio pequeño.'],counts:{a:189,both:112,b:1794}},
+    {id:'dieta',tag:'COMIDA',q:'¿Hay que adaptar el menú de una cena a un invitado con dieta especial?',a:['Que avise y traiga lo suyo.','Cocinar dos platos es mucho.','Ya habrá algo que le valga.'],b:['Invitas a la persona entera.','Un plato extra no es tanto.','Si no, no le invites.'],counts:{a:397,both:311,b:1198}},
+    {id:'sobras2',tag:'COMIDA',q:'¿Puedes terminarte lo que ha dejado otro en su plato?',a:['Se iba a tirar.','Hay confianza.','Es desperdicio si no.'],b:['Es su plato.','Da reparo verlo.','Se pregunta antes.'],counts:{a:604,both:287,b:1024}},
+    {id:'cafe',tag:'COMIDA',q:'¿El último que se sirve café debería poner otro?',a:['Llegaba tarde a una reunión.','No es mi cafetera.','Nadie lo dijo nunca.'],b:['El siguiente se lo encuentra vacío.','Es la norma no escrita.','Cuesta dos minutos.'],counts:{a:276,both:154,b:1512}},
+
+    {id:'ascensor',tag:'ETIQUETA',q:'¿Hay que esperar el ascensor a alguien que viene corriendo?',a:['Llego tarde yo también.','Ya viene el siguiente.','No le había visto.'],b:['Le has visto perfectamente.','Son diez segundos.','Cuesta nada ser amable.'],counts:{a:298,both:167,b:1498}},
+    {id:'altavozmetro',tag:'ETIQUETA',q:'¿Se puede ver vídeos sin auriculares en el transporte público?',a:['Está a volumen bajo.','El vagón ya es ruidoso.','Es un viaje corto.'],b:['Nadie eligió oír eso.','Los auriculares existen.','Es espacio compartido.'],counts:{a:132,both:78,b:1843}},
+    {id:'sitio',tag:'ETIQUETA',q:'¿Hay que ceder el asiento si nadie te lo pide?',a:['Si lo necesita, lo pide.','También vengo cansado.','No sé si le ofende.'],b:['No hay que esperar a que pidan.','Se ve a simple vista.','Ofrecer no cuesta nada.'],counts:{a:387,both:214,b:1401}},
+    {id:'puerta',tag:'ETIQUETA',q:'¿Aguantar la puerta es obligatorio o un detalle?',a:['Es un detalle, no un deber.','A veces ni te das cuenta.','Cada uno abre la suya.'],b:['Es lo mínimo.','Ves a alguien detrás.','Cuesta un segundo.'],counts:{a:512,both:312,b:1176}},
+    {id:'fila',tag:'ETIQUETA',q:'¿Se puede dejar el carro en la caja mientras vas a por una cosa más?',a:['Vuelvo en treinta segundos.','Es un solo producto.','No pierde nadie su turno.'],b:['Bloqueas la caja.','El turno es para quien está.','Se deja para otra vuelta.'],counts:{a:246,both:143,b:1611}},
+    {id:'movilcine',tag:'ETIQUETA',q:'¿Mirar el móvil en el cine molesta aunque bajes el brillo?',a:['Duró tres segundos.','El brillo estaba al mínimo.','Era una urgencia.'],b:['La pantalla se ve desde atrás.','Rompe la oscuridad.','Se sale a la sala.'],counts:{a:187,both:124,b:1689}},
+
+    {id:'ventanilla',tag:'VIAJES',q:'¿La ventanilla es de quien la reserva o se va turnando?',a:['La reservé yo.','Pagué por elegir asiento.','Llegué antes al check-in.'],b:['En un viaje largo se comparte.','Todos quieren mirar.','Turnarse es lo justo.'],counts:{a:1287,both:398,b:487}},
+    {id:'maleta',tag:'VIAJES',q:'¿Está mal ocupar todo el compartimento con tu maleta y tu mochila?',a:['Llegué primero.','La mochila no cabe abajo.','Hay sitio de sobra.'],b:['El espacio es por pasajero.','La mochila va a tus pies.','Otros se quedan sin hueco.'],counts:{a:214,both:132,b:1743}},
+    {id:'respaldo',tag:'VIAJES',q:'¿Se puede reclinar el asiento del avión en un vuelo corto?',a:['El asiento se reclina por algo.','Está en mi precio.','Es un vuelo incómodo igual.'],b:['El de detrás pierde su espacio.','En vuelo corto no compensa.','Se avisa antes al menos.'],counts:{a:687,both:298,b:1087}},
+    {id:'gastos',tag:'VIAJES',q:'¿Los gastos de un viaje en grupo se dividen a partes iguales siempre?',a:['Llevar la cuenta arruina el viaje.','Al final se compensa.','Es lo más simple.'],b:['Unos gastan mucho más.','Hay apps para eso.','A partes iguales no es igual.'],counts:{a:598,both:376,b:1012}},
+    {id:'ruta',tag:'VIAJES',q:'¿El que organiza el viaje decide el plan del día?',a:['Se ha currado todo.','Alguien tiene que decidir.','Si no, no se sale del hotel.'],b:['El viaje es de todos.','Organizar no es mandar.','Se vota por la mañana.'],counts:{a:612,both:401,b:987}},
+    {id:'conducir',tag:'VIAJES',q:'¿Quien no conduce debería pagar más gasolina?',a:['El coche lo pone otro.','Conducir cansa.','Es lo justo a cambio.'],b:['El coste se reparte igual.','Nadie obligó a conducir.','Conducir también tiene ventajas.'],counts:{a:1043,both:387,b:698}},
   ];
 
   const ACHIEVEMENTS=[
@@ -60,7 +113,7 @@
     onboarded:false,sound:true,haptics:true,xp:0,streak:0,lastActiveDate:null,daily:{date:todayKey(),arenaVotes:0,done:false},
     judged:0,majorityMatches:0,choiceCounts:{a:0,both:0,b:0},votes:{},customCases:[],created:0,createdVotePeak:0,closeCalls:0,
     weekly:null,weeklyHistory:[],weeklyPlayed:0,proposalsMade:0,
-    reported:{},verifyQueue:[],verifiedCount:0,coachDone:false,invites:{},arenaFilter:null,
+    reported:{},verifyQueue:[],verifiedCount:0,invites:{},arenaFilter:null,
     unlocked:[],activities:[],unread:3,displayName:null
   };
   const STORAGE='zanja-beta-07';
@@ -102,7 +155,7 @@
   const VERIFY_LEVEL=5,VERIFY_QUORUM=5,REPORT_HIDE_AT=3;
   const DURATION_MS={'15 min':9e5,'1 h':36e5,'24 h':864e5};
   const REPORT_REASONS=['Ataque personal o acoso','Datos privados de alguien','Contenido sexual o violento','Spam o publicidad','Otro motivo'];
-  const SINGLE_CASE_MODES=['daily','weekly','shared'];
+  const SINGLE_CASE_MODES=['daily','weekly','shared','review'];
   const CATEGORIES=['CONVIVENCIA','PAREJA','TRABAJO','AMIGOS','COMIDA','ETIQUETA','VIAJES'];
 
   // A published case has no real jury behind it in this beta, so its vote count is
@@ -147,8 +200,9 @@
   function showScreen(name,{nav=name}={}){
     Object.values(screens).forEach(s=>s.classList.remove('is-active'));
     screens[name].classList.add('is-active');
-    const main=['home','activity','profile'].includes(name);
+    const main=['home','activity','profile'].includes(name)||(name==='play'&&currentMode==='arena');
     els.bottom.classList.toggle('is-visible',main);
+    screens.play.classList.toggle('has-nav',name==='play'&&main);
     $$('#bottomNav button').forEach(b=>b.classList.toggle('is-active',b.dataset.nav===nav));
     if(name==='home')updateHome();if(name==='activity')renderActivity();if(name==='profile')renderProfile();if(name==='achievements')renderAchievements();if(name==='mine')renderMyCases();if(name==='verify')renderVerify();if(name==='weekly')renderWeekly();
   }
@@ -156,32 +210,72 @@
   function clearCountdown(){if(countdownTimer)clearTimeout(countdownTimer);if(countdownInterval)clearInterval(countdownInterval);countdownTimer=countdownInterval=null}
 
   function updateHome(){
+    renderRecent();
     const lvl=getLevel();
     $('#homeStreak').textContent=state.streak;$('#homeLevel').textContent=lvl;
     $('#homeXpFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#homeXpText').textContent=`${state.xp%150} / 150 XP`;
-    $('#createHomeStatus').textContent=state.created?`${state.created} caso${state.created===1?'':'s'} creado${state.created===1?'':'s'}`:'Crea tu primer caso';
-    $('#arenaOpenCount').textContent=arenaPool().filter(c=>!state.votes[c.id]).length;
-    $('#homeSectionLevel').textContent=lvl;
-
-    const openMine=state.customCases.filter(c=>caseState(c)==='open').length;
-    $('#mineCount').textContent=state.created?(openMine?`${openMine} abierta${openMine===1?'':'s'}`:'Todas zanjadas'):'Aún ninguna';
-
-    const lockedVerify=lvl<VERIFY_LEVEL,pending=state.verifyQueue.filter(v=>!v.resolved).length;
-    $('#verifyTile').classList.toggle('is-locked',lockedVerify);
-    $('#verifyCount').textContent=lockedVerify?`NIVEL ${VERIFY_LEVEL} PARA ENTRAR`:(pending?`${pending} pendiente${pending===1?'':'s'}`:'Nada pendiente');
-
-    const w=weeklySummary();
-    $('#weeklyPhase').textContent=w.badge;$('#weeklyTitle').textContent=w.title;$('#weeklyMeta').textContent=w.meta;$('#weeklyCta').textContent=w.cta;
 
     const d=dailyCase();$('#dailyQuestion').textContent=d.q;$('#dailyJuryCount').textContent=fmt.format(d.counts.a+d.counts.b+d.counts.both);
-    const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);$('#dailyCountdown').textContent=`CIERRA EN ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const now=new Date(),end=new Date(now);end.setHours(24,0,0,0);const ms=end-now,h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+    $('#dailyCountdown').textContent=`CIERRA EN ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
-    // Once the daily mission is done it stops taking space at the top.
+    // La misión cumplida deja de ocupar sitio; la racha sigue en la cabecera.
     const daily=state.daily,goal=$('#dailyGoal');
     goal.hidden=daily.done;
     if(!daily.done){let txt='Haz una actividad',pct=0;if(daily.arenaVotes>0){txt=`Arena ${daily.arenaVotes}/5 votos`;pct=daily.arenaVotes/5*100}$('#dailyGoalText').textContent=txt;$('#dailyGoalFill').style.width=`${pct}%`}
 
-    for(const b of [$('#activityBadge'),$('#homeUnread')]){b.textContent=state.unread;b.style.display=state.unread?'grid':'none'}
+    const w=weeklySummary();
+    $('#weeklyPhase').textContent=w.badge;$('#weeklyTitle').textContent=w.title;$('#weeklyMeta').textContent=w.meta;$('#weeklyCta').textContent=w.cta;
+    $('#weeklyDays').textContent=timeLeft(weekEnd()-Date.now());
+
+    // No es una entrada de menú: sólo aparece cuando tienes algo abierto de verdad.
+    const open=state.customCases.filter(c=>caseState(c)==='open').sort((x,y)=>x.closesAt-y.closesAt);
+    const nudge=$('#openCasesNudge');
+    nudge.hidden=!open.length;
+    if(open.length){
+      $('#openCasesTitle').textContent=`${open.length} zanjándose`;
+      $('#openCasesMeta').textContent=`${open.length===1?'Cierra':'La primera cierra'} en ${timeLeft(open[0].closesAt-Date.now())}`;
+    }
+
+    const badge=$('#activityBadge');badge.textContent=state.unread;badge.style.display=state.unread?'grid':'none';
+  }
+
+  function recentVerdicts(n){
+    const byId=new Map(allCases().map(c=>[c.id,c]));
+    return Object.entries(state.votes).filter(([id])=>byId.has(id)).sort((x,y)=>(y[1].at||0)-(x[1].at||0)).slice(0,n).map(([id,v])=>({c:byId.get(id),v}));
+  }
+
+  function recentRowMarkup(c,v){
+    const counts=caseVotes(c);counts[v.choice]=(counts[v.choice]||0)+1;
+    const p=percentage(counts),winner=getWinner(counts),mine=sideLabel(v.choice);
+    return `<button class="recent-row" data-case="${c.id}" type="button">
+      <span class="recent-row__q">${escapeHtml(c.q)}</span>
+      <span class="recent-row__bar" aria-hidden="true"><i class="is-a" style="width:${p.a}%"></i><i class="is-both" style="width:${p.both}%"></i><i class="is-b" style="width:${p.b}%"></i></span>
+      <span class="recent-row__foot"><b class="is-${v.choice}">TU VOTO · ${mine}</b><i class="${v.choice===winner?'is-match':''}">${v.choice===winner?'CON LA MAYORÍA':'EN MINORÍA'}</i></span>
+    </button>`;
+  }
+
+  function renderRecent(){
+    const rows=recentVerdicts(3),list=$('#recentList');
+    $('#recentMeta').textContent=state.judged?`${fmt.format(state.judged)} JUZGADOS`:'';
+    list.innerHTML=rows.length
+      ?rows.map(r=>recentRowMarkup(r.c,r.v)).join('')
+      :`<button class="recent-empty" id="recentEmpty" type="button">
+          <b>AÚN NO HAS JUZGADO NADA</b>
+          <span>Hay ${arenaUnvoted().length} casos esperando veredicto</span>
+          <i>ENTRAR EN ARENA →</i>
+        </button>`;
+    if(rows.length)for(const b of $$('.recent-row',list))b.onclick=()=>openVotedCase(b.dataset.case);
+    else $('#recentEmpty').onclick=startArena;
+  }
+
+  function openVotedCase(id){
+    const c=allCases().find(x=>x.id===id);if(!c)return;
+    sound('open');haptic(8);clearCountdown();clearWash();
+    currentMode='review';currentQueue=[c];currentIndex=0;
+    els.playMode.textContent='TU VEREDICTO';
+    showScreen('play',{nav:'home'});
+    renderArenaCase(c);
   }
 
   function addActivity(type,title,detail){state.activities.unshift({id:Date.now()+Math.random(),type,title,detail,at:Date.now()});state.activities=state.activities.slice(0,20);state.unread=Math.min(9,state.unread+1);save()}
@@ -199,13 +293,10 @@
 
   function openMode(mode){
     sound('open');haptic(8);clearCountdown();clearWash();
-    if(mode==='arena')startArena();else if(mode==='weekly')openWeekly();else if(mode==='mine')showScreen('mine',{nav:'home'});else if(mode==='verify')showScreen('verify',{nav:'home'});else if(mode==='create')openCreate();
+    if(mode==='arena')startArena();else if(mode==='weekly')openWeekly();else if(mode==='mine')showScreen('mine',{nav:'profile'});else if(mode==='verify')showScreen('verify',{nav:'profile'});else if(mode==='create')openCreate();
   }
 
   /* ---------------- PANTALLA DE VOTO ---------------- */
-  // A arriba, B abajo, AMBOS a los lados: el gesto coincide con dónde está dibujado cada
-  // bando, y apilarlos deja a cada argumento el ancho entero de la carta.
-  const SWIPE_X=52,SWIPE_Y=44;
 
   function renderPlayMeta(){
     if(currentMode!=='arena'){els.playProgress.innerHTML='';return}
@@ -215,43 +306,28 @@
     $('#arenaFilter').onclick=openFilter;
   }
 
-  function sideMarkup(side,args){
+  function sideMarkup(side,args,locked){
     const S=side.toUpperCase();
-    return `<section class="side side--${side}">
+    return `<${locked?'div':'button'} class="side side--${side}"${locked?'':` type="button" data-side="${side}"`}>
       <span class="side__head"><span class="side__crest">${S}</span><span class="side__label">BANDO ${S}</span></span>
       <ul class="side__args">${args.slice(0,3).filter(Boolean).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>
-    </section>`;
+    </${locked?'div':'button'}>`;
   }
 
   function caseCardMarkup(c,locked){
-    return `<div class="case-card${locked?' is-locked':''}" id="caseCard"${locked?' data-locked="1"':''}>
-      ${sideMarkup('a',c.a)}
+    return `<div class="case-card${locked?' is-locked':''}" id="caseCard">
+      ${sideMarkup('a',c.a,locked)}
       <span class="case-card__seam" aria-hidden="true"></span>
       <span class="case-card__vs" aria-hidden="true">VS</span>
-      ${sideMarkup('b',c.b)}
-      <span class="stamp stamp--a" id="stampA" aria-hidden="true">A</span>
-      <span class="stamp stamp--b" id="stampB" aria-hidden="true">B</span>
-      <span class="stamp stamp--both" id="stampBoth" aria-hidden="true">AMBOS</span>
-      ${state.coachDone||locked?'':`<div class="coach" id="coach">
-        <div class="coach__inner">
-          <span class="coach__hand" aria-hidden="true"></span>
-          <b>ARRASTRA LA CARTA</b>
-          <span>Hacia <i>arriba</i> si das la razón a A, hacia <i>abajo</i> si se la das a B, y a <i>un lado</i> si la tienen los dos.</span>
-          <button class="coach__ok" id="coachOk" type="button">ENTENDIDO</button>
-        </div>
-      </div>`}
+      ${sideMarkup('b',c.b,locked)}
     </div>`;
   }
 
   function voteDockMarkup(prompt){
     return `<div class="vote-dock">
       <div class="vote-dock__prompt">${prompt}</div>
-      <div class="swipe-legend">ARRASTRA LA CARTA · <b class="is-a">↑ A</b> · <b class="is-b">↓ B</b> · <b class="is-both">↔ AMBOS</b></div>
-      <div class="vote-buttons">
-        <button class="vote-button vote-button--a" data-vote="a" type="button"><span>A</span></button>
-        <button class="vote-button vote-button--both" data-vote="both" type="button"><span>AMBOS</span></button>
-        <button class="vote-button vote-button--b" data-vote="b" type="button"><span>B</span></button>
-      </div>
+      <button class="vote-both" data-vote="both" type="button">AMBOS TIENEN RAZÓN</button>
+      <div class="vote-dock__hint">Toca el bando con el que estés de acuerdo</div>
     </div>`;
   }
 
@@ -266,68 +342,21 @@
     </article>`;
     bindCaseMeta(c);
     if(existing||readonly)bindResultNext();
-    else{
-      bindVoteButtons(choice=>commitArenaVote(choice));
-      bindSwipe(choice=>commitArenaVote(choice));
-      const ok=$('#coachOk');if(ok)ok.onclick=dismissCoach;
+    else bindVote(choice=>commitArenaVote(choice));
+  }
+
+  function bindVote(cb){
+    for(const el of $$('[data-side],[data-vote]',els.playStage)){
+      el.onclick=()=>{
+        if(transitionBusy)return;
+        const choice=el.dataset.side||el.dataset.vote;
+        el.classList.add('is-picked');
+        sound(choice);haptic(10);
+        setTimeout(()=>cb(choice),110);
+      };
     }
   }
 
-  function dismissCoach(){
-    state.coachDone=true;save();
-    const el=$('#coach');if(el)el.remove();
-  }
-
-  function bindSwipe(cb){
-    const card=$('#caseCard');if(!card)return;
-    const stamps={a:$('#stampA'),b:$('#stampB'),both:$('#stampBoth')};
-    let pid=null,sx=0,sy=0,target=null,last=null;
-    const pick=(dx,dy)=>{
-      const ax=Math.abs(dx),ay=Math.abs(dy);
-      if(ay>SWIPE_Y&&ay>=ax)return dy<0?'a':'b';
-      if(ax>SWIPE_X&&ax>ay)return 'both';
-      return null;
-    };
-    const paint=(dx,dy)=>{
-      stamps.a.style.opacity=clamp(-dy/SWIPE_Y,0,1);
-      stamps.b.style.opacity=clamp(dy/SWIPE_Y,0,1);
-      stamps.both.style.opacity=clamp(Math.abs(dx)/SWIPE_X,0,1);
-    };
-    const reset=()=>{
-      paint(0,0);
-      card.classList.remove('is-a','is-b','is-both');
-      clearWash();
-    };
-    card.onpointerdown=e=>{
-      if(card.dataset.locked)return;
-      if($('#coach'))dismissCoach();
-      audio.unlock();pid=e.pointerId;sx=e.clientX;sy=e.clientY;target=last=null;
-      try{card.setPointerCapture(pid)}catch{}
-      card.classList.add('is-dragging');sound('pickup');haptic(8);e.preventDefault();
-    };
-    card.onpointermove=e=>{
-      if(e.pointerId!==pid)return;
-      const dx=e.clientX-sx,dy=e.clientY-sy;
-      paint(dx,dy);
-      target=pick(dx,dy);
-      card.classList.toggle('is-a',target==='a');
-      card.classList.toggle('is-b',target==='b');
-      card.classList.toggle('is-both',target==='both');
-      if(target)setWash(target,clamp(Math.max(Math.abs(dx)/SWIPE_X,Math.abs(dy)/SWIPE_Y)*.18,0,.2));
-      else clearWash();
-      if(target!==last){if(target){sound(target);haptic(11)}last=target}
-    };
-    const finish=e=>{
-      if(e.pointerId!==pid)return;
-      try{card.releasePointerCapture(pid)}catch{}
-      pid=null;card.classList.remove('is-dragging');
-      const t=target;target=null;
-      if(!t){reset();return}
-      card.dataset.locked='1';
-      cb(t);
-    };
-    card.onpointerup=finish;card.onpointercancel=finish;
-  }
 
   function resultMarkup(c,choice){
     const counts=caseVotes(c);
@@ -336,7 +365,7 @@
     const sorted=Object.entries(counts).sort((x,y)=>y[1]-x[1]);
     const tight=p.total&&(sorted[0][1]-sorted[1][1])/p.total<.04;
     let title=!choice?'CÓMO VA AHORA':tight?'PARTIDO EN DOS':choice===winner?'ESTÁS CON LA MAYORÍA':'EL JURADO VA POR OTRO LADO';
-    const own=currentMode==='own';
+    const own=currentMode==='own',quiet=own||currentMode==='review';
     const label=own?'VOLVER A MIS ZANJAS':SINGLE_CASE_MODES.includes(currentMode)?'VOLVER AL INICIO':'SIGUIENTE CASO';
     return `<div class="scoreboard">
       <div class="scoreboard__head"><strong>${title}</strong><span>${p.total?`${fmt.format(p.total)} votos`:'sin votos todavía'}</span></div>
@@ -345,7 +374,7 @@
         ${resultBar('AMBOS',p.both,'var(--signal)',choice==='both')}
         ${resultBar('B',p.b,'var(--coral)',choice==='b')}
       </div>
-      ${own?`<div class="own-actions"><button class="action action--secondary action--lg" id="shareVerdict" type="button">${caseState(c)==='closed'?'COMPARTIR VEREDICTO':'PEDIR MÁS VOTOS'}</button><button class="result-next" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label}</b></button></div>`
+      ${quiet?`<div class="own-actions">${own?`<button class="action action--secondary action--lg" id="shareVerdict" type="button">${caseState(c)==='closed'?'COMPARTIR VEREDICTO':'PEDIR MÁS VOTOS'}</button>`:''}<button class="result-next" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label}</b></button></div>`
         :`<button class="result-next result-next--arena" id="resultNext" type="button" data-label="${label}"><b id="resultCountdown">${label} · 5s</b><span class="countdown-track"><i></i></span></button>`}
     </div>`;
   }
@@ -365,7 +394,7 @@
     markDaily(kind);save();checkAchievements();
     sound('vote',choice);haptic([12,15,20]);setWash(choice,.18);
     const z=$('#voteZone');z.innerHTML=resultMarkup(currentCase,choice);
-    const card=$('#caseCard');if(card){card.dataset.locked='1';card.classList.add('is-locked')}
+    const card=$('#caseCard');if(card)card.classList.add('is-locked');
     setTimeout(()=>{sound('reveal');setWash(choice,.06)},150);
     bindResultNext();
   }
@@ -375,9 +404,9 @@
     const label=btn.dataset.label||'SIGUIENTE';
     const go=()=>{clearCountdown();advanceArena()};
     btn.addEventListener('click',go);
-    if(currentMode==='own'){
+    if(currentMode==='own'||currentMode==='review'){
       const sh=$('#shareVerdict');if(sh)sh.onclick=()=>shareVerdict(currentCase);
-      return;                                 // el autor decide cuándo salir
+      return;                                 // aquí se sale cuando uno quiere
     }
     let r=5;const out=$('#resultCountdown');
     countdownInterval=setInterval(()=>{r=Math.max(0,r-1);if(out)out.textContent=`${label} · ${r}s`},1000);
@@ -443,7 +472,7 @@
     currentQueue=shuffle(arenaQueue());
     currentIndex=0;
     els.playMode.textContent=tutorial?'PRIMER ZANJA':'ARENA LIVE';
-    showScreen('play',{nav:'home'});
+    showScreen('play',{nav:'arena'});
     if(!currentQueue.length){showArenaExhausted();return}
     renderArenaCase(currentQueue[0],tutorial);
   }
@@ -844,13 +873,36 @@
   /* ---------------- Activity / Profile ---------------- */
   function seedActivities(){if(state.activities.length)return;state.activities=[{id:1,type:'closed',title:'Un caso que juzgaste ha sido ZANJADO',detail:'“¿Puedes ver solo una serie?” · B gana 72%',at:Date.now()-1800000},{id:2,type:'verify',title:'Hay casos esperando verificación',detail:'La comunidad ha denunciado 3 casos',at:Date.now()-7200000},{id:3,type:'b',title:'Bando B ha respondido',detail:'Tu caso ya puede abrirse al jurado',at:Date.now()-86400000}];save()}
   function renderActivity(){seedActivities();state.unread=0;save();updateHome();const list=$('#activityList');list.innerHTML=state.activities.map(x=>`<article class="activity-item"><div class="activity-icon activity-icon--${x.type}">${x.type==='closed'?'✓':x.type==='verify'?'⚖':x.type==='report'?'⚑':x.type==='achievement'?'✦':x.type==='streak'?'🔥':x.type==='weekly'?'W':x.type==='created'?'+':'B'}</div><div class="activity-copy"><b>${escapeHtml(x.title)}</b><span>${escapeHtml(x.detail)}</span></div><button data-activity="${x.type}">VER →</button></article>`).join('');$$('[data-activity]',list).forEach(b=>b.onclick=()=>{const t=b.dataset.activity;if(t==='verify'||t==='report')showScreen('verify',{nav:'activity'});else if(t==='created')showScreen('mine',{nav:'activity'});else if(t==='weekly')openWeekly();else if(t==='closed')startArena();else toast('ACTIVIDAD REVISADA')})}
-  function renderProfile(){const agree=state.judged?Math.round(state.majorityMatches/state.judged*100):null;$('#profileAgreement').textContent=agree==null?'—':`${agree}%`;$('#profileLevel').textContent=getLevel();$('#profileLevelFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#profileXpText').textContent=`${state.xp} XP`;const metrics=[['JUZGADOS',state.judged],['RACHA',`🔥 ${state.streak}`],['MIS ZANJAS',state.created],['VERIFICADAS',state.verifiedCount]];$('#metricGrid').innerHTML=metrics.map(([a,b])=>`<div class="metric-card"><strong>${b}</strong><span>${a}</span></div>`).join('');const total=Math.max(1,state.judged),pc={a:Math.round(state.choiceCounts.a/total*100),both:Math.round(state.choiceCounts.both/total*100)};pc.b=state.judged?100-pc.a-pc.both:0;$('#criterionBars').innerHTML=[['A',pc.a,'var(--cyan)'],['AMBOS',pc.both,'var(--signal)'],['B',pc.b,'var(--coral)']].map(([l,p,c])=>`<div class="criterion-bar" style="--pct:${p}%;--color:${c}"><span>${l}</span><b>${p}%</b></div>`).join('');let label='Aún estamos conociéndote';if(state.judged>=20){if(agree<45)label='Tiendes a ir a contracorriente';else if(agree>72)label='Lees bastante bien al jurado';else if(pc.both>22)label='Buscas mucho el punto medio';else label='Tienes criterio propio'}$('#criterionLabel').textContent=label;checkAchievements();const featured=ACHIEVEMENTS.slice(0,3).map(a=>achievementMini(a));$('#achievementStrip').innerHTML=featured.join('');$('#historyJudged').textContent=state.judged;$('#historyCreated').textContent=state.created;$('#historyVerified').textContent=state.verifiedCount}
+  function renderProfile(){const agree=state.judged?Math.round(state.majorityMatches/state.judged*100):null;$('#profileAgreement').textContent=agree==null?'—':`${agree}%`;$('#profileLevel').textContent=getLevel();$('#profileLevelFill').style.width=`${Math.round(levelProgress()*100)}%`;$('#profileXpText').textContent=`${state.xp} XP`;const metrics=[['JUZGADOS',state.judged],['RACHA',`🔥 ${state.streak}`],['PUBLICADAS',state.created],['VERIFICADAS',state.verifiedCount]];$('#metricGrid').innerHTML=metrics.map(([a,b])=>`<div class="metric-card"><strong>${b}</strong><span>${a}</span></div>`).join('');const total=Math.max(1,state.judged),pc={a:Math.round(state.choiceCounts.a/total*100),both:Math.round(state.choiceCounts.both/total*100)};pc.b=state.judged?100-pc.a-pc.both:0;$('#criterionBars').innerHTML=[['A',pc.a,'var(--cyan)'],['AMBOS',pc.both,'var(--signal)'],['B',pc.b,'var(--coral)']].map(([l,p,c])=>`<div class="criterion-bar" style="--pct:${p}%;--color:${c}"><span>${l}</span><b>${p}%</b></div>`).join('');let label='Aún estamos conociéndote';if(state.judged>=20){if(agree<45)label='Tiendes a ir a contracorriente';else if(agree>72)label='Lees bastante bien al jurado';else if(pc.both>22)label='Buscas mucho el punto medio';else label='Tienes criterio propio'}$('#criterionLabel').textContent=label;checkAchievements();const featured=ACHIEVEMENTS.slice(0,3).map(a=>achievementMini(a));$('#achievementStrip').innerHTML=featured.join('');renderHub()}
+
+  function renderHub(){
+    const lvl=getLevel(),locked=lvl<VERIFY_LEVEL;
+    const open=state.customCases.filter(c=>caseState(c)==='open').length;
+    $('#hubMineMeta').textContent=state.created
+      ?(open?`${open} zanjándose · ${state.created} en total`:`${state.created} publicada${state.created===1?'':'s'}`)
+      :'Aún no has publicado nada';
+
+    const pending=state.verifyQueue.filter(v=>!v.resolved&&!v.mine).length;
+    $('#hubVerify').classList.toggle('is-locked',locked);
+    $('#hubVerify').disabled=locked;
+    $('#hubVerifyMeta').textContent=locked
+      ?`Se abre en el nivel ${VERIFY_LEVEL}`
+      :(pending?`${pending} caso${pending===1?'':'s'} esperando`:'Nada pendiente ahora mismo');
+
+    // Bloqueada no se muestra como puerta cerrada, sino como progreso hacia algo.
+    const lock=$('#hubVerifyLock');
+    lock.hidden=!locked;
+    if(locked){
+      const need=VERIFY_LEVEL*150;
+      $('#hubVerifyFill').style.width=`${Math.round(clamp(state.xp/need,0,1)*100)}%`;
+      $('#hubVerifyHint').textContent=`Te faltan ${fmt.format(Math.max(0,need-state.xp))} XP para revisar casos denunciados`;
+    }
+  }
   const MEDAL_IDS=new Set(['jury50','jury500','long','firm','jury100']);
   function achievementMini(a){const u=state.unlocked.includes(a.id);return `<button class="achievement-mini ${u?'':'is-locked'}" data-ach="${a.id}" type="button"><i class="${MEDAL_IDS.has(a.id)?'is-medal':''}">${a.icon}</i><b>${a.name}</b><span>${u?'DESBLOQUEADO':'BLOQUEADO'}</span></button>`}
   function renderAchievements(){checkAchievements();$('#achievementGrid').innerHTML=ACHIEVEMENTS.map(a=>{const u=state.unlocked.includes(a.id);return `<article class="achievement-card ${u?'':'is-locked'}"><i class="${MEDAL_IDS.has(a.id)?'is-medal':''}">${a.icon}</i><b>${a.name}</b><p>${a.desc}</p><span>${u?'DESBLOQUEADO':'AÚN NO'}</span></article>`}).join('')}
 
   /* ---------------- Shared interactions ---------------- */
-  function bindVoteButtons(cb){$$('.vote-button',els.playStage).forEach(b=>b.addEventListener('click',()=>{sound('tap');cb(b.dataset.vote)}))}
   function openShare(title,text,payload){$('#shareTitle').textContent=title;const url=payload?`${location.origin}${location.pathname}?z=${encodePayload(payload)}`:`${location.origin}${location.pathname}`;$('#shareBody').innerHTML=`<div class="share-preview"><p>${escapeHtml(text)}</p><div class="share-url">${escapeHtml(url)}</div></div><div class="share-actions"><button class="action action--primary action--xl" id="shareNative">COMPARTIR →</button><button class="action action--secondary action--lg" id="shareCopy">COPIAR ENLACE</button></div>`;els.share.showModal();$('#shareNative').onclick=async()=>{if(navigator.share){try{await navigator.share({title:'ZANJA',text,url})}catch{}}else copyText(url)};$('#shareCopy').onclick=()=>copyText(url)}
   async function copyText(t){try{await navigator.clipboard.writeText(t);toast('ENLACE COPIADO')}catch{toast('COPIA EL ENLACE MANUALMENTE')}}
   function toggleSound(){state.sound=!state.sound;save();toast(state.sound?'SONIDO ACTIVADO':'SONIDO SILENCIADO');updateSoundButtons()}
@@ -861,11 +913,14 @@
     $('#onboardingStart').onclick=()=>{state.onboarded=true;save();startArena(true)};$('#onboardingSkip').onclick=()=>{state.onboarded=true;save();showScreen('home')};
     $$('[data-mode]').forEach(b=>b.onclick=()=>openMode(b.dataset.mode));$('#dailyCaseCard').onclick=startDaily;$('#dailyGoal').onclick=()=>openMode('arena');
     $('#playBack').onclick=()=>{clearCountdown();showScreen('home')};$('#soundToggle').onclick=toggleSound;$('#activitySoundToggle').onclick=toggleSound;$('#profileSoundToggle').onclick=toggleSound;
-    $$('[data-nav]').forEach(b=>b.onclick=()=>showScreen(b.dataset.nav,{nav:b.dataset.nav}));$('#activityShortcut').onclick=()=>showScreen('activity',{nav:'activity'});$('#profileShortcut').onclick=()=>showScreen('profile',{nav:'profile'});
+    $$('[data-nav]').forEach(b=>b.onclick=()=>{const t=b.dataset.nav;if(t==='arena')startArena();else showScreen(t,{nav:t})});
+    $('#navCreate').onclick=openCreate;
+    $('#hubMine').onclick=()=>showScreen('mine',{nav:'profile'});
+    $('#hubVerify').onclick=()=>showScreen('verify',{nav:'profile'});
+    $('#openCasesNudge').onclick=()=>showScreen('mine',{nav:'profile'});
     $('#createClose').onclick=()=>showScreen('home');$('#createBack').onclick=()=>{if(createPublished){createPublished=false;createStep=3;renderCreate()}else if(createStep>0){createStep--;renderCreate()}else showScreen('home')};
     $('#viewAllAchievements').onclick=()=>showScreen('achievements',{nav:'profile'});$('#achievementsBack').onclick=()=>showScreen('profile',{nav:'profile'});
     $('#shareClose').onclick=()=>els.share.close();els.share.addEventListener('click',e=>{if(e.target===els.share)els.share.close()});
-    $$('.history-actions button').forEach(b=>b.onclick=()=>{const h=b.dataset.history;if(h==='created')showScreen('mine',{nav:'profile'});else if(h==='verified')showScreen('verify',{nav:'profile'});else startArena()});
     $('#mineBack').onclick=()=>showScreen('home');$('#verifyBack').onclick=()=>showScreen('home');$('#weeklyBack').onclick=()=>showScreen('home');
     $('#mineCreate').onclick=openCreate;
     $('#reportClose').onclick=()=>els.report.close();els.report.addEventListener('click',e=>{if(e.target===els.report)els.report.close()});

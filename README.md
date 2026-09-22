@@ -1,10 +1,10 @@
-# ZANJA Beta 0.8 — Crear · Juzgar · Seguir · Moderar
+# ZANJA Beta 0.9 — Crear · Juzgar · Seguir · Moderar
 
 Frontend completo de ZANJA. Esta build sustituye los dos modos de juego de la 0.7 (Pulso y Choque) por el ciclo real del producto: alguien publica un caso, la comunidad lo juzga, el autor ve cómo avanza y la propia comunidad decide qué contenido se queda.
 
 ## Qué incluye
 
-**Arena Live.** Casos abiertos de la comunidad. Se vota **arrastrando sobre la carta**: hacia arriba das la razón al bando A, hacia abajo al B, y a un lado a los dos. La carta no se mueve; responden el sello y el realce del bando. También valen los tres botones. Puedes filtrar por tema (convivencia, pareja, trabajo…) y, cuando no queda nada por juzgar, la app lo dice en vez de repetirte casos.
+**Arena Live.** 67 casos abiertos de la comunidad. Se vota **tocando la ventana del bando** con el que estás de acuerdo, y hay un botón ancho debajo para AMBOS TIENEN RAZÓN. Puedes filtrar por tema (convivencia, pareja, trabajo…) y, cuando no queda nada por juzgar, la app lo dice en vez de repetirte casos.
 
 **Caso del Día.** Un caso único para todos, 24 h, como ritual diario.
 
@@ -21,6 +21,13 @@ Frontend completo de ZANJA. Esta build sustituye los dos modos de juego de la 0.
 **Denuncias y verificación.** Cualquier caso se puede denunciar desde la propia vista de votación. A la primera denuncia queda marcado *en revisión*; a la tercera sale de Arena. El panel de verificación se desbloquea en el nivel 5 y decide por mayoría simple al quinto voto.
 
 **Progresión.** XP, nivel, racha, misión diaria que desaparece al completarse, y 16 logros.
+
+## Cómo está organizada
+
+Barra inferior de cinco ranuras, una por trabajo: `INICIO · ARENA · (+) · ACTIVIDAD · TÚ`. El botón central, elevado, crea una Zanja desde cualquier pantalla.
+
+- **Inicio** no es un menú: es el tablero del día. *HOY* (misión diaria y Caso del Día en un mismo marco), *ESTA SEMANA* (el debate con su fase), un aviso sólo si tienes casos abiertos y *TUS VEREDICTOS*, los últimos tres casos que juzgaste con el reparto del jurado y si fuiste con la mayoría.
+- **TÚ** recoge lo personal: tus números, Mis Zanjas, Verificación —que antes del nivel 5 aparece como una línea de progreso, no como un tile gris— y los logros.
 
 **Sistema.** Sonido sintetizado con Web Audio, haptics cuando el navegador los soporta, `prefers-reduced-motion`, persistencia en `localStorage` y PWA estática lista para Vercel.
 

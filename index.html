@@ -44,85 +44,47 @@
         <button class="brand" data-nav="home" type="button" aria-label="Inicio ZANJA">
           <span>ZANJA</span><i aria-hidden="true"></i>
         </button>
-        <button class="xp-pod" id="profileShortcut" type="button" aria-label="Tu perfil y progreso">
+        <span class="xp-pod" aria-label="Tu progreso">
           <span class="xp-pod__level"><b id="homeLevel">1</b><i>NIV</i></span>
           <span class="xp-pod__meter">
             <span class="xp-pod__track"><i id="homeXpFill"></i></span>
             <small id="homeXpText">0 / 150 XP</small>
           </span>
           <span class="xp-pod__streak"><i aria-hidden="true">🔥</i><b id="homeStreak">0</b></span>
-        </button>
-        <button class="icon-button icon-button--notification" id="activityShortcut" type="button" aria-label="Actividad"><span id="homeUnread">3</span></button>
-      </header>
-
-      <button class="quest-bar" id="dailyGoal" type="button" aria-label="Misión diaria">
-        <span class="quest-bar__icon" aria-hidden="true">◎</span>
-        <span class="quest-bar__body">
-          <span class="quest-bar__head"><b>MISIÓN DIARIA</b><i id="dailyGoalText">Haz una actividad</i></span>
-          <span class="quest-bar__track"><i id="dailyGoalFill"></i></span>
         </span>
-        <span class="quest-bar__go" aria-hidden="true">→</span>
-      </button>
+      </header>
 
       <div class="lobby-section"><span>HOY</span><i aria-hidden="true"></i><b id="dailyCountdown">CIERRA HOY</b></div>
 
-      <button class="daily-case-card" id="dailyCaseCard" type="button">
-        <span class="daily-case-card__head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b>+15 XP</b></span>
-        <span class="daily-case-card__question" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
-        <span class="daily-case-card__foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
+      <section class="today">
+        <div class="today__quest" id="dailyGoal">
+          <span class="today__quest-head"><b>MISIÓN DIARIA</b><i id="dailyGoalText">Haz una actividad</i></span>
+          <span class="today__quest-track"><i id="dailyGoalFill"></i></span>
+        </div>
+        <button class="today__case" id="dailyCaseCard" type="button">
+          <span class="today__case-head"><span><i aria-hidden="true"></i>CASO DEL DÍA</span><b>+15 XP</b></span>
+          <span class="today__case-q" id="dailyQuestion">¿Se puede reservar una tumbona con una toalla?</span>
+          <span class="today__case-foot"><span><b id="dailyJuryCount">1.240</b> jurados ya han participado</span><i>JUZGAR →</i></span>
+        </button>
+      </section>
+
+      <div class="lobby-section"><span>ESTA SEMANA</span><i aria-hidden="true"></i><b id="weeklyDays">7D</b></div>
+
+      <button class="weekly-card" data-mode="weekly" type="button">
+        <span class="weekly-card__head"><b id="weeklyPhase">FASE 1 · PROPUESTAS</b><i aria-hidden="true">7D</i></span>
+        <strong id="weeklyTitle">¿QUÉ DEBATIMOS ESTA SEMANA?</strong>
+        <span class="weekly-card__foot"><span id="weeklyMeta">6 temas en la mesa</span><i id="weeklyCta">PROPONER TEMA →</i></span>
       </button>
 
-      <div class="lobby-section"><span>JUZGAR</span><i aria-hidden="true"></i><b><span id="arenaOpenCount">20</span> SIN JUZGAR</b></div>
+      <button class="open-cases" id="openCasesNudge" type="button" hidden>
+        <span class="open-cases__mark" aria-hidden="true">◴</span>
+        <span class="open-cases__copy"><b id="openCasesTitle">2 zanjándose</b><i id="openCasesMeta">La primera cierra en 40 min</i></span>
+        <span class="open-cases__go" aria-hidden="true">→</span>
+      </button>
 
-      <section class="lobby-modes" aria-label="Modos de juicio">
-        <button class="lobby-hero" data-mode="arena" type="button">
-          <span class="lobby-hero__copy">
-            <span class="mode-signal mode-signal--live"><i aria-hidden="true"></i>EN DIRECTO</span>
-            <strong>ARENA LIVE</strong>
-            <p>Da tu opinión y ayuda a cerrar casos reales.</p>
-            <span class="mode-cta">ENTRAR <i aria-hidden="true">→</i></span>
-          </span>
-          <span class="lobby-hero__art" aria-hidden="true">
-            <span class="chip chip--a">A</span><b>VS</b><span class="chip chip--b">B</span>
-          </span>
-        </button>
+      <div class="lobby-section"><span>TUS VEREDICTOS</span><i aria-hidden="true"></i><b id="recentMeta"></b></div>
 
-        <button class="weekly-card" data-mode="weekly" type="button">
-          <span class="weekly-card__head"><b id="weeklyPhase">FASE 1 · PROPUESTAS</b><i aria-hidden="true">7D</i></span>
-          <strong id="weeklyTitle">¿QUÉ DEBATIMOS ESTA SEMANA?</strong>
-          <span class="weekly-card__foot"><span id="weeklyMeta">6 temas en la mesa</span><i id="weeklyCta">PROPONER TEMA →</i></span>
-        </button>
-      </section>
-
-      <div class="lobby-section"><span>LO TUYO</span><i aria-hidden="true"></i><b>NIVEL <span id="homeSectionLevel">1</span></b></div>
-
-      <section class="lobby-modes" aria-label="Tus casos y moderación">
-        <button class="lobby-band" data-mode="create" type="button">
-          <span class="lobby-band__icon" aria-hidden="true">+</span>
-          <span class="lobby-band__copy">
-            <span class="mode-signal">TU DISCUSIÓN</span>
-            <strong>ZANJAR</strong>
-            <p id="createHomeStatus">Crea tu primer caso</p>
-          </span>
-          <span class="lobby-band__go" aria-hidden="true">→</span>
-        </button>
-
-        <div class="lobby-duo">
-          <button class="mode-tile mode-tile--mine" data-mode="mine" type="button">
-            <span class="mode-tile__art mode-tile__art--mine" aria-hidden="true"><i></i><i></i><i></i></span>
-            <strong>MIS ZANJAS</strong>
-            <p>Sigue tus casos y su veredicto.</p>
-            <span class="mode-tile__foot" id="mineCount">Aún ninguna</span>
-          </button>
-
-          <button class="mode-tile mode-tile--verify" id="verifyTile" data-mode="verify" type="button">
-            <span class="mode-tile__art mode-tile__art--verify" aria-hidden="true"><b>⚖</b></span>
-            <strong>VERIFICAR</strong>
-            <p>Revisa los casos denunciados.</p>
-            <span class="mode-tile__foot" id="verifyCount">NIVEL 5 PARA ENTRAR</span>
-          </button>
-        </div>
-      </section>
+      <div class="recent" id="recentList"></div>
 
       <p class="home-rule">JUZGAMOS SITUACIONES. <b>NO PERSONAS.</b></p>
     </section>
@@ -181,9 +143,24 @@
         <div class="section-title"><div><span>LOGROS</span><b>Tu trayectoria en ZANJA</b></div><button id="viewAllAchievements" type="button">VER TODOS</button></div>
         <div class="achievement-strip" id="achievementStrip"></div>
       </section>
-      <section class="profile-section profile-section--history">
-        <div class="section-title"><div><span>HISTORIAL</span><b>Lo que ya has hecho</b></div></div>
-        <div class="history-actions"><button data-history="judged" type="button">JUZGADOS <span id="historyJudged">0</span></button><button data-history="created" type="button">MIS ZANJAS <span id="historyCreated">0</span></button><button data-history="verified" type="button">VERIFICADAS <span id="historyVerified">0</span></button></div>
+      <section class="profile-section">
+        <div class="section-title"><div><span>LO TUYO</span><b>Tus casos y tu papel en la comunidad</b></div></div>
+        <div class="hub">
+          <button class="hub-row" id="hubMine" type="button">
+            <span class="hub-row__mark hub-row__mark--mine" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="hub-row__copy"><b>MIS ZANJAS</b><i id="hubMineMeta">Aún no has publicado nada</i></span>
+            <span class="hub-row__go" aria-hidden="true">→</span>
+          </button>
+          <button class="hub-row" id="hubVerify" type="button">
+            <span class="hub-row__mark hub-row__mark--verify" aria-hidden="true">⚖</span>
+            <span class="hub-row__copy"><b>VERIFICACIÓN</b><i id="hubVerifyMeta">Se abre en el nivel 5</i></span>
+            <span class="hub-row__go" aria-hidden="true">→</span>
+          </button>
+          <div class="hub-lock" id="hubVerifyLock">
+            <span class="hub-lock__track"><i id="hubVerifyFill"></i></span>
+            <small id="hubVerifyHint">Te faltan 600 XP para revisar casos denunciados</small>
+          </div>
+        </div>
       </section>
     </section>
 
@@ -194,6 +171,8 @@
 
     <nav class="bottom-nav" id="bottomNav" aria-label="Navegación principal">
       <button data-nav="home" type="button" class="is-active"><i class="nav-icon nav-icon--home"></i><span>INICIO</span></button>
+      <button data-nav="arena" type="button"><i class="nav-icon nav-icon--arena"></i><span>ARENA</span></button>
+      <button class="nav-create" id="navCreate" type="button" aria-label="Crear tu Zanja"><i aria-hidden="true">+</i><span>ZANJAR</span></button>
       <button data-nav="activity" type="button"><i class="nav-icon nav-icon--activity"></i><span>ACTIVIDAD</span><b id="activityBadge">3</b></button>
       <button data-nav="profile" type="button"><i class="nav-icon nav-icon--profile"></i><span>TÚ</span></button>
     </nav>
