@@ -63,15 +63,17 @@ function dibuja(ctx:CanvasRenderingContext2D,c:Case){
  ctx.fillStyle=brillo;ctx.fillRect(0,0,ANCHO,ALTO);
  ctx.textAlign='left';ctx.textBaseline='top';
 
- // Banda 1 · cabecera
+ // Banda 1 · cabecera, con el sello arriba a la derecha: abajo hace falta
+ // sitio para el voto particular.
+ const numero=caseNumber(c.id);
  ctx.fillStyle=PAPEL;ctx.font=display(50);ctx.fillText('ZANJA',margen,margen);
  ctx.fillStyle=ORO;ctx.font=texto(23,900);ctx.letterSpacing='4px';
  ctx.fillText('SENTENCIA',margen+230,margen+14);
- ctx.fillStyle=APAGADO;ctx.font=texto(23,700);
- ctx.fillText(`CASO Nº ${caseNumber(c.id)}`,margen,margen+76);
  const fecha=new Date(c.closes||c.created||Date.now()).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
- ctx.textAlign='right';ctx.fillText(fecha.toUpperCase(),ANCHO-margen,margen+76);
- ctx.letterSpacing='0px';ctx.textAlign='left';
+ ctx.fillStyle=APAGADO;ctx.font=texto(23,700);
+ ctx.fillText(`CASO Nº ${numero}  ·  ${fecha.toUpperCase()}`,margen,margen+76);
+ ctx.letterSpacing='0px';
+ sello(ctx,ANCHO-margen-72,margen+66,70,numero);
  ctx.strokeStyle='#584a6d';ctx.lineWidth=2;
  ctx.beginPath();ctx.moveTo(margen,margen+124);ctx.lineTo(ANCHO-margen,margen+124);ctx.stroke();
 
@@ -102,7 +104,7 @@ function dibuja(ctx:CanvasRenderingContext2D,c:Case){
  // barras cortas se quedaban sin sitio y el texto salía a medias.
  const etiqueta=margen+238,derecha=ANCHO-margen-122;
  const pista=derecha-etiqueta-26,alto=42;
- y=768;
+ y=744;
  for(const side of SIDES){
   const porcentaje=percentOf(c.counts||{},side,total);
   const medio=y+alto/2;
@@ -113,15 +115,30 @@ function dibuja(ctx:CanvasRenderingContext2D,c:Case){
   ctx.textAlign='right';ctx.fillStyle=porcentaje?COLOR[side]:APAGADO;ctx.font=texto(34,900);
   ctx.fillText(`${porcentaje}%`,ANCHO-margen,medio);
   ctx.textAlign='left';ctx.textBaseline='top';
-  y+=alto+30;
+  y+=alto+26;
  }
 
- // Banda 5 · pie y sello
+ // Banda 5 · el voto particular: lo más secundado en La Sala.
+ if(c.voice?.body){
+  const alto2=176,arriba=ALTO-margen-alto2-84;
+  ctx.fillStyle='#241d3a';caja(ctx,margen,arriba,util,alto2,18);ctx.fill();
+  ctx.fillStyle=ORO;caja(ctx,margen,arriba,7,alto2,4);ctx.fill();
+  ctx.fillStyle=ORO;ctx.font=texto(20,900);ctx.letterSpacing='2px';
+  ctx.fillText(`VOTO PARTICULAR · ${SIDE_NAME[c.voice.side as Side]||''}`,margen+30,arriba+26);
+  ctx.letterSpacing='0px';ctx.fillStyle='#ded7ec';ctx.font=texto(26,600);
+  let vy=arriba+70;
+  for(const linea of lineas(ctx,`«${c.voice.body}»`,util-60,2)){ctx.fillText(linea,margen+30,vy);vy+=36;}
+  ctx.fillStyle=APAGADO;ctx.font=texto(20,800);
+  ctx.fillText(`Secundado por ${c.voice.seconds} ${c.voice.seconds===1?'persona':'personas'}.`,margen+30,arriba+alto2-30);
+ }
+
+ // Banda 6 · pie
  ctx.fillStyle=MALVA;ctx.font=texto(24,900);ctx.letterSpacing='2px';
- ctx.fillText('ZANJA.APP',margen,ALTO-margen-78);
+ ctx.fillText('ZANJA.APP',margen,ALTO-margen-66);
  ctx.letterSpacing='0px';ctx.fillStyle=APAGADO;ctx.font=texto(25,700);
- ctx.fillText(`Juzgado por ${total} ${total===1?'persona':'personas'}.`,margen,ALTO-margen-36);
- sello(ctx,ANCHO-margen-96,ALTO-margen-98,94,caseNumber(c.id));
+ ctx.textAlign='right';
+ ctx.fillText(`Juzgado por ${total} ${total===1?'persona':'personas'}.`,ANCHO-margen,ALTO-margen-64);
+ ctx.textAlign='left';
 }
 
 export function Sentencia({c,open,onOpenChange,onLink}:{c:Case;open:boolean;onOpenChange:(v:boolean)=>void;onLink:()=>void}){

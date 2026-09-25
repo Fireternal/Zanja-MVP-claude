@@ -1,7 +1,7 @@
 import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
 import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
-import {seeds,categories,readDefenses,validDefenses} from '@/lib/cases';
+import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
@@ -12,18 +12,55 @@ async function identity(req:Request){
  if(session)return session.uid;
  return trustsPlatformHeader()?req.headers.get('oai-authenticated-user-id'):null;
 }
+// --- La Sala -----------------------------------------------------------
+// Se habla después de votar, una vez por caso y sin respuestas. Se cierra
+// cuando se cierra el caso: la sentencia no se discute después de dictada.
+const caseFor=async(database:any,id:string)=>seeds.find(x=>x.id===id)||await database.prepare('SELECT id,owner,respondent,status,closes FROM cases WHERE id=?').bind(id).first();
+const roomOpen=(c:any)=>!!c&&c.status==='open'&&!(c.closes&&c.closes<=Date.now());
+
+async function sala(database:any,id:string,user:string|null){
+ const c:any=await caseFor(database,id);
+ if(!c)return {error:'No encontramos este caso.'};
+ const [rows,backing]=await database.batch([
+  database.prepare('SELECT id,user_id,side,body,at FROM comments WHERE case_id=? ORDER BY at ASC').bind(id),
+  database.prepare('SELECT s.comment_id,s.user_id FROM seconds s JOIN comments c ON c.id=s.comment_id WHERE c.case_id=?').bind(id)]);
+ const vote:any=user?await database.prepare('SELECT choice FROM votes WHERE case_id=? AND user_id=?').bind(id,user).first():null;
+ const comments=(rows.results as any[]).map(r=>({
+  id:r.id,side:r.side,body:r.body,at:r.at,
+  seconds:(backing.results as any[]).filter(s=>s.comment_id===r.id).length,
+  seconded:!!user&&(backing.results as any[]).some(s=>s.comment_id===r.id&&s.user_id===user),
+  mine:r.user_id===user}))
+  .sort((x,y)=>y.seconds-x.seconds||x.at-y.at);
+ return {comments,open:roomOpen(c),voted:!!vote,spoke:comments.some(x=>x.mine),
+  protagonist:c.owner===user||c.respondent===user};
+}
+
+/** El comentario más secundado de cada caso: el que entra en la sentencia. */
+async function topComments(database:any){
+ const rows=await database.prepare('SELECT c.case_id,c.id,c.side,c.body,(SELECT count(*) FROM seconds s WHERE s.comment_id=c.id) n FROM comments c').all();
+ const best=new Map<string,any>();
+ for(const r of rows.results as any[]){
+  const previo=best.get(r.case_id);
+  if(!previo||Number(r.n)>previo.seconds)best.set(r.case_id,{side:r.side,body:r.body,seconds:Number(r.n)});
+ }
+ return best;
+}
+
 const clean=(x:unknown,max:number,min=1)=>typeof x==='string'&&x.trim().length>=min&&x.trim().length<=max?x.trim():null;
 export async function GET(req:Request){try{
  const user=await identity(req); const url=new URL(req.url); const token=url.searchParams.get('invite'); const database=db();
+ const room=url.searchParams.get('room');
+ if(room){const r:any=await sala(database,room,user);return r.error?fail(r.error,404):reply(r);}
  if(token){const c:any=await database.prepare('SELECT id,q,tag,status,owner,a,evidence,story,workflow FROM cases WHERE invite=?').bind(token).first(); if(!c) return fail('No encontramos esta invitación.',404);return reply({invitation:{id:c.id,story:c.story,workflow:c.workflow,q:c.q,tag:c.tag,status:validDefenses(readDefenses(c.a))?c.status:'incomplete',mine:c.owner===user,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id)+'&invite='+encodeURIComponent(token):null}});}
  const [cs,vs,rs]=await database.batch([database.prepare("SELECT * FROM cases WHERE status != 'removed' ORDER BY created DESC LIMIT 300"),database.prepare('SELECT case_id,choice,count(*) n FROM votes GROUP BY case_id,choice'),database.prepare('SELECT case_id,count(*) n FROM reports GROUP BY case_id')]);
  const personal=user?await database.prepare('SELECT case_id,choice,at FROM votes WHERE user_id=?').bind(user).all():{results:[]};
+ const voices=await topComments(database);
  const reported=user?await database.prepare('SELECT case_id FROM reports WHERE user_id=?').bind(user).all():{results:[]};
  const now=Date.now(); const editorialIds=new Set(seeds.map(c=>c.id)); const records=[...seeds,...cs.results.filter((c:any)=>!editorialIds.has(c.id))] as any[];
  const data=records.filter(c=>!['waiting','ready'].includes(c.status)||c.owner===user||(c.status==='ready'&&c.respondent===user)).filter(c=>c.audience!=='link'||c.owner===user||c.respondent===user||c.id===url.searchParams.get('case')).filter(c=>c.owner===user||!rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)).map(c=>{
  const a=readDefenses(c.a),b=readDefenses(c.b);const needsDefenses=!validDefenses(a)||(c.status!=='waiting'&&!validDefenses(b));
  const vote:any=personal.results.find((v:any)=>v.case_id===c.id);const closed=c.closes>0&&c.closes<=now&&c.status!=='waiting';const counts={a:0,both:0,b:0,none:0};vs.results.filter((v:any)=>v.case_id===c.id).forEach((v:any)=>{counts[v.choice as keyof typeof counts]=Number(v.n);});
- return {id:c.id,story:c.story||'',audience:c.audience||'public',workflow:c.workflow||0,duration:c.duration,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id):(c.editorial?c.evidenceUrl||null:null),q:c.q,tag:c.tag,at:c.at,a:c.status==='ready'&&c.owner!==user?[]:a,bt:c.bt,b,needsDefenses,emoji:c.emoji,created:c.created,closes:c.closes,status:rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)?'review':closed?'closed':needsDefenses?'incomplete':c.status,editorial:c.editorial||0,mine:c.owner===user,participant:c.respondent===user,votedAt:vote?.at||0,bilateral:!!c.respondent,choice:vote?.choice||null,counts:vote||closed||c.owner===user?counts:null,total:Object.values(counts).reduce((a,b)=>a+b,0),invite:c.owner===user?c.invite:undefined,reported:reported.results.some((r:any)=>r.case_id===c.id)};
+ return {id:c.id,story:c.story||'',audience:c.audience||'public',workflow:c.workflow||0,duration:c.duration,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id):(c.editorial?c.evidenceUrl||null:null),q:c.q,tag:c.tag,at:c.at,a:c.status==='ready'&&c.owner!==user?[]:a,bt:c.bt,b,needsDefenses,emoji:c.emoji,created:c.created,closes:c.closes,status:rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)?'review':closed?'closed':needsDefenses?'incomplete':c.status,editorial:c.editorial||0,mine:c.owner===user,participant:c.respondent===user,votedAt:vote?.at||0,bilateral:!!c.respondent,choice:vote?.choice||null,counts:vote||closed||c.owner===user?counts:null,voice:vote||closed||c.owner===user?voices.get(c.id)||null:null,total:Object.values(counts).reduce((a,b)=>a+b,0),invite:c.owner===user?c.invite:undefined,reported:reported.results.some((r:any)=>r.case_id===c.id)};
  });
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
  return reply({cases:data,profile:{votes:personal.results.length,xp:personal.results.length*5,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
@@ -52,6 +89,16 @@ export async function POST(req:Request){try{
  const invited:any=await database.prepare('SELECT a,workflow FROM cases WHERE invite=?').bind(data.invite).first();if(!invited||!validDefenses(readDefenses(invited.a)))return fail('Esta invitación es anterior al nuevo formato. Pide al autor una nueva zanja.',409);
  const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow});
  }
+ if(data.action==='second'){
+ const target:any=await database.prepare('SELECT id,user_id,case_id FROM comments WHERE id=?').bind(data.id||'').first();
+ if(!target)return fail('Ese comentario ya no está.',404);
+ if(target.user_id===user)return fail('Secundar es apoyar a otro, no a ti mismo.',403);
+ if(!roomOpen(await caseFor(database,target.case_id)))return fail('La Sala de este caso está cerrada.',409);
+ const quitado=await database.prepare('DELETE FROM seconds WHERE comment_id=? AND user_id=?').bind(target.id,user).run();
+ if(!quitado.meta.changes)await database.prepare('INSERT OR IGNORE INTO seconds (comment_id,user_id,at) VALUES (?,?,?)').bind(target.id,user,now).run();
+ const tally:any=await database.prepare('SELECT count(*) n FROM seconds WHERE comment_id=?').bind(target.id).first();
+ return reply({ok:true,seconded:!quitado.meta.changes,seconds:Number(tally.n)});
+ }
  const c:any=seeds.find(x=>x.id===data.id)||await database.prepare('SELECT * FROM cases WHERE id=?').bind(data.id||'').first();if(!c)return fail('No encontramos este caso.',404);
  if(data.action==='publish'){
  if(c.owner!==user)return fail('Solo quien creó el caso puede abrirlo al jurado.',403);
@@ -64,6 +111,24 @@ export async function POST(req:Request){try{
  if(data.action==='report'){
  if(!['Datos personales','Acoso o insultos','Contenido sensible','Relato engañoso','Otro motivo'].includes(data.reason))return fail('Selecciona un motivo.');
  await database.prepare('INSERT OR IGNORE INTO reports (case_id,user_id,reason,at) VALUES (?,?,?,?)').bind(c.id,user,data.reason,now).run();return reply({ok:true});
+ }
+ if(data.action==='comment'){
+ const body=clean(data.body,COMMENT_MAX,COMMENT_MIN);
+ if(!body)return fail(`Escribe entre ${COMMENT_MIN} y ${COMMENT_MAX} caracteres.`);
+ if(c.owner===user||c.respondent===user)return fail('La Sala es del jurado. Tu versión ya está en el caso.',403);
+ if(!roomOpen(c))return fail('La Sala de este caso está cerrada.',409);
+ const vote:any=await database.prepare('SELECT choice FROM votes WHERE case_id=? AND user_id=?').bind(c.id,user).first();
+ if(!vote)return fail('En La Sala se habla después de votar.',403);
+ const dicho:any=await database.prepare('SELECT id FROM comments WHERE case_id=? AND user_id=?').bind(c.id,user).first();
+ if(dicho)return fail('Ya has hablado en este caso. Borra lo tuyo si quieres decirlo de otra forma.',409);
+ const id=crypto.randomUUID();
+ await database.prepare('INSERT INTO comments (id,case_id,user_id,side,body,at) VALUES (?,?,?,?,?,?)').bind(id,c.id,user,vote.choice,body,now).run();
+ return reply({id,side:vote.choice,body,at:now});
+ }
+ if(data.action==='uncomment'){
+ const dicho:any=await database.prepare('SELECT id FROM comments WHERE case_id=? AND user_id=?').bind(c.id,user).first();
+ if(dicho){await database.prepare('DELETE FROM seconds WHERE comment_id=?').bind(dicho.id).run();await database.prepare('DELETE FROM comments WHERE id=?').bind(dicho.id).run();}
+ return reply({ok:true});
  }
  if(data.action==='vote'){
  if(!['a','both','b','none'].includes(data.choice))return fail('Elige una respuesta válida.');if(c.owner===user||c.respondent===user)return fail('Los protagonistas no votan su propio caso.',403);

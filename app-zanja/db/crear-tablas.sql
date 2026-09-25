@@ -57,3 +57,22 @@ ALTER TABLE `cases` ADD `story` text DEFAULT '' NOT NULL;
 ALTER TABLE `cases` ADD `audience` text DEFAULT 'public' NOT NULL;
 ALTER TABLE `cases` ADD `workflow` integer DEFAULT 0 NOT NULL;
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0002_heavy_dust.sql');
+
+-- 0003_unknown_electro.sql
+CREATE TABLE `comments` (
+	`id` text PRIMARY KEY NOT NULL,
+	`case_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`side` text NOT NULL,
+	`body` text NOT NULL,
+	`at` integer NOT NULL
+);
+CREATE INDEX `comments_case` ON `comments` (`case_id`);
+CREATE INDEX `comments_author` ON `comments` (`case_id`,`user_id`);
+CREATE TABLE `seconds` (
+	`comment_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`at` integer NOT NULL,
+	PRIMARY KEY(`comment_id`, `user_id`)
+);
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0003_unknown_electro.sql');

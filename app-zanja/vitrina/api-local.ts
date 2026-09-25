@@ -11,10 +11,10 @@
 // la que se puede auditar, sigue estando en app/api/game/route.ts; aquí está
 // repetida a propósito para que la vitrina no arrastre el servidor entero.
 
-import {seeds,categories,readDefenses,validDefenses} from '@/lib/cases';
+import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
-import {juradoDeEjemplo,casosCerrados,type Reparto} from './jurado';
+import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,type Reparto,type Voz} from './jurado';
 
 const LLAVE='zanja-vitrina-v1';
 const SECRETO='vitrina-sin-servidor';
@@ -22,9 +22,10 @@ const SECRETO='vitrina-sin-servidor';
 type Ficha={id:string;owner:string;q:string;tag:string;at:string;a:string;bt:string;b:string;emoji:string;created:number;closes:number;status:string;invite:string|null;respondent:string|null;duration:number;evidence:string|null;story:string;audience:string;workflow:number};
 type Voto={case_id:string;user_id:string;choice:string;at:number};
 type Denuncia={case_id:string;user_id:string;reason:string;at:number};
-type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>};
+type Apoyo={comment_id:string;user_id:string;at:number};
+type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[]};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id))});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:vocesDeEjemplo(),seconds:[]});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
@@ -74,6 +75,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
  const editoriales=new Set(seeds.map(c=>c.id));
  const registros:any[]=[...seeds,...g.cases.filter(c=>c.status!=='removed'&&!editoriales.has(c.id))];
  const denunciasPorCaso=(id:string)=>g.reports.filter(r=>r.case_id===id).length;
+ const voces=vocesPrincipales(g);
 
  const data=registros
   .filter(c=>!['waiting','ready'].includes(c.status)||c.owner===user||(c.status==='ready'&&c.respondent===user))
@@ -94,6 +96,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
     editorial:c.editorial||0,mine:c.owner===user,participant:c.respondent===user,
     votedAt:voto?.at||0,bilateral:!!c.respondent,choice:voto?.choice||null,
     counts:voto||cerrado||c.owner===user?counts:null,
+    voice:voto||cerrado||c.owner===user?voces.get(c.id)||null:null,
     total:counts.a+counts.both+counts.b+counts.none,
     invite:c.owner===user?c.invite:undefined,
     reported:!!user&&g.reports.some(r=>r.case_id===c.id&&r.user_id===user)};
@@ -155,6 +158,17 @@ function guardarPartida(g:Guardado,data:any){
   return json({ok:true,pendingPublication:!!c.workflow});
  }
 
+ if(data.action==='second'){
+  const voz=g.comments.find(v=>v.id===data.id);
+  if(!voz)return error('Ese comentario ya no está.',404);
+  if(voz.user_id===user)return error('Secundar es apoyar a otro, no a ti mismo.',403);
+  if(!abierta(casoDe(g,voz.case_id)))return error('La Sala de este caso está cerrada.',409);
+  const tenia=g.seconds.some(s=>s.comment_id===voz.id&&s.user_id===user);
+  g.seconds=tenia?g.seconds.filter(s=>!(s.comment_id===voz.id&&s.user_id===user)):[...g.seconds,{comment_id:voz.id,user_id:user,at:ahora}];
+  escribir(g);
+  return json({ok:true,seconded:!tenia,seconds:apoyos(g,voz)});
+ }
+
  const semilla:any=seeds.find(x=>x.id===data.id);
  const propio=g.cases.find(x=>x.id===data.id);
  const c:any=semilla||propio;
@@ -181,6 +195,23 @@ function guardarPartida(g:Guardado,data:any){
   escribir(g);return json({ok:true});
  }
 
+ if(data.action==='comment'){
+  const cuerpo=limpio(data.body,COMMENT_MAX,COMMENT_MIN);
+  if(!cuerpo)return error(`Escribe entre ${COMMENT_MIN} y ${COMMENT_MAX} caracteres.`);
+  if(c.owner===user||c.respondent===user)return error('La Sala es del jurado. Tu versión ya está en el caso.',403);
+  if(!abierta(c))return error('La Sala de este caso está cerrada.',409);
+  const voto=g.votes.find(v=>v.case_id===c.id&&v.user_id===user);
+  if(!voto)return error('En La Sala se habla después de votar.',403);
+  if(g.comments.some(v=>v.case_id===c.id&&v.user_id===user))return error('Ya has hablado en este caso. Borra lo tuyo si quieres decirlo de otra forma.',409);
+  const voz={id:crypto.randomUUID(),case_id:c.id,user_id:user,side:voto.choice,body:cuerpo,at:ahora,base:0};
+  g.comments.push(voz);escribir(g);
+  return json({id:voz.id,side:voz.side,body:voz.body,at:voz.at});
+ }
+ if(data.action==='uncomment'){
+  const voz=g.comments.find(v=>v.case_id===c.id&&v.user_id===user);
+  if(voz){g.comments=g.comments.filter(v=>v.id!==voz.id);g.seconds=g.seconds.filter(s=>s.comment_id!==voz.id);}
+  escribir(g);return json({ok:true});
+ }
  if(data.action==='vote'){
   if(!['a','both','b','none'].includes(data.choice))return error('Elige una respuesta válida.');
   if(c.owner===user||c.respondent===user)return error('Los protagonistas no votan su propio caso.',403);
@@ -196,6 +227,34 @@ function guardarPartida(g:Guardado,data:any){
  }
 
  return error('Acción no disponible.');
+}
+
+// --- La Sala -----------------------------------------------------------
+
+const abierta=(c:any)=>!!c&&c.status==='open'&&!(c.closes&&c.closes<=Date.now());
+const casoDe=(g:Guardado,id:string):any=>seeds.find(x=>x.id===id)||g.cases.find(x=>x.id===id&&x.status!=='removed');
+const apoyos=(g:Guardado,voz:Voz)=>voz.base+g.seconds.filter(s=>s.comment_id===voz.id).length;
+
+function sala(g:Guardado,id:string){
+ const c=casoDe(g,id);
+ if(!c)return error('No encontramos este caso.',404);
+ const user=g.user?.uid||null;
+ const comments=g.comments.filter(v=>v.case_id===id).map(v=>({
+  id:v.id,side:v.side,body:v.body,at:v.at,seconds:apoyos(g,v),
+  seconded:!!user&&g.seconds.some(s=>s.comment_id===v.id&&s.user_id===user),
+  mine:v.user_id===user})).sort((x,y)=>y.seconds-x.seconds||x.at-y.at);
+ return json({comments,open:abierta(c),voted:!!user&&g.votes.some(v=>v.case_id===id&&v.user_id===user),
+  spoke:comments.some(x=>x.mine),protagonist:c.owner===user||c.respondent===user});
+}
+
+/** El comentario más secundado de cada caso. */
+function vocesPrincipales(g:Guardado){
+ const mejor=new Map<string,{side:string;body:string;seconds:number}>();
+ for(const v of g.comments){
+  const n=apoyos(g,v),previo=mejor.get(v.case_id);
+  if(!previo||n>previo.seconds)mejor.set(v.case_id,{side:v.side,body:v.body,seconds:n});
+ }
+ return mejor;
 }
 
 // --- El interceptor ----------------------------------------------------
@@ -216,6 +275,8 @@ export function instalarApiLocal(){
     const g=leer();
     if(metodo==='GET'){
      const token=destino.searchParams.get('invite');
+     const cuarto=destino.searchParams.get('room');
+     if(cuarto)return sala(g,cuarto);
      return token?invitacion(g,token):json(estadoDeLaPartida(g,destino.searchParams));
     }
     return guardarPartida(g,cuerpo||{});

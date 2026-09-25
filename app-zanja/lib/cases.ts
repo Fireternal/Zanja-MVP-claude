@@ -1,4 +1,6 @@
 export const categories = ['Todas','Convivencia','Pareja','Amigos','Comida','Trabajo','Viajes'];
+export const COMMENT_MIN=4;
+export const COMMENT_MAX=280;
 export const DEFENSE_MIN=12;
 export const DEFENSE_MAX=160;
 export function readDefenses(value:unknown):string[]{
@@ -11,7 +13,8 @@ export function validDefenses(value:unknown):value is [string,string,string]{
  return Array.isArray(value)&&value.length===3&&value.every(x=>typeof x==='string'&&x.trim().length>=DEFENSE_MIN&&x.trim().length<=DEFENSE_MAX)&&new Set(value.map(x=>x.trim().toLocaleLowerCase('es'))).size===3;
 }
 export function draftDefenses(value:unknown):[string,string,string]{const a=readDefenses(value);return[a[0]||'',a[1]||'',a[2]||''];}
-export type Case={story?:string;audience?:'public'|'link';workflow?:number;duration?:number;id:string;tag:string;q:string;at:string;a:string[];bt:string;b:string[];emoji:string;editorial:number;owner?:string;created:number;closes:number;status:string;mine?:boolean;votedAt?:number;bilateral?:boolean;participant?:boolean;choice?:string|null;counts?:Record<string,number>|null;total?:number;invite?:string;reported?:boolean;needsDefenses?:boolean;evidenceUrl?:string|null;};
+export type Voice={side:string;body:string;seconds:number};
+export type Case={story?:string;audience?:'public'|'link';workflow?:number;duration?:number;id:string;tag:string;q:string;at:string;a:string[];bt:string;b:string[];emoji:string;editorial:number;owner?:string;created:number;closes:number;status:string;mine?:boolean;votedAt?:number;bilateral?:boolean;participant?:boolean;choice?:string|null;counts?:Record<string,number>|null;total?:number;invite?:string;reported?:boolean;needsDefenses?:boolean;evidenceUrl?:string|null;voice?:Voice|null;};
 export const seeds:Case[] = [
 {
   "id": "demo-diseno",

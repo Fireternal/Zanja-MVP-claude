@@ -278,3 +278,77 @@ test('ninguno es un veredicto más: cuenta, es único y entra en el total',async
  assert.equal(c.counts.none,1);assert.equal(c.counts.both,1);assert.equal(c.total,2);
  assert.equal(c.choice,'none');
 });
+
+// --- La Sala ---------------------------------------------------------
+const sala=async(id,user)=>{const r=await GET(new Request(base+'/api/game?room='+id,{headers:user?{cookie:await cookieFor(user)}:{}}));return {status:r.status,body:await r.json()};};
+
+test('en La Sala se habla después de votar, y una sola vez',async()=>{
+ assert.equal((await request({action:'comment',id:'pizza',body:'Con piña también es pizza.'},'mudo')).status,403);
+ assert.equal((await request({action:'vote',id:'pizza',choice:'a'},'mudo')).status,200);
+ assert.equal((await request({action:'comment',id:'pizza',body:'ya'},'mudo')).status,400);
+ const r=await request({action:'comment',id:'pizza',body:'Con piña también es pizza.'},'mudo');
+ assert.equal(r.status,200);
+ assert.equal((await r.json()).side,'a','el comentario hereda el bando de tu voto');
+ assert.equal((await request({action:'comment',id:'pizza',body:'Y además está buena.'},'mudo')).status,409);
+ const {body}=await sala('pizza','mudo');
+ assert.equal(body.comments.length,1);
+ assert.equal(body.spoke,true);
+ assert.equal(body.comments[0].mine,true);
+});
+
+test('borrar lo dicho deja hablar otra vez',async()=>{
+ assert.equal((await request({action:'uncomment',id:'pizza'},'mudo')).status,200);
+ assert.equal((await sala('pizza','mudo')).body.comments.length,0);
+ assert.equal((await request({action:'comment',id:'pizza',body:'Lo pienso mejor: con piña, no.'},'mudo')).status,200);
+});
+
+test('secundar es apoyar a otro, y se puede retirar',async()=>{
+ const {body}=await sala('pizza','mudo');
+ const id=body.comments[0].id;
+ assert.equal((await request({action:'second',id},'mudo')).status,403,'no puedes secundarte a ti mismo');
+ assert.equal((await request({action:'second',id},null)).status,401);
+ const apoyo=await request({action:'second',id},'apoyo');
+ assert.equal(apoyo.status,200);
+ assert.deepEqual(await apoyo.json(),{ok:true,seconded:true,seconds:1});
+ assert.deepEqual(await (await request({action:'second',id},'apoyo')).json(),{ok:true,seconded:false,seconds:0});
+ await request({action:'second',id},'apoyo');
+ assert.equal((await sala('pizza','apoyo')).body.comments[0].seconded,true);
+});
+
+test('el más secundado es el que entra en la sentencia',async()=>{
+ await request({action:'vote',id:'pizza',choice:'b'},'otra');
+ await request({action:'comment',id:'pizza',body:'La piña es fruta y la pizza no es macedonia.'},'otra');
+ const antes=(await state('mudo')).cases.find(c=>c.id==='pizza');
+ assert.match(antes.voice.body,/Lo pienso mejor/,'gana el que tiene un secundado');
+ for(const quien of ['coro1','coro2']){
+  await request({action:'vote',id:'pizza',choice:'b'},quien);
+  const id=(await sala('pizza',quien)).body.comments.find(x=>/macedonia/.test(x.body)).id;
+  await request({action:'second',id},quien);
+ }
+ const despues=(await state('mudo')).cases.find(c=>c.id==='pizza');
+ assert.match(despues.voice.body,/macedonia/);
+ assert.equal(despues.voice.seconds,2);
+ assert.equal(despues.voice.side,'b');
+});
+
+test('quien no ha votado no ve lo que se dice de su caso en el estado',async()=>{
+ assert.equal((await state('mirón')).cases.find(c=>c.id==='pizza').voice,null);
+});
+
+test('los protagonistas no hablan en La Sala: su versión ya está en el caso',async()=>{
+ const creado=await(await request(valid,'dueño')).json();
+ assert.equal((await request({action:'comment',id:creado.id,body:'Que conste que yo tenía razón.'},'dueño')).status,403);
+ assert.equal((await sala(creado.id,'dueño')).body.protagonist,true);
+});
+
+test('La Sala se cierra con el caso',async()=>{
+ const creado=await(await request({...valid,duration:900000},'autor2')).json();
+ await request({action:'vote',id:creado.id,choice:'a'},'tarde');
+ __zanjaTestDb.prepare('UPDATE cases SET closes=? WHERE id=?').bind(Date.now()-1000,creado.id).run();
+ assert.equal((await request({action:'comment',id:creado.id,body:'Llego tarde a esta sala.'},'tarde')).status,409);
+ assert.equal((await sala(creado.id,'tarde')).body.open,false);
+});
+
+test('un caso que no existe no tiene sala',async()=>{
+ assert.equal((await sala('no-existe','mudo')).status,404);
+});

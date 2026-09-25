@@ -27,7 +27,13 @@ Una app de jurado donde todo marca «1 voto» no se puede juzgar, así que
 `jurado.ts` trae un reparto fijo para cada caso editorial y dos casos ya
 cerrados que aparecen en Mis zanjas la primera vez que entras: uno con fallo
 claro y otro en empate técnico, para poder ver la sentencia sellada sin
-esperar a que se acabe un plazo. Es de mentira y sólo existe aquí.
+esperar a que se acabe un plazo. También trae nueve voces de ejemplo en La
+Sala, porque una sala vacía no se puede juzgar. Es de mentira y sólo existe
+aquí.
+
+Para probar un jurado con varias personas sin salir del navegador: Perfil →
+Ajustes → Cerrar sesión, y entrar con otro nombre. Cada nombre es un jurado
+distinto y sus votos se suman al mismo caso.
 
 ## Compilar
 

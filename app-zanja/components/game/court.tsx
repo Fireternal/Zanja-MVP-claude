@@ -9,6 +9,7 @@ import {NextCountdown} from '@/components/game/next-countdown';
 import {DuelBoard} from '@/components/game/duel-board';
 import {categories,validDefenses,type Case} from '@/lib/cases';
 import {Sentencia} from '@/components/game/sentencia';
+import {Sala} from '@/components/game/sala';
 import {verdictHeadline,verdictOf,verdictSubhead} from '@/lib/verdict';
 type Props={current?:Case;cases:Case[];filter:string;loading:boolean;busy:boolean;celebrate:boolean;onFilter:(s:string)=>void;onBack:()=>void;onVote:(side:'a'|'both'|'b'|'none')=>Promise<boolean>;onNext:()=>void;onCreate:()=>void;onReport:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void;};
 function time(c:Case){if(c.status==='closed')return 'Cerrado';if(c.status==='waiting')return 'Esperando a B';if(!c.closes)return 'Sin límite';const m=Math.max(1,Math.ceil((c.closes-Date.now())/60000));return m>60?`${Math.ceil(m/60)} h`:`${m} min`;}
@@ -29,6 +30,7 @@ export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,on
    <div className="verdict-scorecards">{(['a','both','b','none'] as const).map(side=>{const percent=c.total?Math.round((c.counts?.[side]||0)/c.total*100):0;return <div className={'verdict-card verdict-card-'+side+(c.choice===side?' is-choice':'')} key={side}><div className="verdict-card-top"><h3>{side==='both'?'AMBOS':side==='none'?'NINGUNO':<>BANDO <b>{side.toUpperCase()}</b></>}</h3><strong>{percent}<span>%</span></strong></div><Progress value={percent} aria-label={side==='both'?'Ambos':side==='none'?'Ninguno':`Bando ${side.toUpperCase()}`}/><div className="verdict-card-foot"><span>{c.counts?.[side]||0} {(c.counts?.[side]||0)===1?'voto':'votos'}</span>{c.choice===side&&<span className="your-choice"><Check size={13}/>TU VOTO</span>}</div></div>;})}</div>
    {(c.total||0)<5&&<p className="verdict-note">{c.status==='closed'?'No hubo votos suficientes para un veredicto.':'Con 5 votos habrá un resultado representativo.'}</p>}
    <div className="verdict-actions"><button className="quiet-btn" onClick={()=>{setHold(true);setArgumentsVisible(true);}}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setHold(true);setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{setHold(true);onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>{celebrate?<NextCountdown key={c.id} onNext={onNext} blocked={hold||filters} onResume={()=>setHold(false)}/>:<button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button>}
+   <Sala key={'sala-'+c.id} c={c} onHold={()=>setHold(true)}/>
   </div>:<DuelBoard key={c.id} c={c} canVote={canVote} pressed={pressed} choose={choose} onNext={onNext} onShare={onShare} onRevise={onRevise} ready={ready} onResult={()=>setArgumentsVisible(false)}/>}
 
   {c&&<Sentencia c={c} open={sentencia} onOpenChange={setSentencia} onLink={()=>onShare(c)}/>}
