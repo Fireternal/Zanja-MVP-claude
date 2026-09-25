@@ -316,7 +316,7 @@ html[data-motion=off] .party-burst{display:none}
    Por debajo de 760 px de alto, el duelo deja de estirarse y la pantalla
    hace scroll, como ya hace el resultado. */
 @media(max-height:760px){
- .court-screen{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+ .court-screen:not(.court-results){overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
  .fixed-battle{grid-template-rows:auto 28px auto;flex:0 0 auto}
  .fixed-battle>*{min-height:0}
  .vote-team{min-height:0}
@@ -366,3 +366,19 @@ html[data-motion=off] .party-burst{display:none}
  color:var(--muted-foreground)}
 @media(prefers-reduced-motion:reduce){.defensas-carril{transition:none}}
 [data-motion=off] .defensas-carril{transition:none}
+
+/* ---------- La salida ---------- */
+/* SIGUIENTE ZANJA vuelve a estar justo debajo del resultado, que es donde
+   cae la vista al terminar de leerlo, y se queda pegada abajo mientras se
+   baja por La Sala. Quien no quiera comentar sigue jugando sin hacer scroll;
+   quien comente no pierde de vista la salida. */
+.court-result-body{display:flex;flex-direction:column;flex:1;min-height:0}
+.court-desplazable{
+ flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+ display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
+.court-desplazable>*{flex:0 0 auto}
+.court-salida{
+ flex:0 0 auto;position:relative;z-index:3;
+ padding:9px 0 calc(4px + env(safe-area-inset-bottom,0px));
+ box-shadow:0 -14px 18px -14px #0d0919}
+.court-salida .court-next{margin:0}
