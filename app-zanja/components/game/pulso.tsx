@@ -7,7 +7,8 @@
 // mayoría; en el Juzgado eso convertiría el criterio en apostar.
 
 import {useState} from 'react';
-import {Activity,Check,X} from 'lucide-react';
+import {ArrowRight,Check,X} from 'lucide-react';
+import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {percentOf,type Choice} from '@/lib/pulse';
 
 export type PulseState={
@@ -19,7 +20,28 @@ export type PulseState={
 
 const NOMBRE:Record<Choice,string>={si:'SÍ',no:'NO'};
 
-export function Pulso({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:boolean;onAnswer:(c:Choice)=>Promise<boolean>}){
+/** La casilla de Inicio: la pregunta del día y, si ya has respondido, cómo va. */
+export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>void}){
+ if(!pulse)return null;
+ const marca=pulse.counts||{si:0,no:0};
+ return <button className="daily-tile daily-feature illustrated-daily pulso-tarjeta" onClick={onOpen}>
+  <img width={768} height={512} loading="eager" decoding="async" className="daily-art" src="/daily-menu.webp" alt="" aria-hidden="true"/>
+  <span className="daily-art-shade" aria-hidden="true"/>
+  <div className="daily-feature-heading"><h2>PULSO DE HOY</h2>
+   {pulse.hits>0&&<span className="pulso-marcador">{pulse.points} pts</span>}</div>
+  <div className="daily-question"><h3>{pulse.question}</h3></div>
+  {pulse.choice
+   ?<div className="pulso-mini" aria-hidden="true">
+     <i className={'pulso-tramo pulso-si'+(pulse.choice==='si'?' es-mio':'')} style={{width:percentOf(marca,'si')+'%'}}/>
+     <i className={'pulso-tramo pulso-no'+(pulse.choice==='no'?' es-mio':'')} style={{width:percentOf(marca,'no')+'%'}}/>
+    </div>
+   :<span className="pulso-llamada">Sin responder</span>}
+  <ArrowRight className="shortcut-arrow" aria-hidden="true"/>
+ </button>;
+}
+
+/** La hoja que se abre al entrar: responder y ver el reparto. */
+export function PulsoHoja({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:boolean;onAnswer:(c:Choice)=>Promise<boolean>}){
  const [pulsado,setPulsado]=useState<Choice|null>(null);
  if(!pulse)return null;
 
@@ -28,12 +50,13 @@ export function Pulso({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:boolean;
  const ayer=pulse.yesterday;
 
  return <section className="pulso" aria-labelledby="pulso-titulo">
-  <header className="pulso-cabecera">
-   <h2 id="pulso-titulo"><Activity size={16}/>PULSO DE HOY</h2>
-   {pulse.hits>0&&<span className="pulso-marcador">{pulse.points} pts</span>}
-  </header>
-
-  <p className="pulso-pregunta">{pulse.question}</p>
+  <span className="eyebrow">PULSO DE HOY</span>
+  <DialogTitle id="pulso-titulo">{pulse.question}</DialogTitle>
+  <DialogDescription>
+   {respondido
+    ?`Así va el pulso: ${pulse.total} ${pulse.total===1?'respuesta':'respuestas'}. Vuelve mañana.`
+    :`${pulse.total} ${pulse.total===1?'persona ha respondido':'personas han respondido'}. Aciertas si vas con la mayoría.`}
+  </DialogDescription>
 
   {respondido
    ?<div className="pulso-resultado">
