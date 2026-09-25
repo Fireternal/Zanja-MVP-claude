@@ -21,6 +21,14 @@ Por tanto:
 
 Para todo eso está el despliegue de verdad: `../DESPLIEGUE-AUTOMATICO.md`.
 
+## El jurado de ejemplo
+
+Una app de jurado donde todo marca «1 voto» no se puede juzgar, así que
+`jurado.ts` trae un reparto fijo para cada caso editorial y dos casos ya
+cerrados que aparecen en Mis zanjas la primera vez que entras: uno con fallo
+claro y otro en empate técnico, para poder ver la sentencia sellada sin
+esperar a que se acabe un plazo. Es de mentira y sólo existe aquí.
+
 ## Compilar
 
 ```sh

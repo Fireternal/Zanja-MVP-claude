@@ -119,3 +119,19 @@ html[data-motion=off] .party-burst{display:none}
 .vote-none .both-copy small{color:#c3bcd6}
 .verdict-card-none{--score-light:#c7c2d8;--score-dark:#4a4259}
 @media(max-width:360px){.vote-nuance .both-copy small{font-size:10.5px}.vote-nuance .vote-both{padding:8px 9px}}
+
+/* El fallo, en la pantalla del veredicto. */
+.verdict-ruling{display:flex;flex-direction:column;gap:3px;margin-top:11px;padding-top:11px;border-top:1px solid #ffffff1f}
+.verdict-ruling strong{font-family:var(--display);font-size:20px;font-weight:400;line-height:1.15;color:var(--yellow);text-wrap:balance}
+.verdict-ruling small{font-size:12.5px;color:#cfc7de}
+.verdict-ruling-ruling strong{color:var(--yellow)}
+.verdict-ruling-few strong{color:#c6bed6;font-size:17px}
+
+/* La sentencia sellada. */
+.sentencia-dialog{gap:13px}
+.sentencia-lienzo{display:flex;align-items:center;justify-content:center;min-height:190px;border-radius:14px;overflow:hidden;background:#1d1733;border:1px solid var(--border)}
+.sentencia-lienzo img{display:block;width:100%;max-width:330px;height:auto}
+.sentencia-espera{display:flex;align-items:center;gap:9px;color:var(--muted-foreground);font-size:13px;padding:30px 0}
+.sentencia-pista{font-size:12px;color:var(--muted-foreground);text-align:center;margin:0}
+.sentencia-acciones{display:flex;flex-direction:column;gap:9px}
+.sentencia-acciones .quiet-btn{align-self:center}

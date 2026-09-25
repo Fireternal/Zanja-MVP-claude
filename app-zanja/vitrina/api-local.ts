@@ -14,6 +14,7 @@
 import {seeds,categories,readDefenses,validDefenses} from '@/lib/cases';
 import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
+import {juradoDeEjemplo,casosCerrados,type Reparto} from './jurado';
 
 const LLAVE='zanja-vitrina-v1';
 const SECRETO='vitrina-sin-servidor';
@@ -21,9 +22,9 @@ const SECRETO='vitrina-sin-servidor';
 type Ficha={id:string;owner:string;q:string;tag:string;at:string;a:string;bt:string;b:string;emoji:string;created:number;closes:number;status:string;invite:string|null;respondent:string|null;duration:number;evidence:string|null;story:string;audience:string;workflow:number};
 type Voto={case_id:string;user_id:string;choice:string;at:number};
 type Denuncia={case_id:string;user_id:string;reason:string;at:number};
-type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[]};
+type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[]});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id))});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
@@ -50,8 +51,19 @@ async function auth(metodo:string,cuerpo:any){
  const nombre=cleanName(cuerpo?.name);
  if(!nombre)return error(`Escribe un nombre de entre ${NAME_MIN} y ${NAME_MAX} caracteres, sin símbolos raros.`);
  g.user={uid:await identificador(nombre),name:nombre};
+ sembrarEjemplos(g);
  escribir(g);
  return json({user:g.user});
+}
+
+/** Los casos cerrados de ejemplo, una sola vez por persona. */
+function sembrarEjemplos(g:Guardado){
+ const uid=g.user?.uid;if(!uid)return;
+ for(const {reparto,...caso} of casosCerrados(uid,Date.now())){
+  if(g.cases.some(c=>c.id===caso.id))continue;
+  g.cases.push(caso as Ficha);
+  g.jury[caso.id]=reparto;
+ }
 }
 
 // --- Partida -----------------------------------------------------------
@@ -72,7 +84,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
    const faltan=!validDefenses(a)||(c.status!=='waiting'&&!validDefenses(b));
    const voto=user?g.votes.find(v=>v.case_id===c.id&&v.user_id===user):undefined;
    const cerrado=c.closes>0&&c.closes<=ahora&&c.status!=='waiting';
-   const counts={a:0,both:0,b:0,none:0};
+   const counts={...{a:0,both:0,b:0,none:0},...(g.jury[c.id]||{})};
    g.votes.filter(v=>v.case_id===c.id).forEach(v=>{counts[v.choice as keyof typeof counts]++;});
    return {id:c.id,story:c.story||'',audience:c.audience||'public',workflow:c.workflow||0,duration:c.duration,
     evidenceUrl:c.evidence||(c.editorial?c.evidenceUrl||null:null),
@@ -178,7 +190,7 @@ function guardarPartida(g:Guardado,data:any){
   if(g.votes.some(v=>v.case_id===c.id&&v.user_id===user))return error('Ya has votado en este caso.',409);
   g.votes.push({case_id:c.id,user_id:user,choice:data.choice,at:ahora});
   escribir(g);
-  const counts={a:0,both:0,b:0,none:0};
+  const counts={...{a:0,both:0,b:0,none:0},...(g.jury[c.id]||{})};
   g.votes.filter(v=>v.case_id===c.id).forEach(v=>{counts[v.choice as keyof typeof counts]++;});
   return json({ok:true,xp:5,choice:data.choice,counts,total:counts.a+counts.both+counts.b+counts.none});
  }
