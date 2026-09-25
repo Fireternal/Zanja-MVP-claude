@@ -53,7 +53,7 @@ Panel → **Workers & Pages** → **Create** → pestaña **Workers** →
 **Import a repository**.
 
 - Conecta tu cuenta de GitHub y dale acceso al repositorio
-  **`Fireternal/zanja-mvp-claude`**.
+  **`Fireternal/Zanja-MVP-claude`**.
 - Elige ese repositorio.
 
 Y en la pantalla de configuración que sale:
