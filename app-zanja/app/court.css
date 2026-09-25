@@ -108,3 +108,14 @@
 @keyframes party-confetti{0%{opacity:0;transform:rotate(var(--angle)) translateY(0) rotate(0)}15%{opacity:1}100%{opacity:0;transform:rotate(var(--angle)) translateY(-185px) rotate(160deg)}}
 @media(prefers-reduced-motion:reduce){.party-burst{display:none}.fixed-duel *,.result-arrives *{animation:none!important}.countdown-track>span{transition:none}}
 html[data-motion=off] .party-burst{display:none}
+
+/* Cuatro veredictos: A y B son los bloques grandes; AMBOS y NINGUNO, los dos
+   matices, comparten fila con el mismo peso entre ellos. */
+.vote-nuance{display:grid;grid-template-columns:1fr 1fr;gap:9px;flex:0 0 auto;min-height:68px;margin:9px 1px 5px}
+.vote-nuance .vote-both{flex:1 1 auto;width:100%;min-height:68px;margin:0;padding:9px 11px;gap:8px}
+.vote-nuance .both-copy small{font-size:11px;white-space:nowrap}
+.vote-none{background:linear-gradient(115deg,#2f2740,#413552)}
+.vote-none:before{background:radial-gradient(ellipse at 100% 50%,#7d8bb52e,transparent 62%)}
+.vote-none .both-copy small{color:#c3bcd6}
+.verdict-card-none{--score-light:#c7c2d8;--score-dark:#4a4259}
+@media(max-width:360px){.vote-nuance .both-copy small{font-size:10.5px}.vote-nuance .vote-both{padding:8px 9px}}

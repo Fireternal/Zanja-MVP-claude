@@ -98,11 +98,11 @@ test('editorial cases each expose three complete arguments per team',async()=>{
  for(const [user,choice] of [['both-1','both'],['both-2','both'],['a-1','a'],['b-1','b']])assert.equal((await request({action:'vote',id,choice},user)).status,200);
  assert.equal((await request({action:'vote',id,choice:'a'},'both-1')).status,409);
  for(const user of ['both-1','both-author']){
- const c=(await state(user)).cases.find(x=>x.id===id);assert.deepEqual(c.counts,{a:1,both:2,b:1});assert.equal(c.total,4);assert.deepEqual(['a','both','b'].map(k=>Math.round(c.counts[k]/c.total*100)),[25,50,25]);
+ const c=(await state(user)).cases.find(x=>x.id===id);assert.deepEqual(c.counts,{a:1,both:2,b:1,none:0});assert.equal(c.total,4);assert.deepEqual(['a','both','b'].map(k=>Math.round(c.counts[k]/c.total*100)),[25,50,25]);
  }
  const participant=await state('both-1');assert.equal(participant.cases.find(x=>x.id===id).choice,'both');assert.equal(participant.profile.xp,5);
  sql.prepare('UPDATE cases SET closes=? WHERE id=?').run(Date.now()-1,id);
- assert.deepEqual((await state('reader')).cases.find(x=>x.id===id).counts,{a:1,both:2,b:1});
+ assert.deepEqual((await state('reader')).cases.find(x=>x.id===id).counts,{a:1,both:2,b:1,none:0});
  const inv=await request({...noTitles,mode:'invite'},'no-title-inviter');const {invite}=await inv.json();assert.equal((await request({action:'respond',invite,b:valid.b,consent:true},'no-title-respondent')).status,200);
  });
 
@@ -247,10 +247,13 @@ test('la sesión se comprueba y se cierra',async()=>{
 
 test('una cookie manipulada, caducada o de otro secreto no vale',async()=>{
  const good=await cookieFor('tramposo');
- const tampered=good.replace(/.$/,c=>c==='a'?'b':'a');
+ const corte=good.indexOf('.');
+ const tampered=good.slice(0,corte+1)+(good[corte+1]==='A'?'B':'A')+good.slice(corte+2);
+ const alterado=(good[0]==='e'?'f':'e')+good.slice(1);
  assert.equal((await request({action:'vote',id:'pizza',choice:'a'},null)).status,401);
  const send=cookie=>POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json',origin:base,cookie},body:JSON.stringify({action:'vote',id:'pizza',choice:'a'})}));
  assert.equal((await send(tampered)).status,401);
+ assert.equal((await send(alterado)).status,401);
  const caducada=SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:'viejo',name:'viejo',exp:Date.now()-1000},globalThis.__zanjaTestSecret));
  assert.equal((await send(caducada)).status,401);
  const otroSecreto=SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:'colado',name:'colado',exp:Date.now()+3600000},'otro-secreto-igual-de-largo-que-el-real'));
@@ -263,4 +266,15 @@ test('la cabecera de la plataforma no se acepta salvo que el despliegue lo decla
  globalThis.__zanjaTrustHeader=true;
  try{assert.equal((await send()).status,200);}finally{globalThis.__zanjaTrustHeader=false;}
  assert.equal((await send()).status,401);
+});
+
+// ---- cuatro veredictos: A, B, LOS DOS y NINGUNO
+test('ninguno es un veredicto más: cuenta, es único y entra en el total',async()=>{
+ assert.equal((await request({action:'vote',id:'serie',choice:'none'},'juez-duro')).status,200);
+ const r=await request({action:'vote',id:'serie',choice:'a'},'juez-duro');assert.equal(r.status,409);
+ assert.equal((await request({action:'vote',id:'serie',choice:'both'},'juez-salomonico')).status,200);
+ assert.equal((await request({action:'vote',id:'serie',choice:'ninguno'},'juez-confundido')).status,400);
+ const c=(await state('juez-duro')).cases.find(x=>x.id==='serie');
+ assert.equal(c.counts.none,1);assert.equal(c.counts.both,1);assert.equal(c.total,2);
+ assert.equal(c.choice,'none');
 });
