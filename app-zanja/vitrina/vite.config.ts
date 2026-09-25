@@ -19,5 +19,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {alias: {'@': raiz}},
   css: {postcss: raiz},
-  build: {outDir: resolve(raiz, 'dist-vitrina'), emptyOutDir: true},
+  // Nombres fijos, sin huella: la vitrina se republica siempre en la misma
+  // dirección y así cada versión sustituye a la anterior en vez de dejar
+  // archivos sueltos detrás.
+  build: {
+    outDir: resolve(raiz, 'dist-vitrina'),
+    emptyOutDir: true,
+    rollupOptions: {output: {entryFileNames: 'zanja.js', chunkFileNames: 'zanja-[name].js', assetFileNames: 'zanja.[ext]'}},
+  },
 });

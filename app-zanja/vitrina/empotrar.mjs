@@ -48,6 +48,6 @@ for (const ruta of archivos) {
 // El servidor que aloja la vitrina la sirve colgando de una ruta, así que las
 // rutas del propio paquete van relativas y sin "./" delante.
 const indice = resolve(salida, 'index.html');
-writeFileSync(indice, readFileSync(indice, 'utf8').replaceAll('"./assets/', '"assets/'));
+writeFileSync(indice, readFileSync(indice, 'utf8').replaceAll('"./', '"'));
 
 console.log(`${cambios} referencias empotradas (+${Math.round(bytes / 1024)} KB).`);
