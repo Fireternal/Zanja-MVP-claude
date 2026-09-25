@@ -1,0 +1,29 @@
+✔ votes are real, private until voting, unique and persisted (17.604344ms)
+✔ creation enforces validation, ownership and deadline (8.829677ms)
+✔ invitations hide A, require another participant and accept only one response (6.986799ms)
+✔ three distinct reports hide a case and disable further votes (6.122857ms)
+✔ cross-origin mutations are rejected (0.430841ms)
+✔ exactly three distinct arguments are mandatory on create and invitation response (11.418754ms)
+✔ legacy authored text is preserved and cannot receive fresh votes (5.745947ms)
+✔ editorial cases each expose three complete arguments per team (1.088157ms)
+✔ Both votes count toward shared totals, persist, and remain unique; titles are not required (6.068706ms)
+✔ optional evidence persists in object storage, loads privately and is removed with its case (8.235135ms)
+✔ evidence validates uploads and keeps drafts unpublished when storage fails (24.015779ms)
+✔ waiting evidence needs owner or invitation; reported evidence is hidden from jurors (7.890292ms)
+✔ public entry keeps the illustrated editorial case first after loading persisted cases (1.387511ms)
+✔ vote response includes confirmed results without a second game fetch (1.556542ms)
+✔ four-step invitation keeps A hidden, waits for owner publication, and enforces link-only discovery (9.945054ms)
+✔ creation back navigation always leaves the current screen and respects saved invitations (3.276347ms)
+✔ creation preserves the original account without requiring a shorter editable question (1.608099ms)
+✔ development reset clears only the caller votes and allows another round (6.074781ms)
+✔ explicit create and publish actions no longer require the removed creator checkboxes (0.519051ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 770.165381
+
+Exportación: 139 archivos fuente idénticos byte a byte. 72 recursos documentados. Referencias de galería comprobadas. No hubo verificación visual en navegador.

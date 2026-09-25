@@ -1,0 +1,47 @@
+# Iconos funcionales
+
+Exportados desde lucide-react instalado,24×24,stroke2,currentColor. Son recursos de biblioteca, no imágenes generadas por IA: no hay prompt. El tamaño de cada uso JSX puede ser distinto; consultar los archivos fuente.
+
+- ArrowLeft.svg
+- ArrowRight.svg
+- BookOpen.svg
+- Check.svg
+- CheckCircle2.svg
+- ChevronRight.svg
+- Clock.svg
+- Copy.svg
+- DoorClosed.svg
+- DoorOpen.svg
+- Expand.svg
+- Flag.svg
+- Flame.svg
+- Gavel.svg
+- Globe.svg
+- HeartHandshake.svg
+- Home.svg
+- ImageIcon.svg
+- ImagePlus.svg
+- Layers.svg
+- Link2.svg
+- LoaderCircle.svg
+- LockKeyhole.svg
+- Pause.svg
+- Play.svg
+- Plus.svg
+- RotateCcw.svg
+- Send.svg
+- Settings2.svg
+- Share2.svg
+- ShieldCheck.svg
+- SlidersHorizontal.svg
+- Sparkles.svg
+- Star.svg
+- Swords.svg
+- Trash2.svg
+- Trophy.svg
+- UserRound.svg
+- Users.svg
+- Volume2.svg
+- VolumeX.svg
+- X.svg
+- Zap.svg
