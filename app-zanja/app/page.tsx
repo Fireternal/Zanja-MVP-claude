@@ -16,6 +16,8 @@ import {InviteResponse} from '@/components/game/invite-response';
 import {Court} from '@/components/game/court';
 import {DefenseFields} from '@/components/game/defense-fields';
 import {EvidenceField,EvidenceAccess} from '@/components/game/evidence';
+import {Pulso,type PulseState} from '@/components/game/pulso';
+import type {Choice} from '@/lib/pulse';
 type Profile={votes:number;xp:number;today:number;created:number;dailyAchieved?:boolean};
 type Draft=ZanjaDraft;
 const blank:Draft={story:'',audience:'public',evidence:null,q:'',tag:'Convivencia',at:'',a:['','',''],bt:'',b:['','',''],mode:'invite',duration:3600000,consent:false};
@@ -24,6 +26,7 @@ const navs=[{id:'home',label:'Inicio',Icon:Home},{id:'arena',label:'Juzgado',Ico
 function remaining(c:Case){if(c.status==='waiting')return 'Esperando a B';if(c.status==='ready')return 'Listo para publicar';if(c.status==='incomplete')return 'Completar defensas';if(c.status==='review')return 'En revisión';if(c.status==='closed')return 'Finalizado';if(!c.closes)return 'Sin límite';const m=Math.max(1,Math.ceil((c.closes-Date.now())/60000));return m>60?`${Math.ceil(m/60)} h restantes`:`${m} min restantes`;}
 export default function Game(){
  const [view,setView]=useState('home'),[cases,setCases]=useState<Case[]>(seeds),[profile,setProfile]=useState<Profile>(initProfile),[signedIn,setSignedIn]=useState(false),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[busy,setBusy]=useState(false);
+ const [pulse,setPulse]=useState<PulseState|null>(null);
  const [filter,setFilter]=useState('Todas'),[active,setActive]=useState<string|null>(null),[daily,setDaily]=useState('pizza'),[skipped,setSkipped]=useState<string[]>([]),[mineTab,setMineTab]=useState('created');
  const [modal,setModal]=useState<string|null>(null),[step,setStep]=useState(1),[draft,setDraft]=useState<Draft>(blank),[created,setCreated]=useState<{id:string;invite?:string}|null>(null),[report,setReport]=useState(''),[remove,setRemove]=useState<string|null>(null);
  const [sound,setSound]=useState(false),[motion,setMotion]=useState(true),[celebrate,setCelebrate]=useState(false),[invitation,setInvitation]=useState<any>(null),[token,setToken]=useState<string|null>(null),[response,setResponse]=useState({bt:'',b:['','',''] as [string,string,string],consent:false}),[invError,setInvError]=useState('');
@@ -37,7 +40,7 @@ export default function Game(){
  const mainRef=useRef<HTMLElement|null>(null);
  const scrollTop=()=>mainRef.current?.scrollTo({top:0,behavior:'instant'});
  const loadUser=useCallback(async()=>{try{const res=await fetch('/api/auth',{cache:'no-store'});const data:any=await res.json();setDisplayName(data.user?.name||null);}catch{}},[]);
- const refresh=useCallback(async()=>{const revision=stateRevision.current;try{const res=await fetch('/api/game'+(new URLSearchParams(location.search).get('case')?'?case='+encodeURIComponent(new URLSearchParams(location.search).get('case')!):''),{cache:'no-store'});const data:any=await res.json();if(!res.ok)throw new Error(data.error);if(revision!==stateRevision.current)return true;setCases(data.cases);setProfile(data.profile);setSignedIn(data.signedIn);setDaily(data.daily);setFailed(false);return true;}catch{setFailed(true);return false;}finally{setLoading(false);}},[]);
+ const refresh=useCallback(async()=>{const revision=stateRevision.current;try{const res=await fetch('/api/game'+(new URLSearchParams(location.search).get('case')?'?case='+encodeURIComponent(new URLSearchParams(location.search).get('case')!):''),{cache:'no-store'});const data:any=await res.json();if(!res.ok)throw new Error(data.error);if(revision!==stateRevision.current)return true;setCases(data.cases);setProfile(data.profile);setPulse(data.pulse||null);setSignedIn(data.signedIn);setDaily(data.daily);setFailed(false);return true;}catch{setFailed(true);return false;}finally{setLoading(false);}},[]);
  useEffect(()=>{refresh();loadUser();try{const prefs=JSON.parse(localStorage.getItem('zanja-preferences')||'{}');setSound(!!prefs.sound);setMotion(prefs.motion!==false&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches);const saved=localStorage.getItem('zanja-draft');if(saved){const d=JSON.parse(saved);setDraft({...blank,...d,a:draftDefenses(d.a),b:draftDefenses(d.b)});}}catch{}const params=new URLSearchParams(location.search);const inv=params.get('invite');const id=params.get('case');if(inv){setToken(inv);setModal('invite');fetch('/api/game?invite='+encodeURIComponent(inv)).then(async r=>{const d:any=await r.json();if(!r.ok)throw Error(d.error);setInvitation(d.invitation);}).catch(e=>setInvError(e.message));}if(id){setActive(id);setView('arena');}},[refresh]);
  useEffect(()=>{if(loading)return;const id=new URLSearchParams(location.search).get('case');const c=cases.find(c=>c.id===id);if(c?.mine&&c.status==='ready'&&!modal&&returnedCase.current!==id){returnedCase.current=id;resume(c);}},[loading,cases]);
  useEffect(()=>{const id=setInterval(()=>refresh(),45000);return()=>clearInterval(id);},[refresh]);
@@ -72,6 +75,17 @@ export default function Game(){
  async function resetRound(){if(busy)return;stateRevision.current++;setBusy(true);try{if(signedIn)await post({action:'reset_round'});setSkipped([]);setActive(null);setFilter('Todas');setCelebrate(false);await refresh();toast.success('Ronda reiniciada. Puedes volver a zanjar.');}catch(e:any){toast.error(e.message);}finally{setBusy(false);}}
  function next(){scrollTop();if(current)setSkipped(s=>[...s,current.id]);setActive(null);setCelebrate(false);}
  async function publish(){if(busy||evidenceBusy)return;if(!signedIn){toast.error('Inicia sesión para publicar y guardar tu zanja.');return;}setBusy(true);try{const d=await post({action:'create',...draft});setCreated(d);setDraft(blank);await refresh();blip();setModal('success');}catch(e:any){toast.error(e.message);}finally{setBusy(false);}}
+ async function answerPulse(choice:Choice){
+  if(busy)return false;
+  if(!signedIn){openSignIn();return false;}
+  setBusy(true);blip();
+  try{
+   const r=await post({action:'pulse',choice});
+   setPulse(p=>p&&{...p,choice:r.choice,counts:r.counts,total:r.total});
+   return true;
+  }catch(e:any){toast.error(e.message);return false;}
+  finally{setBusy(false);}
+ }
  async function share(c:Case|{id:string;invite?:string},isInvite=false){const url=new URL('/',location.origin);url.searchParams.set(isInvite?'invite':'case',isInvite?c.invite!:c.id);try{if(navigator.share&&!isInvite)await navigator.share({title:'ZANJA · ¿Tú a quién das la razón?',url:url.href});else{await navigator.clipboard.writeText(url.href);toast.success(isInvite?'Invitación copiada':'Enlace copiado');}}catch(e:any){if(e.name!=='AbortError')toast.error('No se pudo copiar. Usa el enlace que aparece debajo.');}}
  const defensesReady=validDefenses(draft.a)&&(draft.mode==='invite'||validDefenses(draft.b));
  const canStep=!evidenceBusy&&(step===1?draft.q.trim().length>=12:step===2?defensesReady:draft.consent&&defensesReady);
@@ -85,6 +99,7 @@ export default function Game(){
    {failed&&<div className="connection-banner" role="alert">No podemos conectar. Puedes explorar los casos; tus acciones necesitan conexión.<button onClick={()=>{setLoading(true);refresh();}}>Reintentar</button></div>}
    {view==='home'&&<div key="home" className="screen-in phone-home sketch-menu"><h1 className="sr-only">Inicio de ZANJA</h1>
     <button className="mission-tile" onClick={()=>play()}><span className="mission-icon"><Zap size={23} fill="currentColor"/></span><div><div className="mission-title"><strong>{profile.today>=5?'¡Reto completado!':'Tu reto de hoy'}</strong><span>{Math.min(profile.today,5)}/5 votos</span></div><div className="mission-segments" aria-label={`${Math.min(profile.today,5)} de 5 votos hoy`}>{[1,2,3,4,5].map(n=><i key={n} className={profile.today>=n?'done':''}/>)}</div></div><ChevronRight size={19}/></button>
+    <Pulso pulse={pulse} busy={busy} onAnswer={answerPulse}/>
     <section className="mobile-lobby-hero"><div className="lobby-scene"><img width={768} height={512} fetchPriority="high" decoding="async" src="/arena-menu.webp" alt="Mazo dorado del Juzgado entre los bandos azul y coral"/><div className="scene-tint"/><span className="ribbon">JUZGADO</span><div className="scene-title">DOS BANDOS.<br/><span>TÚ DECIDES.</span></div><span className="scene-vs" aria-hidden="true">A <b>VS</b> B</span></div><div className="play-zone"><button className="game-btn yellow" onClick={()=>{setFilter('Todas');play();}}>¡A ZANJAR!<Gavel size={24}/></button></div></section>
     <button className="daily-tile daily-feature illustrated-daily" onClick={()=>play(dailyCase.id)}><img width={768} height={512} loading="eager" decoding="async" className="daily-art" src="/daily-menu.webp" alt="" aria-hidden="true"/><span className="daily-art-shade" aria-hidden="true"/><div className="daily-feature-heading"><h2>CASO DEL DÍA</h2></div><div className="daily-question"><h3>{dailyCase.q}</h3></div><ArrowRight className="shortcut-arrow" aria-hidden="true"/></button>
     <div className="home-shortcuts"><button className="home-shortcut shortcut-mine" onClick={()=>{setMineTab('created');go('mine');}}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/my-cases-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>MIS<br/>ZANJAS</h2><ArrowRight className="shortcut-arrow" size={21}/></button><button className="home-shortcut shortcut-create" onClick={openCreate}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/create-case-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>CREAR<br/>ZANJA</h2><ArrowRight className="shortcut-arrow" size={21}/></button></div>

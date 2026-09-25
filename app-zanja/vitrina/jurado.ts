@@ -102,3 +102,14 @@ export const vocesDeEjemplo=():Voz[]=>[
  {id:'v9',case_id:'ejemplo-cerrado-empate',user_id:'j9',side:'b',base:17,at:hace(144),
   body:'Repartir a partes iguales no es generosidad, es que siempre pague lo mismo el que menos pide.'},
 ];
+
+/** El pulso de ejemplo: un reparto fijo por día, para que la barra no salga
+ *  a cero. El de ayer lo gana el «sí», que es el voto que se siembra al
+ *  entrar, para poder ver cómo se cobran los puntos. */
+export function repartoPulso(dia:number):{si:number;no:number}{
+ const h=hash('pulso-'+dia);
+ const total=40+(h>>>5)%320;
+ const parteSi=32+(h>>>11)%37;          // entre el 32% y el 68%
+ const si=Math.round(total*parteSi/100);
+ return {si,no:Math.max(0,total-si)};
+}

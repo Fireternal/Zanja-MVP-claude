@@ -76,3 +76,14 @@ CREATE TABLE `seconds` (
 	PRIMARY KEY(`comment_id`, `user_id`)
 );
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0003_unknown_electro.sql');
+
+-- 0004_marvelous_drax.sql
+CREATE TABLE `pulse` (
+	`day` integer NOT NULL,
+	`user_id` text NOT NULL,
+	`choice` text NOT NULL,
+	`at` integer NOT NULL,
+	PRIMARY KEY(`day`, `user_id`)
+);
+CREATE INDEX `pulse_day` ON `pulse` (`day`);
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0004_marvelous_drax.sql');
