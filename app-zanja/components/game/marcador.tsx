@@ -8,7 +8,7 @@
 // La tira ocupa una altura fija, se lee de un vistazo y deja sitio debajo
 // para La Sala. Las cifras exactas bajan a las fichas, donde no estorban.
 
-import {BookOpen,Check} from 'lucide-react';
+import {Check} from 'lucide-react';
 import {SIDES,SIDE_NAME,percentOf,verdictLead,verdictHeadline,verdictSubhead,verdictOf,type Side} from '@/lib/verdict';
 import type {Case} from '@/lib/cases';
 
@@ -70,7 +70,6 @@ export function Marcador({c,onLado}:{c:Case;onLado:(l:'a'|'b')=>void}){
       <small>{votos} {votos===1?'voto':'votos'}</small>
      </span>
      <b>{percentOf(c.counts||{},side,total)}%</b>
-     {lee&&<BookOpen size={14} className="ficha-lee"/>}
     </>;
     const clases='ficha ficha-'+side+(elegido===side?' es-mia':'')+(lee?' es-lectura':'');
     return lee
