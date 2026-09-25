@@ -344,14 +344,11 @@ html[data-motion=off] .party-burst{display:none}
 .defensas-carta{
  --carta-luz:var(--a-marco);--carta-fondo:var(--a-fondo);
  position:relative;flex:0 0 100%;min-width:100%;
- padding:15px 16px 17px;border-radius:18px;
+ padding:17px 16px;border-radius:18px;
  border:2px solid var(--carta-luz);
  background:linear-gradient(150deg,var(--carta-fondo),#211634ee),url('/court-energy.webp') center/cover;
  box-shadow:var(--game-bevel)}
 .defensas-carta-b{--carta-luz:var(--b-marco);--carta-fondo:var(--b-fondo)}
-.defensas-carta h3{
- margin:0 0 12px;font-family:var(--display);font-weight:400;font-size:22px;
- color:#fff;text-shadow:0 3px 0 #22112f;text-wrap:balance;text-transform:uppercase}
 .defensas-carta ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
 .defensas-carta li{display:flex;align-items:flex-start;gap:10px}
 .defensas-carta li span{
@@ -361,15 +358,8 @@ html[data-motion=off] .party-burst{display:none}
 .defensas-carta li p{margin:0;font-size:15px;line-height:1.35;font-weight:800;color:#fff}
 .defensas-vacio{margin:0;font-size:14px;color:#ffffffbf}
 
-.defensas-pie{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.defensas-flecha{
- flex:0 0 44px;width:44px;height:44px;border-radius:50%;
- display:grid;place-items:center;
- border:2px solid #271633;background:linear-gradient(#4a3a68,#3a2d53);color:#fff;
- box-shadow:0 3px 0 #140d24,inset 0 2px 0 #ffffff26}
-.defensas-flecha:active{transform:translateY(2px);box-shadow:0 1px 0 #140d24}
 .defensas-pista{
- flex:1;text-align:center;font-size:11.5px;font-weight:900;letter-spacing:.5px;
+ margin:0;text-align:center;font-size:11.5px;font-weight:900;letter-spacing:.5px;
  color:var(--muted-foreground)}
 @media(prefers-reduced-motion:reduce){.defensas-carril{transition:none}}
 [data-motion=off] .defensas-carril{transition:none}

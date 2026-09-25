@@ -8,7 +8,6 @@
 // el sitio.
 
 import {useEffect,useRef,useState} from 'react';
-import {ChevronLeft,ChevronRight} from 'lucide-react';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import type {Case} from '@/lib/cases';
 
@@ -29,7 +28,6 @@ export function Defensas({c,abierto,onAbrir,inicial='a'}:{c:Case;abierto:boolean
  const mueve=(paso:number)=>setLado(LADOS[(indice+paso+LADOS.length)%LADOS.length]);
 
  const defensas=(l:Lado)=>(l==='a'?c.a:c.b)||[];
- const titulo=(l:Lado)=>(l==='a'?c.at:c.bt)||NOMBRE[l];
 
  return <Dialog open={abierto} onOpenChange={onAbrir}>
   <DialogContent className="zanja-dialog bottom-sheet defensas-hoja">
@@ -49,8 +47,8 @@ export function Defensas({c,abierto,onAbrir,inicial='a'}:{c:Case;abierto:boolean
      origen.current=null;setArrastre(0);
     }}>
     <div className="defensas-carril" style={{transform:`translateX(calc(${-indice*100}% + ${arrastre}px))`}}>
-     {LADOS.map(l=><article key={l} className={'defensas-carta defensas-carta-'+l} aria-hidden={l!==lado}>
-       <h3>{titulo(l)}</h3>
+     {LADOS.map(l=><article key={l} className={'defensas-carta defensas-carta-'+l}
+       aria-label={NOMBRE[l]} aria-hidden={l!==lado}>
        <ol>{defensas(l).map((texto,i)=><li key={i}><span>{i+1}</span><p>{texto}</p></li>)}</ol>
        {!defensas(l).length&&<p className="defensas-vacio">Este bando todavía no ha escrito su versión.</p>}
       </article>)}
@@ -58,15 +56,7 @@ export function Defensas({c,abierto,onAbrir,inicial='a'}:{c:Case;abierto:boolean
 
    </div>
 
-   {/* Las flechas van debajo y no encima de la carta: sobre el texto tapaban
-       justo lo que se viene a leer. */}
-   <div className="defensas-pie">
-    <button className="defensas-flecha" onClick={()=>mueve(-1)}
-     aria-label={`Ver ${NOMBRE[LADOS[(indice-1+LADOS.length)%LADOS.length]]}`}><ChevronLeft size={22}/></button>
-    <span className="defensas-pista">Desliza o usa las flechas</span>
-    <button className="defensas-flecha" onClick={()=>mueve(1)}
-     aria-label={`Ver ${NOMBRE[LADOS[(indice+1)%LADOS.length]]}`}><ChevronRight size={22}/></button>
-   </div>
+   <p className="defensas-pista">Desliza para ver el otro bando</p>
   </DialogContent>
  </Dialog>;
 }
