@@ -35,6 +35,19 @@ Para probar un jurado con varias personas sin salir del navegador: Perfil →
 Ajustes → Cerrar sesión, y entrar con otro nombre. Cada nombre es un jurado
 distinto y sus votos se suman al mismo caso.
 
+## Instalarla en el móvil
+
+La vitrina trae manifiesto e iconos, así que desde el navegador del teléfono
+—Chrome o Safari, no el navegador incrustado de otra app— se puede usar
+«Añadir a pantalla de inicio» y queda como una aplicación: icono propio y a
+pantalla completa, sin las barras del navegador comiéndose el alto.
+
+El `start_url` del manifiesto apunta a la dirección concreta donde está
+publicada la vitrina, porque cuelga de un dominio ajeno y una ruta relativa no
+resolvería bien. Si la vitrina cambia de dirección, hay que actualizar
+`vitrina/public/manifest.webmanifest`. El despliegue de verdad tiene su propio
+manifiesto en `public/`, con `start_url` en la raíz, y ese no hay que tocarlo.
+
 ## Compilar
 
 ```sh
