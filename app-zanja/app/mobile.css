@@ -31,9 +31,17 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 /* La casilla del día: antes llevaba a un caso al que ya se llega desde el
    Juzgado; ahora es la entrada al Pulso, y enseña cómo va si ya respondiste. */
 .pulso-tarjeta .daily-feature-heading{justify-content:space-between}
+.pulso-avance{margin:9px 44px 0 0;display:flex;flex-direction:column;gap:4px}
 .pulso-mini{
- display:flex;gap:2px;height:12px;margin:10px 44px 0 0;border-radius:6px;
+ display:flex;gap:2px;height:11px;border-radius:6px;
  overflow:hidden;border:2px solid #1c1030;background:#160f28}
+.pulso-mini .pulso-tramo{box-shadow:none}
+.pulso-mini-cifras{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ font-size:10.5px;font-weight:1000;letter-spacing:.8px;color:#efe9fb;
+ text-shadow:0 1px 3px #200b34}
+.pulso-mini-cifras span:first-child{color:var(--a-marco)}
+.pulso-mini-cifras span:last-child{color:var(--b-marco)}
 .pulso-llamada{
  align-self:flex-start;margin-top:10px;padding:4px 9px;border-radius:999px;
  background:#ffffff1f;border:1px solid #ffffff33;
@@ -52,25 +60,40 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
  min-height:44px;border-radius:12px;border:2px solid #271633;
  font-family:var(--display);font-weight:400;font-size:16px;letter-spacing:.5px;
  box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33}
-.pulso-boton-si{background:linear-gradient(#7fe3f6,#2eaecd);color:#0b2c38}
-.pulso-boton-no{background:linear-gradient(#ffb0bb,#e0616f);color:#3a0f18}
+.pulso-boton-si{background:linear-gradient(var(--a-marco),var(--a-fondo));color:#08283a}
+.pulso-boton-no{background:linear-gradient(var(--b-marco),var(--b-fondo));color:#3a0f18}
 .pulso-boton:active:not(:disabled),.pulso-boton.es-pulsado{transform:translateY(3px);box-shadow:0 1px 0 #140d24}
 .pulso-boton:disabled{opacity:.6}
 
-.pulso-resultado{display:flex;flex-direction:column;gap:7px}
-.pulso-barra{
- display:flex;gap:2px;height:26px;border-radius:9px;overflow:hidden;
- border:2px solid #271633;background:#160f28}
-.pulso-tramo{display:block;min-width:4px;transition:width .5s ease-out}
-.pulso-si{background:linear-gradient(180deg,#7fe3f6,#2eaecd)}
-.pulso-no{background:linear-gradient(180deg,#ffb0bb,#e0616f)}
+.pulso-resultado{display:flex;flex-direction:column;gap:8px}
+/* El duelo: dos bandos empujando desde el centro. Arranca en tablas y se
+   abre hasta el reparto real, y la costura late mientras el día sigue vivo. */
+.pulso-duelo{
+ position:relative;display:flex;gap:2px;height:46px;border-radius:13px;
+ overflow:hidden;border:2px solid var(--game-frame);box-shadow:var(--game-bevel);
+ background:#100c1f}
+.pulso-costura{
+ position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;z-index:2;
+ background:#fff;border-radius:2px;
+ box-shadow:0 0 10px #ffffffa6,0 0 22px #ffd13e6b;
+ transition:left .85s cubic-bezier(.18,.9,.22,1);
+ animation:pulso-tension 1.7s ease-in-out infinite}
+@keyframes pulso-tension{
+ 0%,100%{transform:scaleY(1);opacity:.9}
+ 50%{transform:scaleY(1.1);opacity:1}}
+.pulso-tramo{display:block;min-width:4px;transition:width .85s cubic-bezier(.18,.9,.22,1)}
+.pulso-si{background:linear-gradient(180deg,var(--a-marco),var(--a-fondo))}
+.pulso-no{background:linear-gradient(180deg,var(--b-marco),var(--b-fondo))}
 .pulso-tramo.es-mio{box-shadow:inset 0 0 0 2px var(--yellow)}
 .pulso-cifras{
  display:flex;align-items:center;justify-content:space-between;gap:10px;
  font-size:11px;font-weight:900;letter-spacing:.8px;color:#b8afcc}
 .pulso-cifras b{font-family:var(--display);font-weight:400;font-size:15px;color:#efe9fb}
-.pulso-cifras .es-mio{color:var(--yellow)}
-.pulso-cifras .es-mio b{color:var(--yellow)}
+.pulso-lado-si{color:var(--a-marco)}
+.pulso-lado-no{color:var(--b-marco)}
+.pulso-cifras .es-mio::after{
+ content:"TU VOTO";display:block;font-size:9px;letter-spacing:1px;color:var(--yellow)}
+.pulso-cifras b{font-family:var(--display);font-weight:400;font-size:17px}
 .pulso-cifras small{font-size:10.5px;font-weight:800;letter-spacing:.2px}
 .pulso-ayer{
  margin:0;font-size:11.5px;font-weight:800;line-height:1.4;color:#b8afcc;
@@ -79,4 +102,8 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 .pulso-ayer.es-acierto{color:#d8ffd0}
 .pulso-ayer.es-acierto b{color:var(--yellow)}
 @media(prefers-reduced-motion:reduce){.pulso-tramo{transition:none}}
-[data-motion=off] .pulso-tramo{transition:none}
+[data-motion=off] .pulso-tramo,[data-motion=off] .pulso-costura{transition:none;animation:none}
+@media(prefers-reduced-motion:reduce){.pulso-costura{animation:none;transition:none}}
+/* La zona de debate va dentro de la hoja, pegada al duelo. La hoja ya se
+   desplaza sola, así que aquí no se mete otro scroll dentro. */
+.pulso .sala{margin-top:4px;padding-top:14px}

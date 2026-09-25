@@ -6,9 +6,10 @@
 // martes cualquiera. Y es el único sitio donde se premia coincidir con la
 // mayoría; en el Juzgado eso convertiría el criterio en apostar.
 
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {ArrowRight,Check,X} from 'lucide-react';
 import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
+import {Sala} from '@/components/game/sala';
 import {percentOf,type Choice} from '@/lib/pulse';
 
 export type PulseState={
@@ -31,9 +32,12 @@ export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>vo
    {pulse.hits>0&&<span className="pulso-marcador">{pulse.points} pts</span>}</div>
   <div className="daily-question"><h3>{pulse.question}</h3></div>
   {pulse.choice
-   ?<div className="pulso-mini" aria-hidden="true">
-     <i className={'pulso-tramo pulso-si'+(pulse.choice==='si'?' es-mio':'')} style={{width:percentOf(marca,'si')+'%'}}/>
-     <i className={'pulso-tramo pulso-no'+(pulse.choice==='no'?' es-mio':'')} style={{width:percentOf(marca,'no')+'%'}}/>
+   ?<div className="pulso-avance">
+     <div className="pulso-mini" aria-hidden="true">
+      <i className="pulso-tramo pulso-si" style={{width:percentOf(marca,'si')+'%'}}/>
+      <i className="pulso-tramo pulso-no" style={{width:percentOf(marca,'no')+'%'}}/>
+     </div>
+     <div className="pulso-mini-cifras"><span>SÍ {percentOf(marca,'si')}%</span><span>{percentOf(marca,'no')}% NO</span></div>
     </div>
    :<span className="pulso-llamada">Sin responder</span>}
   <ArrowRight className="shortcut-arrow" aria-hidden="true"/>
@@ -43,9 +47,14 @@ export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>vo
 /** La hoja que se abre al entrar: responder y ver el reparto. */
 export function PulsoHoja({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:boolean;onAnswer:(c:Choice)=>Promise<boolean>}){
  const [pulsado,setPulsado]=useState<Choice|null>(null);
+ const [abierto,setAbierto]=useState(false);
+ const respondido=!!pulse?.choice;
+ // Un fotograma en tablas antes de abrirse: sin esto la barra aparece ya
+ // colocada y no se ve el tirón.
+ useEffect(()=>{if(!respondido){setAbierto(false);return;}
+  const t=setTimeout(()=>setAbierto(true),90);return()=>clearTimeout(t);},[respondido,pulse?.day]);
  if(!pulse)return null;
 
- const respondido=!!pulse.choice;
  const marca=pulse.counts||{si:0,no:0};
  const ayer=pulse.yesterday;
 
@@ -60,15 +69,18 @@ export function PulsoHoja({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:bool
 
   {respondido
    ?<div className="pulso-resultado">
-     <div className="pulso-barra" role="img"
+     {/* El duelo arranca en tablas y se abre hasta el reparto real: así se ve
+         que esto es un tira y afloja y no una estadística. */}
+     <div className="pulso-duelo" role="img"
       aria-label={`Sí ${percentOf(marca,'si')}%, no ${percentOf(marca,'no')}%`}>
-      <i className={'pulso-tramo pulso-si'+(pulse.choice==='si'?' es-mio':'')} style={{width:percentOf(marca,'si')+'%'}}/>
-      <i className={'pulso-tramo pulso-no'+(pulse.choice==='no'?' es-mio':'')} style={{width:percentOf(marca,'no')+'%'}}/>
+      <i className="pulso-tramo pulso-si" style={{width:abierto?percentOf(marca,'si')+'%':'50%'}}/>
+      <i className="pulso-tramo pulso-no" style={{width:abierto?percentOf(marca,'no')+'%':'50%'}}/>
+      <span className="pulso-costura" style={{left:(abierto?percentOf(marca,'si'):50)+'%'}}/>
      </div>
      <div className="pulso-cifras">
-      <span className={pulse.choice==='si'?'es-mio':''}>SÍ <b>{percentOf(marca,'si')}%</b></span>
+      <span className={'pulso-lado-si'+(pulse.choice==='si'?' es-mio':'')}>SÍ <b>{percentOf(marca,'si')}%</b></span>
       <small>{pulse.total} {pulse.total===1?'voto':'votos'}</small>
-      <span className={pulse.choice==='no'?'es-mio':''}><b>{percentOf(marca,'no')}%</b> NO</span>
+      <span className={'pulso-lado-no'+(pulse.choice==='no'?' es-mio':'')}><b>{percentOf(marca,'no')}%</b> NO</span>
      </div>
     </div>
    :<div className="pulso-botones">
@@ -78,6 +90,8 @@ export function PulsoHoja({pulse,busy,onAnswer}:{pulse:PulseState|null;busy:bool
        onClick={async()=>{setPulsado(c);if(!await onAnswer(c))setPulsado(null);}}>
        {c==='si'?<Check size={18}/>:<X size={18}/>}{NOMBRE[c]}</button>)}
     </div>}
+
+  {respondido&&<Sala sala={'pulso-'+pulse.day} titulo="ZONA DE DEBATE"/>}
 
   {ayer&&<p className={'pulso-ayer'+(ayer.hit?' es-acierto':'')}>
    {ayer.hit

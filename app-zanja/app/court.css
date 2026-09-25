@@ -244,6 +244,7 @@ html[data-motion=off] .party-burst{display:none}
 .sala-turno .game-btn{width:auto;min-width:118px}
 
 .sala-voces{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px}
+.sala-voces>li{flex:0 0 auto}
 .voz{
  --voz-luz:var(--a-luz);
  position:relative;overflow:hidden;padding:12px 14px;
@@ -253,6 +254,8 @@ html[data-motion=off] .party-burst{display:none}
 .voz-b{--voz-luz:var(--b-luz)}
 .voz-both{--voz-luz:var(--ambos-luz)}
 .voz-none{--voz-luz:var(--nadie-luz)}
+.voz-si{--voz-luz:var(--a-luz)}
+.voz-no{--voz-luz:var(--b-luz)}
 .voz-mia{border-color:#7a5fa8;background:linear-gradient(100deg,#38295c,#2a2148)}
 .voz-cabecera{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
 .voz-bando{

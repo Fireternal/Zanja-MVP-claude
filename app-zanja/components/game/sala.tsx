@@ -11,12 +11,11 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {Gavel,LoaderCircle,Send,Trash2,Users} from 'lucide-react';
 import {COMMENT_MAX,COMMENT_MIN} from '@/lib/cases';
-import type {Case} from '@/lib/cases';
 
 type Voz={id:string;side:string;body:string;at:number;seconds:number;seconded:boolean;mine:boolean};
 type Estado={comments:Voz[];open:boolean;voted:boolean;spoke:boolean;protagonist:boolean};
 
-const BANDO:Record<string,string>={a:'BANDO A',both:'LOS DOS',b:'BANDO B',none:'NINGUNO'};
+const BANDO:Record<string,string>={a:'BANDO A',both:'LOS DOS',b:'BANDO B',none:'NINGUNO',si:'SÍ',no:'NO'};
 
 function cuando(at:number){
  const minutos=Math.floor((Date.now()-at)/60000);
@@ -28,7 +27,7 @@ function cuando(at:number){
  return dias===1?'ayer':`hace ${dias} días`;
 }
 
-export function Sala({c}:{c:Case}){
+export function Sala({sala,titulo='LA SALA'}:{sala:string;titulo?:string}){
  const [estado,setEstado]=useState<Estado|null>(null);
  const [texto,setTexto]=useState('');
  const [enviando,setEnviando]=useState(false);
@@ -37,11 +36,11 @@ export function Sala({c}:{c:Case}){
 
  const cargar=useCallback(async()=>{
   try{
-   const r=await fetch('/api/game?room='+encodeURIComponent(c.id),{cache:'no-store'});
+   const r=await fetch('/api/game?room='+encodeURIComponent(sala),{cache:'no-store'});
    const d=await r.json() as Estado;
    if(r.ok)setEstado(d);
   }catch{}
- },[c.id]);
+ },[sala]);
 
  useEffect(()=>{setEstado(null);setTexto('');setError('');cargar();},[cargar]);
 
@@ -56,7 +55,7 @@ export function Sala({c}:{c:Case}){
   const cuerpo=texto.trim();
   if(cuerpo.length<COMMENT_MIN||enviando)return;
   setEnviando(true);setError('');
-  try{await envia({action:'comment',id:c.id,body:cuerpo});setTexto('');await cargar();}
+  try{await envia({action:'comment',id:sala,body:cuerpo});setTexto('');await cargar();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
  }
@@ -70,7 +69,7 @@ export function Sala({c}:{c:Case}){
 
  async function borrar(){
   setEnviando(true);
-  try{await envia({action:'uncomment',id:c.id});await cargar();}
+  try{await envia({action:'uncomment',id:sala});await cargar();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
  }
@@ -80,7 +79,7 @@ export function Sala({c}:{c:Case}){
 
  return <section className="sala" aria-labelledby="sala-titulo">
   <header className="sala-cabecera">
-   <h3 id="sala-titulo"><Users size={18}/>LA SALA</h3>
+   <h3 id="sala-titulo"><Users size={18}/>{titulo}</h3>
    <span>{voces.length} {voces.length===1?'voz':'voces'}</span>
   </header>
 

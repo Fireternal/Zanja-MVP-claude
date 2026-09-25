@@ -14,7 +14,7 @@
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
-import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,type Reparto,type Voz} from './jurado';
+import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 
 const LLAVE='zanja-vitrina-v1';
@@ -62,6 +62,8 @@ async function auth(metodo:string,cuerpo:any){
 /** Los casos cerrados de ejemplo, una sola vez por persona. */
 function sembrarEjemplos(g:Guardado){
  const uid=g.user?.uid;if(!uid)return;
+ const salaHoy='pulso-'+dayOf();
+ if(!g.comments.some(v=>v.case_id===salaHoy))g.comments.push(...vocesDelPulso(salaHoy));
  const ayer=dayOf()-1;
  if(!g.pulse.some(l=>l.day===ayer&&l.user_id===uid))
   g.pulse.push({day:ayer,user_id:uid,choice:'si',at:Date.now()-86400000});
@@ -172,11 +174,30 @@ function guardarPartida(g:Guardado,data:any){
   const counts=latidos(g,hoy);
   return json({ok:true,choice:data.choice,counts,total:totalOf(counts)});
  }
+ if(data.action==='comment'||data.action==='uncomment'){
+  const cuarto=String(data.id||'');
+  const contexto=contextoSala(g,cuarto);
+  if(!contexto.existe)return error('No encontramos esta sala.',404);
+  if(data.action==='uncomment'){
+   const voz=g.comments.find(v=>v.case_id===cuarto&&v.user_id===user);
+   if(voz){g.comments=g.comments.filter(v=>v.id!==voz.id);g.seconds=g.seconds.filter(s=>s.comment_id!==voz.id);}
+   escribir(g);return json({ok:true});
+  }
+  const cuerpo=limpio(data.body,COMMENT_MAX,COMMENT_MIN);
+  if(!cuerpo)return error(`Escribe entre ${COMMENT_MIN} y ${COMMENT_MAX} caracteres.`);
+  if(contexto.protagonista)return error('La Sala es del jurado. Tu versión ya está en el caso.',403);
+  if(!contexto.abierta)return error('Esta sala ya está cerrada.',409);
+  if(!contexto.lado)return error('Aquí se habla después de votar.',403);
+  if(g.comments.some(v=>v.case_id===cuarto&&v.user_id===user))return error('Ya has hablado aquí. Borra lo tuyo si quieres decirlo de otra forma.',409);
+  const voz={id:crypto.randomUUID(),case_id:cuarto,user_id:user,side:contexto.lado,body:cuerpo,at:ahora,base:0};
+  g.comments.push(voz);escribir(g);
+  return json({id:voz.id,side:voz.side,body:voz.body,at:voz.at});
+ }
  if(data.action==='second'){
   const voz=g.comments.find(v=>v.id===data.id);
   if(!voz)return error('Ese comentario ya no está.',404);
   if(voz.user_id===user)return error('Secundar es apoyar a otro, no a ti mismo.',403);
-  if(!abierta(casoDe(g,voz.case_id)))return error('La Sala de este caso está cerrada.',409);
+  if(!contextoSala(g,voz.case_id).abierta)return error('Esta sala ya está cerrada.',409);
   const tenia=g.seconds.some(s=>s.comment_id===voz.id&&s.user_id===user);
   g.seconds=tenia?g.seconds.filter(s=>!(s.comment_id===voz.id&&s.user_id===user)):[...g.seconds,{comment_id:voz.id,user_id:user,at:ahora}];
   escribir(g);
@@ -209,23 +230,6 @@ function guardarPartida(g:Guardado,data:any){
   escribir(g);return json({ok:true});
  }
 
- if(data.action==='comment'){
-  const cuerpo=limpio(data.body,COMMENT_MAX,COMMENT_MIN);
-  if(!cuerpo)return error(`Escribe entre ${COMMENT_MIN} y ${COMMENT_MAX} caracteres.`);
-  if(c.owner===user||c.respondent===user)return error('La Sala es del jurado. Tu versión ya está en el caso.',403);
-  if(!abierta(c))return error('La Sala de este caso está cerrada.',409);
-  const voto=g.votes.find(v=>v.case_id===c.id&&v.user_id===user);
-  if(!voto)return error('En La Sala se habla después de votar.',403);
-  if(g.comments.some(v=>v.case_id===c.id&&v.user_id===user))return error('Ya has hablado en este caso. Borra lo tuyo si quieres decirlo de otra forma.',409);
-  const voz={id:crypto.randomUUID(),case_id:c.id,user_id:user,side:voto.choice,body:cuerpo,at:ahora,base:0};
-  g.comments.push(voz);escribir(g);
-  return json({id:voz.id,side:voz.side,body:voz.body,at:voz.at});
- }
- if(data.action==='uncomment'){
-  const voz=g.comments.find(v=>v.case_id===c.id&&v.user_id===user);
-  if(voz){g.comments=g.comments.filter(v=>v.id!==voz.id);g.seconds=g.seconds.filter(s=>s.comment_id!==voz.id);}
-  escribir(g);return json({ok:true});
- }
  if(data.action==='vote'){
   if(!['a','both','b','none'].includes(data.choice))return error('Elige una respuesta válida.');
   if(c.owner===user||c.respondent===user)return error('Los protagonistas no votan su propio caso.',403);
@@ -247,18 +251,34 @@ function guardarPartida(g:Guardado,data:any){
 
 const abierta=(c:any)=>!!c&&c.status==='open'&&!(c.closes&&c.closes<=Date.now());
 const casoDe=(g:Guardado,id:string):any=>seeds.find(x=>x.id===id)||g.cases.find(x=>x.id===id&&x.status!=='removed');
+/** El día de una sala del Pulso, o null si la sala es de un caso. */
+const diaDelPulso=(id:string)=>/^pulso-\d+$/.test(id)?Number(id.slice(6)):null;
+
+/** Quién puede hablar en una sala, sea de un caso o del Pulso. */
+function contextoSala(g:Guardado,id:string){
+ const user=g.user?.uid||null;
+ const dia=diaDelPulso(id);
+ if(dia!==null){
+  const voto=user?g.pulse.find(l=>l.day===dia&&l.user_id===user)?.choice||null:null;
+  return {existe:true,abierta:dia===dayOf(),lado:voto as string|null,protagonista:false};
+ }
+ const c=casoDe(g,id);
+ if(!c)return {existe:false,abierta:false,lado:null as string|null,protagonista:false};
+ const voto=user?g.votes.find(v=>v.case_id===id&&v.user_id===user)?.choice||null:null;
+ return {existe:true,abierta:abierta(c),lado:voto as string|null,protagonista:c.owner===user||c.respondent===user};
+}
 const apoyos=(g:Guardado,voz:Voz)=>voz.base+g.seconds.filter(s=>s.comment_id===voz.id).length;
 
 function sala(g:Guardado,id:string){
- const c=casoDe(g,id);
- if(!c)return error('No encontramos este caso.',404);
+ const contexto=contextoSala(g,id);
+ if(!contexto.existe)return error('No encontramos esta sala.',404);
  const user=g.user?.uid||null;
  const comments=g.comments.filter(v=>v.case_id===id).map(v=>({
   id:v.id,side:v.side,body:v.body,at:v.at,seconds:apoyos(g,v),
   seconded:!!user&&g.seconds.some(s=>s.comment_id===v.id&&s.user_id===user),
   mine:v.user_id===user})).sort((x,y)=>y.seconds-x.seconds||x.at-y.at);
- return json({comments,open:abierta(c),voted:!!user&&g.votes.some(v=>v.case_id===id&&v.user_id===user),
-  spoke:comments.some(x=>x.mine),protagonist:c.owner===user||c.respondent===user});
+ return json({comments,open:contexto.abierta,voted:!!contexto.lado,
+  spoke:comments.some(x=>x.mine),protagonist:contexto.protagonista});
 }
 
 /** El comentario más secundado de cada caso. */

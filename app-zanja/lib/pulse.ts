@@ -50,8 +50,16 @@ export const questions:string[]=[
  '¿Está bien felicitar el cumpleaños por WhatsApp y no llamar?',
 ];
 
+/** El día en que arranca la serie: el primero de la lista es la piña, que es
+ *  la pregunta con la que se explica el Pulso. De ahí en adelante van en
+ *  orden, y cuando se acaban vuelve a empezar. */
+export const SERIES_START=20721;
+
 /** La pregunta de un día. La misma para todo el mundo, sin sorteo. */
-export const questionFor=(day:number)=>questions[((day%questions.length)+questions.length)%questions.length];
+export const questionFor=(day:number)=>{
+ const n=questions.length;
+ return questions[(((day-SERIES_START)%n)+n)%n];
+};
 
 export type Tally={si:number;no:number};
 export const totalOf=(t:Tally)=>t.si+t.no;

@@ -30,7 +30,7 @@ export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,on
    <div className="verdict-context"><p className="verdict-status">{c.status==='closed'?'Resultado final':'Votación abierta'} · {c.total||0} {(c.total||0)===1?'voto':'votos'}</p>{c.evidenceUrl&&<EvidenceAccess src={c.evidenceUrl}/>}</div>
    <Marcador c={c} onLado={setDefensas}/>
    <div className="verdict-actions"><button className="quiet-btn" onClick={()=>setDefensas('a')}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>
-   <Sala key={'sala-'+c.id} c={c}/>
+   <Sala key={'sala-'+c.id} sala={c.id}/>
    </div>
    <div className="court-salida"><button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button></div>
   </div>:<DuelBoard key={c.id} c={c} canVote={canVote} pressed={pressed} choose={choose} onNext={onNext} onShare={onShare} onRevise={onRevise} />}

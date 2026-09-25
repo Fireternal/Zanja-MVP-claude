@@ -281,7 +281,7 @@ test('ninguno es un veredicto más: cuenta, es único y entra en el total',async
 });
 
 // --- La Sala ---------------------------------------------------------
-const sala=async(id,user)=>{const r=await GET(new Request(base+'/api/game?room='+id,{headers:user?{cookie:await cookieFor(user)}:{}}));return {status:r.status,body:await r.json()};};
+const sala_=async(id,user)=>{const r=await GET(new Request(base+'/api/game?room='+id,{headers:user?{cookie:await cookieFor(user)}:{}}));return {status:r.status,body:await r.json()};};
 
 test('en La Sala se habla después de votar, y una sola vez',async()=>{
  assert.equal((await request({action:'comment',id:'pizza',body:'Con piña también es pizza.'},'mudo')).status,403);
@@ -291,7 +291,7 @@ test('en La Sala se habla después de votar, y una sola vez',async()=>{
  assert.equal(r.status,200);
  assert.equal((await r.json()).side,'a','el comentario hereda el bando de tu voto');
  assert.equal((await request({action:'comment',id:'pizza',body:'Y además está buena.'},'mudo')).status,409);
- const {body}=await sala('pizza','mudo');
+ const {body}=await sala_('pizza','mudo');
  assert.equal(body.comments.length,1);
  assert.equal(body.spoke,true);
  assert.equal(body.comments[0].mine,true);
@@ -299,12 +299,12 @@ test('en La Sala se habla después de votar, y una sola vez',async()=>{
 
 test('borrar lo dicho deja hablar otra vez',async()=>{
  assert.equal((await request({action:'uncomment',id:'pizza'},'mudo')).status,200);
- assert.equal((await sala('pizza','mudo')).body.comments.length,0);
+ assert.equal((await sala_('pizza','mudo')).body.comments.length,0);
  assert.equal((await request({action:'comment',id:'pizza',body:'Lo pienso mejor: con piña, no.'},'mudo')).status,200);
 });
 
 test('secundar es apoyar a otro, y se puede retirar',async()=>{
- const {body}=await sala('pizza','mudo');
+ const {body}=await sala_('pizza','mudo');
  const id=body.comments[0].id;
  assert.equal((await request({action:'second',id},'mudo')).status,403,'no puedes secundarte a ti mismo');
  assert.equal((await request({action:'second',id},null)).status,401);
@@ -313,7 +313,7 @@ test('secundar es apoyar a otro, y se puede retirar',async()=>{
  assert.deepEqual(await apoyo.json(),{ok:true,seconded:true,seconds:1});
  assert.deepEqual(await (await request({action:'second',id},'apoyo')).json(),{ok:true,seconded:false,seconds:0});
  await request({action:'second',id},'apoyo');
- assert.equal((await sala('pizza','apoyo')).body.comments[0].seconded,true);
+ assert.equal((await sala_('pizza','apoyo')).body.comments[0].seconded,true);
 });
 
 test('el más secundado es el que entra en la sentencia',async()=>{
@@ -323,7 +323,7 @@ test('el más secundado es el que entra en la sentencia',async()=>{
  assert.match(antes.voice.body,/Lo pienso mejor/,'gana el que tiene un secundado');
  for(const quien of ['coro1','coro2']){
   await request({action:'vote',id:'pizza',choice:'b'},quien);
-  const id=(await sala('pizza',quien)).body.comments.find(x=>/macedonia/.test(x.body)).id;
+  const id=(await sala_('pizza',quien)).body.comments.find(x=>/macedonia/.test(x.body)).id;
   await request({action:'second',id},quien);
  }
  const despues=(await state('mudo')).cases.find(c=>c.id==='pizza');
@@ -339,7 +339,7 @@ test('quien no ha votado no ve lo que se dice de su caso en el estado',async()=>
 test('los protagonistas no hablan en La Sala: su versión ya está en el caso',async()=>{
  const creado=await(await request(valid,'dueño')).json();
  assert.equal((await request({action:'comment',id:creado.id,body:'Que conste que yo tenía razón.'},'dueño')).status,403);
- assert.equal((await sala(creado.id,'dueño')).body.protagonist,true);
+ assert.equal((await sala_(creado.id,'dueño')).body.protagonist,true);
 });
 
 test('La Sala se cierra con el caso',async()=>{
@@ -347,11 +347,11 @@ test('La Sala se cierra con el caso',async()=>{
  await request({action:'vote',id:creado.id,choice:'a'},'tarde');
  __zanjaTestDb.prepare('UPDATE cases SET closes=? WHERE id=?').bind(Date.now()-1000,creado.id).run();
  assert.equal((await request({action:'comment',id:creado.id,body:'Llego tarde a esta sala.'},'tarde')).status,409);
- assert.equal((await sala(creado.id,'tarde')).body.open,false);
+ assert.equal((await sala_(creado.id,'tarde')).body.open,false);
 });
 
 test('un caso que no existe no tiene sala',async()=>{
- assert.equal((await sala('no-existe','mudo')).status,404);
+ assert.equal((await sala_('no-existe','mudo')).status,404);
 });
 
 // --- El Pulso --------------------------------------------------------
@@ -404,4 +404,28 @@ test('un empate exacto no lo gana nadie',async()=>{
   __zanjaTestDb.prepare('INSERT OR IGNORE INTO pulse (day,user_id,choice,at) VALUES (?,?,?,?)').bind(anteayer,quien,voto,Date.now()).run();
  const p=(await state('empate1')).pulse;
  assert.equal(p.hits,0,'un empate no suma acierto');
+});
+
+test('el Pulso también es una sala, y se habla después de responder',async()=>{
+ const sala='pulso-'+dayOf();
+ assert.equal((await request({action:'comment',id:sala,body:'La piña es fruta, no ingrediente.'},'callado')).status,403);
+ assert.equal((await request({action:'pulse',choice:'no'},'callado')).status,200);
+ const r=await request({action:'comment',id:sala,body:'La piña es fruta, no ingrediente.'},'callado');
+ assert.equal(r.status,200);
+ assert.equal((await r.json()).side,'no','la voz hereda tu respuesta del día');
+ const d=(await sala_(sala,'callado')).body;
+ assert.equal(d.comments.length,1);
+ assert.equal(d.open,true);
+ assert.equal(d.protagonist,false,'en el Pulso no hay protagonistas');
+});
+
+test('la sala del Pulso se cierra con el día',async()=>{
+ const ayer='pulso-'+(dayOf()-1);
+ const d=(await sala_(ayer,'callado')).body;
+ assert.equal(d.open,false);
+ assert.equal((await request({action:'comment',id:ayer,body:'Llego un día tarde.'},'callado')).status,409);
+});
+
+test('una sala que no existe no se abre',async()=>{
+ assert.equal((await sala_('pulso-no','callado')).status,404);
 });

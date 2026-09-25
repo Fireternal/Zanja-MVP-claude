@@ -113,3 +113,13 @@ export function repartoPulso(dia:number):{si:number;no:number}{
  const si=Math.round(total*parteSi/100);
  return {si,no:Math.max(0,total-si)};
 }
+
+/** Voces de ejemplo para la zona de debate del Pulso. */
+export const vocesDelPulso=(sala:string):Voz[]=>[
+ {id:sala+'-v1',case_id:sala,user_id:'p1',side:'no',base:21,at:hace(5),
+  body:'La piña es fruta. En una pizza sobra igual que sobraría un plátano.'},
+ {id:sala+'-v2',case_id:sala,user_id:'p2',side:'si',base:18,at:hace(4),
+  body:'Dulce con salado lleva funcionando toda la vida. Esto es puro prejuicio.'},
+ {id:sala+'-v3',case_id:sala,user_id:'p3',side:'si',base:7,at:hace(2),
+  body:'Que no te guste no la convierte en un delito. Pídela sin piña y ya está.'},
+];
