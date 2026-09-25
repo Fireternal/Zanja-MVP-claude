@@ -35,20 +35,33 @@ export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>vo
      {/* Un solo bloque del alto de un botón, con el porcentaje y el bando
          dentro. Lo que no quepa en un tramo estrecho no se pinta: el tramo
          grande manda igual y el detalle está a un toque. */}
-     <div className="pulso-mini" role="img"
-      aria-label={`Sí ${percentOf(marca,'si')}%, no ${percentOf(marca,'no')}%, ${pulse.total} votos`}>
-      {(['si','no'] as Choice[]).map(c=>{
-       const parte=percentOf(marca,c);
-       return <i key={c} className={'pulso-tramo pulso-'+c} style={{width:parte+'%'}}>
-        {parte>=20&&<b>{parte}%</b>}
-        {parte>=11&&<em>{NOMBRE[c]}</em>}
-       </i>;})}
+     {/* Las cifras van fuera de la barra: así un 99 a 1 se lee igual de bien,
+         porque el tramo pequeño no tiene que sostener ningún texto. */}
+     <div className="pulso-marcador-dia">
+      <span className="pulso-lado-si"><em>SÍ</em><b>{percentOf(marca,'si')}%</b></span>
+      <small>{pulse.total} votos</small>
+      <span className="pulso-lado-no"><b>{percentOf(marca,'no')}%</b><em>NO</em></span>
      </div>
-     <small className="pulso-recuento">{pulse.total} votos</small>
+     <div className="pulso-mini" aria-hidden="true">
+      {(['si','no'] as Choice[]).filter(c=>marca[c]>0).map(c=>
+       <i key={c} className={'pulso-tramo pulso-'+c} style={{width:percentOf(marca,c)+'%'}}/>)}
+     </div>
     </div>
    :<span className="pulso-llamada">Sin responder</span>}
   <ArrowRight className="shortcut-arrow" aria-hidden="true"/>
  </button>;
+}
+
+/** Un reparto extremo o unas tablas merecen nombre: si no, la barra se queda
+ *  en una franja casi lisa que no cuenta nada. */
+function estadoDelDia(t:{si:number;no:number}){
+ const total=t.si+t.no;
+ if(total<5)return null;
+ const mayor=Math.max(percentOf(t,'si'),percentOf(t,'no'));
+ if(t.si===t.no)return {clase:'tablas',texto:'EMPATE: ni unos ni otros'};
+ if(mayor>=90)return {clase:'paliza',texto:`PALIZA: 9 de cada 10 dicen que ${percentOf(t,'si')>percentOf(t,'no')?'sí':'no'}`};
+ if(mayor<=55)return {clase:'reñido',texto:'REÑIDO: esto se decide por los pelos'};
+ return null;
 }
 
 /** Cuánto queda para que el día cierre, que es la tensión de verdad. */
@@ -100,9 +113,12 @@ export function PulsoPantalla({pulse,busy,onAnswer,onBack}:{pulse:PulseState|nul
       aria-label={`Sí ${percentOf(marca,'si')}%, no ${percentOf(marca,'no')}%`}>
       <i className="pulso-tramo pulso-si" style={{width:abierto?percentOf(marca,'si')+'%':'50%'}}/>
       <i className="pulso-tramo pulso-no" style={{width:abierto?percentOf(marca,'no')+'%':'50%'}}/>
-      <span className="pulso-costura" style={{left:(abierto?percentOf(marca,'si'):50)+'%'}}/>
+      {/* La costura se queda dentro del marco aunque el reparto sea de 99 a 1:
+          fuera se saldría del borde y no se vería el tirón. */}
+      <span className="pulso-costura" style={{left:Math.min(97,Math.max(3,abierto?percentOf(marca,'si'):50))+'%'}}/>
      </div>
-     <div className="pulso-cifras">
+     {estadoDelDia(marca)&&<p className={'pulso-estado pulso-estado-'+estadoDelDia(marca)!.clase}>{estadoDelDia(marca)!.texto}</p>}
+    <div className="pulso-cifras">
       <span className={'pulso-lado-si'+(pulse.choice==='si'?' es-mio':'')}>SÍ <b>{percentOf(marca,'si')}%</b></span>
       <small>{pulse.total} {pulse.total===1?'voto':'votos'}</small>
       <span className={'pulso-lado-no'+(pulse.choice==='no'?' es-mio':'')}><b>{percentOf(marca,'no')}%</b> NO</span>
