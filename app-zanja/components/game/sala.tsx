@@ -28,7 +28,7 @@ function cuando(at:number){
  return dias===1?'ayer':`hace ${dias} días`;
 }
 
-export function Sala({c,onHold}:{c:Case;onHold:()=>void}){
+export function Sala({c}:{c:Case}){
  const [estado,setEstado]=useState<Estado|null>(null);
  const [texto,setTexto]=useState('');
  const [enviando,setEnviando]=useState(false);
@@ -55,14 +55,13 @@ export function Sala({c,onHold}:{c:Case;onHold:()=>void}){
  async function hablar(){
   const cuerpo=texto.trim();
   if(cuerpo.length<COMMENT_MIN||enviando)return;
-  onHold();setEnviando(true);setError('');
+  setEnviando(true);setError('');
   try{await envia({action:'comment',id:c.id,body:cuerpo});setTexto('');await cargar();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
  }
 
  async function secundar(voz:Voz){
-  onHold();
   // Se pinta antes de que conteste el servidor: si falla, se recoloca al recargar.
   setEstado(e=>e&&{...e,comments:e.comments.map(v=>v.id===voz.id?{...v,seconded:!v.seconded,seconds:v.seconds+(v.seconded?-1:1)}:v)});
   try{await envia({action:'second',id:voz.id});}catch(e:any){setError(e.message);}
@@ -70,7 +69,7 @@ export function Sala({c,onHold}:{c:Case;onHold:()=>void}){
  }
 
  async function borrar(){
-  onHold();setEnviando(true);
+  setEnviando(true);
   try{await envia({action:'uncomment',id:c.id});await cargar();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
@@ -94,7 +93,7 @@ export function Sala({c,onHold}:{c:Case;onHold:()=>void}){
      :!estado.open
       ?<p className="sala-aviso"><Gavel size={17}/>La Sala se cerró con el caso.</p>
       :puedeHablar&&<div className="sala-turno">
-        <textarea ref={campo} value={texto} onFocus={onHold} onChange={e=>setTexto(e.target.value.slice(0,COMMENT_MAX))}
+        <textarea ref={campo} value={texto} onChange={e=>setTexto(e.target.value.slice(0,COMMENT_MAX))}
          placeholder="¿Por qué has votado así?" rows={2} maxLength={COMMENT_MAX} aria-label="Tu argumento"/>
         <div className="sala-turno-pie">
          <small>{texto.trim().length}/{COMMENT_MAX}</small>

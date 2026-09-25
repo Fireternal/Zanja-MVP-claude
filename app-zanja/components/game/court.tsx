@@ -4,7 +4,6 @@ import {ArrowLeft,ArrowRight,SlidersHorizontal,Check,Flag,Clock,Gavel,Zap,Trophy
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {RadioGroup,RadioGroupItem} from '@/components/ui/radio-group';
 import {EvidenceAccess} from '@/components/game/evidence';
-import {NextCountdown} from '@/components/game/next-countdown';
 import {DuelBoard} from '@/components/game/duel-board';
 import {categories,validDefenses,type Case} from '@/lib/cases';
 import {Sentencia} from '@/components/game/sentencia';
@@ -14,10 +13,10 @@ type Props={current?:Case;cases:Case[];filter:string;loading:boolean;busy:boolea
 function time(c:Case){if(c.status==='closed')return 'Cerrado';if(c.status==='waiting')return 'Esperando a B';if(!c.closes)return 'Sin límite';const m=Math.max(1,Math.ceil((c.closes-Date.now())/60000));return m>60?`${Math.ceil(m/60)} h`:`${m} min`;}
 export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,onBack,onVote,onNext,onCreate,onReport,onShare,onRevise}:Props){
  const [filters,setFilters]=useState(false),[choice,setChoice]=useState(filter),[argumentsVisible,setArgumentsVisible]=useState(false),[pressed,setPressed]=useState<'a'|'both'|'b'|'none'|null>(null);
- const [hold,setHold]=useState(false),[sentencia,setSentencia]=useState(false);
+ const [sentencia,setSentencia]=useState(false);
  const heading=useRef<HTMLHeadingElement>(null);
  const ready=!!c?.counts&&!!(c.choice||c.status==='closed'||c.mine&&c.status==='open');const result=ready&&!argumentsVisible;
- useEffect(()=>{setArgumentsVisible(false);setPressed(null);setHold(false);},[c?.id]);
+ useEffect(()=>{setArgumentsVisible(false);setPressed(null);},[c?.id]);
  useEffect(()=>{if(c?.choice){setArgumentsVisible(false);setPressed(null);heading.current?.focus({preventScroll:true});}},[c?.choice]);
  const canVote=!!c&&c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&validDefenses(c.a)&&validDefenses(c.b)&&!loading&&!busy;
  const choose=async(side:'a'|'both'|'b'|'none')=>{if(!canVote||pressed)return;setPressed(side);if(!await onVote(side))setPressed(null);};
@@ -27,8 +26,9 @@ export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,on
    {celebrate&&<div className="party-burst" aria-hidden="true">{Array.from({length:12},(_,i)=><i key={i} style={{"--piece":i} as React.CSSProperties}/>)}</div>}<div className="verdict-banner"><span className="verdict-confirmation"><Check size={18}/>{c.choice?'VOTO REGISTRADO':'ASÍ OPINA EL JURADO'}</span>{c.choice&&<span className="verdict-reward"><Zap size={16} fill="currentColor"/>+5 XP</span>}<h2 className="verdict-question">{c.q}</h2></div>
    <div className="verdict-context"><p className="verdict-status">{c.status==='closed'?'Resultado final':'Votación abierta'} · {c.total||0} {(c.total||0)===1?'voto':'votos'}</p>{c.evidenceUrl&&<EvidenceAccess src={c.evidenceUrl}/>}</div>
    <Marcador c={c}/>
-   <div className="verdict-actions"><button className="quiet-btn" onClick={()=>{setHold(true);setArgumentsVisible(true);}}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setHold(true);setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{setHold(true);onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>{celebrate?<NextCountdown key={c.id} onNext={onNext} blocked={hold||filters} onResume={()=>setHold(false)}/>:<button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button>}
-   <Sala key={'sala-'+c.id} c={c} onHold={()=>setHold(true)}/>
+   <div className="verdict-actions"><button className="quiet-btn" onClick={()=>{setArgumentsVisible(true);}}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>
+   <Sala key={'sala-'+c.id} c={c}/>
+   <button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button>
   </div>:<DuelBoard key={c.id} c={c} canVote={canVote} pressed={pressed} choose={choose} onNext={onNext} onShare={onShare} onRevise={onRevise} ready={ready} onResult={()=>setArgumentsVisible(false)}/>}
 
   {c&&<Sentencia c={c} open={sentencia} onOpenChange={setSentencia} onLink={()=>onShare(c)}/>}

@@ -64,7 +64,7 @@
 .court-result-body .verdict-actions{margin:0;gap:10px}.verdict-actions>.quiet-btn{flex:1;background:#4c3261;border:1px solid #9871b5;border-radius:11px;box-shadow:0 3px 0 #120b21}.court-result-body .court-next{margin:0;min-height:51px;flex-shrink:0}
 @media(max-height:730px){.court-result-body{gap:8px}.verdict-banner{padding:12px;gap:8px}.verdict-banner .verdict-question{font-size:21px}.verdict-actions .quiet-btn{min-height:40px}}
 @media(max-height:570px){.court-result-body{flex:none}}
-/* Party rhythm: instant selection, staggered reveal, then a draining countdown. */
+/* Ritmo de la celebración: selección instantánea y revelado escalonado. */
 .fixed-duel .vote-a{animation:party-team-a .48s cubic-bezier(.2,.9,.25,1.2) both}
 .fixed-duel .vote-b{animation:party-team-b .48s .1s cubic-bezier(.2,.9,.25,1.2) both}
 .fixed-duel .battle-vs{animation:party-vs .52s .16s cubic-bezier(.2,.9,.25,1.3) both}
@@ -76,13 +76,7 @@
 .result-arrives .verdict-banner{animation:party-stamp .48s cubic-bezier(.15,.8,.3,1.3) both}
 
 .result-arrives .verdict-reward{animation:party-stamp .5s .35s both}
-.next-countdown{flex-shrink:0;display:flex;flex-direction:column;gap:5px}
-.countdown-controls{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:1000;letter-spacing:.6px;color:#e7cfff}
-.countdown-controls b{font-family:var(--display);font-size:19px;color:#ffe16a;display:inline-block;min-width:16px}
-.countdown-controls>button{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:#4a2e68;border:1px solid #9575b5}
-.next-countdown .court-next{position:relative;overflow:hidden;padding-bottom:15px}
-.countdown-track{position:absolute;bottom:0;left:0;right:0;height:5px;background:#96631366;overflow:hidden}
-.countdown-track>span{display:block;width:100%;height:100%;background:#633383;transform-origin:left;transition:transform 50ms linear}
+
 .party-burst{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;border-radius:18px}
 .party-burst>i{position:absolute;top:12%;left:50%;width:7px;height:12px;background:#ffe367;opacity:0;border-radius:2px;animation:party-confetti .95s calc(var(--piece)*.025s) ease-out both;--angle:calc(var(--piece)*30deg)}
 .party-burst>i:nth-child(3n){background:#78e7ff}.party-burst>i:nth-child(3n + 1){background:#ff7faa}
@@ -94,7 +88,7 @@
 @keyframes party-pick{0%{transform:scale(1)}35%{transform:scale(.975)}70%{transform:scale(1.012)}100%{transform:scale(1)}}
 @keyframes party-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes party-confetti{0%{opacity:0;transform:rotate(var(--angle)) translateY(0) rotate(0)}15%{opacity:1}100%{opacity:0;transform:rotate(var(--angle)) translateY(-185px) rotate(160deg)}}
-@media(prefers-reduced-motion:reduce){.party-burst{display:none}.fixed-duel *,.result-arrives *{animation:none!important}.countdown-track>span{transition:none}}
+@media(prefers-reduced-motion:reduce){.party-burst{display:none}.fixed-duel *,.result-arrives *{animation:none!important}}
 html[data-motion=off] .party-burst{display:none}
 
 /* Cuatro veredictos: A y B son los bloques grandes; AMBOS y NINGUNO, los dos
