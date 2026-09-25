@@ -31,24 +31,25 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 /* La casilla del día: antes llevaba a un caso al que ya se llega desde el
    Juzgado; ahora es la entrada al Pulso, y enseña cómo va si ya respondiste. */
 .pulso-tarjeta .daily-feature-heading{justify-content:space-between}
-/* La casilla enseña el pulso como un marcador de estadio: primero las cifras,
-   la barra debajo como apoyo. Una barra fina con letra pequeña dentro no se
-   lee a la distancia a la que se mira un menú. */
-.pulso-avance{margin:10px 44px 0 0;display:flex;flex-direction:column;gap:6px}
-.pulso-marcador-dia{
- display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.pulso-marcador-dia span{display:flex;align-items:baseline;gap:6px}
-.pulso-marcador-dia em{
- font-style:normal;font-size:11px;font-weight:1000;letter-spacing:1.2px}
-.pulso-marcador-dia b{
- font-family:var(--display);font-weight:400;font-size:24px;line-height:1;
- font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #22112f}
-.pulso-marcador-dia small{
- font-size:10.5px;font-weight:800;letter-spacing:.4px;color:#cfc7de}
+/* La casilla enseña el pulso en un solo bloque del alto de un botón, con el
+   porcentaje y el bando dentro de su tramo. Una barra fina con letra pequeña
+   no se lee a la distancia a la que se mira un menú. */
+.pulso-avance{margin:10px 44px 0 0;display:flex;flex-direction:column;gap:5px}
 .pulso-mini{
- display:flex;gap:2px;height:16px;border-radius:8px;
- overflow:hidden;border:2px solid #1c1030;background:#160f28}
-.pulso-mini .pulso-tramo{box-shadow:none}
+ display:flex;gap:2px;height:52px;border-radius:12px;
+ overflow:hidden;border:2px solid #1c1030;background:#160f28;
+ box-shadow:0 3px 0 #110a21,inset 0 2px 0 #ffffff26}
+.pulso-mini .pulso-tramo{
+ box-shadow:none;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;gap:1px;min-width:3px;overflow:hidden;
+ color:var(--ink);text-shadow:0 1px 0 #ffffff59}
+.pulso-mini b{
+ font-family:var(--display);font-weight:400;font-size:21px;line-height:1;
+ font-variant-numeric:tabular-nums}
+.pulso-mini em{
+ font-style:normal;font-size:10px;font-weight:1000;letter-spacing:1.3px;line-height:1}
+.pulso-recuento{
+ font-size:10.5px;font-weight:800;letter-spacing:.4px;color:#cfc7de}
 .pulso-llamada{
  align-self:flex-start;margin-top:10px;padding:4px 9px;border-radius:999px;
  background:#ffffff1f;border:1px solid #ffffff33;

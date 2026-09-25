@@ -32,15 +32,19 @@ export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>vo
   <div className="daily-question"><h3>{pulse.question}</h3></div>
   {pulse.choice
    ?<div className="pulso-avance">
-     <div className="pulso-marcador-dia">
-      <span className="pulso-lado-si"><em>SÍ</em><b>{percentOf(marca,'si')}%</b></span>
-      <small>{pulse.total} votos</small>
-      <span className="pulso-lado-no"><b>{percentOf(marca,'no')}%</b><em>NO</em></span>
+     {/* Un solo bloque del alto de un botón, con el porcentaje y el bando
+         dentro. Lo que no quepa en un tramo estrecho no se pinta: el tramo
+         grande manda igual y el detalle está a un toque. */}
+     <div className="pulso-mini" role="img"
+      aria-label={`Sí ${percentOf(marca,'si')}%, no ${percentOf(marca,'no')}%, ${pulse.total} votos`}>
+      {(['si','no'] as Choice[]).map(c=>{
+       const parte=percentOf(marca,c);
+       return <i key={c} className={'pulso-tramo pulso-'+c} style={{width:parte+'%'}}>
+        {parte>=20&&<b>{parte}%</b>}
+        {parte>=11&&<em>{NOMBRE[c]}</em>}
+       </i>;})}
      </div>
-     <div className="pulso-mini" aria-hidden="true">
-      <i className="pulso-tramo pulso-si" style={{width:percentOf(marca,'si')+'%'}}/>
-      <i className="pulso-tramo pulso-no" style={{width:percentOf(marca,'no')+'%'}}/>
-     </div>
+     <small className="pulso-recuento">{pulse.total} votos</small>
     </div>
    :<span className="pulso-llamada">Sin responder</span>}
   <ArrowRight className="shortcut-arrow" aria-hidden="true"/>
