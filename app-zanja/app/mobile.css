@@ -44,7 +44,13 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
  font-family:var(--display);font-weight:400;font-size:21px;line-height:1;
  font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #22112f}
 .pulso-marcador-dia small{
- font-size:10px;font-weight:800;letter-spacing:.4px;color:#cfc7de}
+ font-size:10px;font-weight:800;letter-spacing:.4px;color:#e8e2f5}
+/* En la casilla, todo va en blanco con la sombra dura de la casa: debajo hay
+   una ilustración, y el azul y el rojo sobre ella se enturbian. El color lo
+   pone la barra, que está justo debajo. */
+.pulso-marcador-dia span,.pulso-marcador-dia b,
+.pulso-marcador-dia em,.pulso-marcador-dia small{
+ color:#fff;text-shadow:0 2px 0 #22112f}
 .pulso-mini{
  display:flex;gap:2px;height:14px;border-radius:7px;
  overflow:hidden;border:2px solid #1c1030;background:#160f28}
