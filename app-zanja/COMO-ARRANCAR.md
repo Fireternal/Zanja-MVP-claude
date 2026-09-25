@@ -27,13 +27,10 @@ corepack pnpm build
 corepack pnpm start          # http://127.0.0.1:8787
 ```
 
-La primera vez, y sólo la primera, hay que crear las tablas en la base local:
+La primera vez hay que crear las tablas en la base local:
 
 ```sh
-for f in drizzle/0000_*.sql drizzle/0001_*.sql drizzle/0002_*.sql; do
-  corepack pnpm exec wrangler d1 execute site-creator-d1 \
-    --config dist/server/wrangler.json --local --persist-to .wrangler/state --file "$f"
-done
+corepack pnpm migrar
 ```
 
 Comprobación rápida de que la base responde:
@@ -78,6 +75,10 @@ Fuera de local hace falta definir `SESSION_SECRET` con 32 caracteres o más; sin
   `.openai/LEEME.txt`.
 
 El resto del código está tal y como se entregó.
+
+## Publicar
+
+Los pasos para ponerlo en internet están en `DESPLIEGUE.md`.
 
 ## Aviso sobre el proveedor
 

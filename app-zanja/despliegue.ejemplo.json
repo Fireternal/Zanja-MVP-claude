@@ -1,0 +1,10 @@
+{
+  "worker": "zanja",
+  "d1": {
+    "nombre": "zanja",
+    "id": "pega-aquí-el-identificador-que-te-da-wrangler-d1-create"
+  },
+  "r2": {
+    "nombre": "zanja-pruebas"
+  }
+}
