@@ -1,6 +1,12 @@
 # Publicar ZANJA en Cloudflare
 
-Para tener una dirección pública tipo `https://zanja.<lo-tuyo>.workers.dev`.
+Para tener una dirección pública tipo `https://zanja.<lo-tuyo>.workers.dev`,
+publicando **a mano desde tu ordenador**.
+
+> Si lo que quieres es que la dirección se actualice sola cada vez que se sube
+> un cambio a GitHub, sin instalar nada ni abrir una terminal, la guía es
+> [`DESPLIEGUE-AUTOMATICO.md`](DESPLIEGUE-AUTOMATICO.md). Las dos llevan al
+> mismo sitio.
 
 Los pasos que piden tu cuenta los tienes que ejecutar tú: abren el navegador y
 crean recursos que se facturan a tu nombre. Lo demás ya está preparado.
@@ -60,7 +66,9 @@ Y edita `despliegue.json` con el identificador del paso 2:
 }
 ```
 
-Este archivo no se sube al repositorio.
+Este archivo no se sube al repositorio. (Los mismos valores se pueden pasar
+como variables de entorno `ZANJA_WORKER`, `ZANJA_D1_NOMBRE`, `ZANJA_D1_ID` y
+`ZANJA_R2_NOMBRE`; es lo que hace Cloudflare cuando compila solo.)
 
 ## 5. Compilar y publicar
 

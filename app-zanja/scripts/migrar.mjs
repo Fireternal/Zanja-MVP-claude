@@ -8,16 +8,12 @@
 
 import {readFileSync, writeFileSync, existsSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {resolve, dirname} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+import {raiz, aborta, ajustes, wrangler} from './ajustes.mjs';
 
-const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const generado = resolve(raiz, 'dist/server/wrangler.json');
 const destino = resolve(raiz, 'dist/server/wrangler.migrate.json');
-const ajustes = resolve(raiz, 'despliegue.json');
 const remoto = process.argv.includes('--remoto');
-
-const aborta = (mensaje) => {console.error('\n' + mensaje + '\n');process.exit(1);};
 
 if (!existsSync(generado)) aborta('Falta dist/server/wrangler.json. Compila antes: corepack pnpm build');
 
@@ -26,9 +22,7 @@ let nombre = config.d1_databases?.[0]?.database_name;
 let id = config.d1_databases?.[0]?.database_id;
 
 if (remoto) {
-  if (!existsSync(ajustes)) aborta('Falta despliegue.json. Los pasos están en DESPLIEGUE.md');
-  const {d1} = JSON.parse(readFileSync(ajustes, 'utf8'));
-  if (!d1?.nombre || !d1?.id) aborta('despliegue.json: faltan "d1.nombre" o "d1.id".');
+  const {d1} = ajustes();
   nombre = d1.nombre; id = d1.id;
 }
 
@@ -42,7 +36,7 @@ writeFileSync(destino, JSON.stringify(config, null, 2));
 console.log(`Migraciones sobre "${nombre}" (${remoto ? 'Cloudflare' : 'local'})\n`);
 
 const ubicacion = remoto ? ['--remote'] : ['--local', '--persist-to', '.wrangler/state'];
-const salida = spawnSync('corepack',
-  ['pnpm','exec','wrangler','d1','migrations','apply',nombre,'--config',destino,...ubicacion],
+const salida = spawnSync(process.execPath,
+  [wrangler,'d1','migrations','apply',nombre,'--config',destino,...ubicacion],
   {cwd: raiz, stdio: 'inherit'});
 process.exit(salida.status ?? 1);

@@ -42,7 +42,7 @@ curl "http://127.0.0.1:8787/api/game?action=state"     # 200 y el caso demo
 ## Verificaciones
 
 ```sh
-node --test tests/game.test.mjs      # 24 pruebas, todas pasan
+node --test tests/game.test.mjs      # 25 pruebas, todas pasan
 corepack pnpm exec tsc --noEmit      # sin errores
 corepack pnpm build                  # compila
 ```
@@ -78,7 +78,12 @@ El resto del código está tal y como se entregó.
 
 ## Publicar
 
-Los pasos para ponerlo en internet están en `DESPLIEGUE.md`.
+Dos caminos, el mismo resultado:
+
+- `DESPLIEGUE-AUTOMATICO.md` — Cloudflare compila solo con cada push a GitHub
+  y actualiza siempre la misma dirección. Se configura desde el panel, sin
+  terminal. Es el que usamos.
+- `DESPLIEGUE.md` — publicar a mano desde tu ordenador.
 
 ## Aviso sobre el proveedor
 
