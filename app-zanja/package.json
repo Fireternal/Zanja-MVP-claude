@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "desplegar": "node scripts/desplegar.mjs",
     "migrar": "node scripts/migrar.mjs",
-    "sql-inicial": "node scripts/sql-inicial.mjs"
+    "sql-inicial": "node scripts/sql-inicial.mjs",
+    "vitrina": "vite build --config vitrina/vite.config.ts && node vitrina/empotrar.mjs",
+    "vitrina:dev": "vite --config vitrina/vite.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
