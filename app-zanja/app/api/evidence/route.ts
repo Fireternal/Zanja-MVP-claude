@@ -1,9 +1,12 @@
-import {db,bucket} from '@/lib/server-db';
+import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 export const dynamic='force-dynamic';
 export async function GET(req:Request){
  const headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'};
  const fail=(status:number)=>new Response('Imagen no disponible',{status,headers});
- const user=req.headers.get('oai-authenticated-user-id');if(!user)return fail(401);
+ const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
+ const user=session?session.uid:(trustsPlatformHeader()?req.headers.get('oai-authenticated-user-id'):null);
+ if(!user)return fail(401);
  try{
   const url=new URL(req.url);const c:any=await db().prepare('SELECT id,owner,status,evidence,invite,respondent FROM cases WHERE id=?').bind(url.searchParams.get('id')||'').first();
   if(!c?.evidence||c.status==='removed')return fail(404);

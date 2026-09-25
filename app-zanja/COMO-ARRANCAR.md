@@ -45,31 +45,39 @@ curl "http://127.0.0.1:8787/api/game?action=state"     # 200 y el caso demo
 ## Verificaciones
 
 ```sh
-node --test tests/game.test.mjs      # 19 pruebas, todas pasan
+node --test tests/game.test.mjs      # 24 pruebas, todas pasan
 corepack pnpm exec tsc --noEmit      # sin errores
 corepack pnpm build                  # compila
 ```
 
-## Lo que NO funciona fuera del hosting original
+## Entrar
 
-**La sesión.** La autenticación la ponía la plataforma de ChatGPT Sites
-(`app/chatgpt-auth.ts`). En local puedes navegar y leer, pero cualquier acción
-que escriba —votar, crear, denunciar— devuelve `401 Inicia sesión para guardar
-tu participación`.
+La app tiene sesión propia: escribes un nombre y el servidor te devuelve una
+cookie firmada. Funciona igual en local que desplegada, sin depender de ninguna
+plataforma.
 
-Es el primer trabajo real pendiente: sustituir esa autenticación por una
-portable. Hasta entonces el bucle completo no se puede probar de punta a punta
-fuera del sitio publicado.
+Es provisional y no sustituye a una cuenta de verdad: quien escriba tu mismo
+nombre entra como tú. Sirve para desarrollar y para una beta cerrada. Los
+detalles y lo que haría falta para abrir al público están en
+`app/api/auth/LEEME.md`.
+
+Fuera de local hace falta definir `SESSION_SECRET` con 32 caracteres o más; sin
+él la app falla a propósito en vez de arrancar insegura.
 
 ## Lo que se ha cambiado respecto al paquete recibido
 
+- **Sesión portable** en lugar de la identidad por cabecera de ChatGPT Sites:
+  `lib/session.ts`, `app/api/auth/`. La cabecera `oai-authenticated-user-id`
+  ya no se acepta salvo que el despliegue declare `TRUST_PLATFORM_HEADER=1`,
+  porque desde fuera de aquella plataforma la puede enviar cualquiera.
+  Se retiró `app/chatgpt-auth.ts`, que ya no usaba nadie.
 - **Se retiró `.openai/hosting.json`** con el `project_id` del sitio original.
   El propio traspaso avisa de no reutilizar esa identidad para desplegar otra
   aplicación. En su lugar queda un archivo con los nombres de los bindings
   (`DB` y `BUCKET`), que es lo único que la compilación necesita. Ver
   `.openai/LEEME.txt`.
 
-Nada más. El resto del código está tal y como se entregó.
+El resto del código está tal y como se entregó.
 
 ## Aviso sobre el proveedor
 

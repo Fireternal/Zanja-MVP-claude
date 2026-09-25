@@ -13,11 +13,17 @@ const seedsUrl=moduleUrl(compile(readFileSync(new URL('../lib/cases.ts',import.m
 const blobs=new Map();let failStorage=false;
 globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Error('Storage unavailable');blobs.set(key,new Uint8Array(bytes));},get:async key=>{const bytes=blobs.get(key);return bytes?{body:bytes,size:bytes.length}:null;},delete:async key=>{blobs.delete(key);}};
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;").replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl));
+const sessionUrl=moduleUrl(compile(readFileSync(new URL('../lib/session.ts',import.meta.url),'utf8')));
+globalThis.__zanjaTestSecret='secreto-de-pruebas-con-longitud-suficiente';
+globalThis.__zanjaTrustHeader=false;
+const {SESSION_COOKIE,signSession}=await import(sessionUrl);
+// Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
+const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
-async function request(data,user='juror'){return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{'oai-authenticated-user-id':user}:{})},body:JSON.stringify(data)}));}
-async function state(user='juror',suffix=''){const r=await GET(new Request(base+'/api/game'+suffix,{headers:user?{'oai-authenticated-user-id':user}:{}}));assert.equal(r.status,200);return r.json();}
+async function request(data,user='juror'){return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{cookie:await cookieFor(user)}:{})},body:JSON.stringify(data)}));}
+async function state(user='juror',suffix=''){const r=await GET(new Request(base+'/api/game'+suffix,{headers:user?{cookie:await cookieFor(user)}:{}}));assert.equal(r.status,200);return r.json();}
 const valid={action:'create',q:'¿Quien cocina también tiene que fregar?',tag:'Convivencia',at:'Yo cocino',a:['He preparado la cena para los dos.','He dedicado una hora a cocinar.','Quiero repartir las tareas de forma justa.'],bt:'Yo ordeno',b:['He ordenado toda la casa esta tarde.','También he trabajado durante una hora.','Yo necesito descansar después de limpiar.'],mode:'solo',duration:3600000,consent:true};
 test('votes are real, private until voting, unique and persisted',async()=>{
  const initial=await state();assert.equal(initial.cases.find(c=>c.id==='pizza').counts,null);assert.equal(initial.profile.votes,0);
@@ -60,7 +66,7 @@ test('three distinct reports hide a case and disable further votes',async()=>{
  assert.equal((await request({action:'vote',id,choice:'a'},'visitor')).status,409);
 });
 test('cross-origin mutations are rejected',async()=>{
- const r=await POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':'https://other.test','oai-authenticated-user-id':'x'},body:JSON.stringify(valid)}));assert.equal(r.status,403);
+ const r=await POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':'https://other.test',cookie:await cookieFor('x')},body:JSON.stringify(valid)}));assert.equal(r.status,403);
 });
 
 test('exactly three distinct arguments are mandatory on create and invitation response',async()=>{
@@ -100,10 +106,10 @@ test('editorial cases each expose three complete arguments per team',async()=>{
  const inv=await request({...noTitles,mode:'invite'},'no-title-inviter');const {invite}=await inv.json();assert.equal((await request({action:'respond',invite,b:valid.b,consent:true},'no-title-respondent')).status,200);
  });
 
-const evidenceSource=readFileSync(new URL('../app/api/evidence/route.ts',import.meta.url),'utf8').replace("import {db,bucket} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;");
+const evidenceSource=readFileSync(new URL('../app/api/evidence/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl));
 const {GET:readEvidence}=await import(moduleUrl(compile(evidenceSource)));
 const image='data:image/webp;base64,'+readFileSync(new URL('../public/arena-menu.webp',import.meta.url)).toString('base64');
-async function fetchImage(url,user='image-viewer'){return readEvidence(new Request(base+url,{headers:user?{'oai-authenticated-user-id':user}:{}}));}
+async function fetchImage(url,user='image-viewer'){return readEvidence(new Request(base+url,{headers:user?{cookie:await cookieFor(user)}:{}}));}
 test('optional evidence persists in object storage, loads privately and is removed with its case',async()=>{
  const r=await request({...valid,evidence:image},'image-author');assert.equal(r.status,200);const {id}=await r.json();
  const c=(await state('image-viewer')).cases.find(x=>x.id===id);assert.ok(c.evidenceUrl);assert.equal('evidence' in c,false);assert.equal(blobs.size,1);
@@ -202,4 +208,59 @@ test('development reset clears only the caller votes and allows another round',a
 });
 test('explicit create and publish actions no longer require the removed creator checkboxes',async()=>{
  const result=await request({...valid,consent:undefined},'no-checkbox-author');assert.equal(result.status,200);
+});
+
+// ---- sesión portable: la cookie firmada sustituye a la cabecera de la plataforma
+const authSource=readFileSync(new URL('../app/api/auth/route.ts',import.meta.url),'utf8').replace("import {sessionSecret} from '@/lib/server-db';","const sessionSecret=()=>globalThis.__zanjaTestSecret;").replace("'@/lib/session'",JSON.stringify(sessionUrl));
+const auth=await import(moduleUrl(compile(authSource)));
+const {verifySession}=await import(sessionUrl);
+const cookieValue=res=>{const raw=res.headers.get('set-cookie')||'';const m=raw.match(new RegExp(SESSION_COOKIE+'=([^;]*)'));return m?decodeURIComponent(m[1]):'';};
+
+test('entrar con nombre devuelve una cookie firmada y una identidad estable',async()=>{
+ const res=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Lucía'})}));
+ assert.equal(res.status,200);
+ const {user}=await res.json();assert.equal(user.name,'Lucía');assert.match(user.uid,/^u_[0-9a-f]{16}$/);
+ const session=await verifySession(cookieValue(res),globalThis.__zanjaTestSecret);
+ assert.equal(session.uid,user.uid);
+ // el mismo nombre, escrito de otra forma, es la misma persona
+ const again=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'  lucía  '})}));
+ assert.equal((await again.json()).user.uid,user.uid);
+ // y otra persona es otra
+ const otra=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Diego'})}));
+ assert.notEqual((await otra.json()).user.uid,user.uid);
+});
+
+test('el nombre se valida y el origen cruzado se rechaza',async()=>{
+ const post=(body,origin=base)=>auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin},body:JSON.stringify(body)}));
+ for(const name of ['','a','x'.repeat(25),'<script>',{},null,42])assert.equal((await post({name})).status,400);
+ assert.equal((await post({name:'Marta'},'https://otro.test')).status,403);
+});
+
+test('la sesión se comprueba y se cierra',async()=>{
+ const res=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Marta'})}));
+ const cookie=SESSION_COOKIE+'='+encodeURIComponent(cookieValue(res));
+ assert.equal((await (await auth.GET(new Request(base+'/api/auth',{headers:{cookie}}))).json()).user.name,'Marta');
+ assert.equal((await (await auth.GET(new Request(base+'/api/auth'))).json()).user,null);
+ const out=await auth.DELETE(new Request(base+'/api/auth'));
+ assert.match(out.headers.get('set-cookie'),/Max-Age=0/);
+});
+
+test('una cookie manipulada, caducada o de otro secreto no vale',async()=>{
+ const good=await cookieFor('tramposo');
+ const tampered=good.replace(/.$/,c=>c==='a'?'b':'a');
+ assert.equal((await request({action:'vote',id:'pizza',choice:'a'},null)).status,401);
+ const send=cookie=>POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json',origin:base,cookie},body:JSON.stringify({action:'vote',id:'pizza',choice:'a'})}));
+ assert.equal((await send(tampered)).status,401);
+ const caducada=SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:'viejo',name:'viejo',exp:Date.now()-1000},globalThis.__zanjaTestSecret));
+ assert.equal((await send(caducada)).status,401);
+ const otroSecreto=SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:'colado',name:'colado',exp:Date.now()+3600000},'otro-secreto-igual-de-largo-que-el-real'));
+ assert.equal((await send(otroSecreto)).status,401);
+});
+
+test('la cabecera de la plataforma no se acepta salvo que el despliegue lo declare',async()=>{
+ const send=()=>POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json',origin:base,'oai-authenticated-user-id':'suplantador'},body:JSON.stringify({action:'vote',id:'pan',choice:'a'})}));
+ assert.equal((await send()).status,401);
+ globalThis.__zanjaTrustHeader=true;
+ try{assert.equal((await send()).status,200);}finally{globalThis.__zanjaTrustHeader=false;}
+ assert.equal((await send()).status,401);
 });

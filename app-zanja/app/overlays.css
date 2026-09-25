@@ -9,3 +9,11 @@
 @keyframes modal-appear{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.modal-viewport>[data-slot]{animation:none!important}}
 html[data-motion=off] .modal-viewport>[data-slot]{animation:none!important}
+
+/* Entrar con un nombre. Mismo trazo que los campos del creador. */
+.signin-form{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left}
+.signin-form input{width:100%;background:#180e29;border:2px solid #76548e;border-radius:13px;color:#fff;font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:16px;line-height:1.4;padding:13px;outline:none}
+.signin-form input:focus-visible{border-color:#ffd13e}
+.signin-form .creator-label{margin:0}
+.signin-note{margin:0;color:#b89bcb;font-size:12px;line-height:1.45;text-align:center}
+.session-row button{margin:0;padding:0;min-height:auto;font-size:13px;white-space:nowrap}

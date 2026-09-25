@@ -1,13 +1,20 @@
-import {db,bucket} from '@/lib/server-db';
+import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {seeds,categories,readDefenses,validDefenses} from '@/lib/cases';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
-function identity(req:Request){return req.headers.get('oai-authenticated-user-id');}
+// La identidad sale de la cookie firmada. La cabecera de la plataforma sólo se
+// acepta si el despliegue declara que tiene delante un proxy que la limpia.
+async function identity(req:Request){
+ const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
+ if(session)return session.uid;
+ return trustsPlatformHeader()?req.headers.get('oai-authenticated-user-id'):null;
+}
 const clean=(x:unknown,max:number,min=1)=>typeof x==='string'&&x.trim().length>=min&&x.trim().length<=max?x.trim():null;
 export async function GET(req:Request){try{
- const user=identity(req); const url=new URL(req.url); const token=url.searchParams.get('invite'); const database=db();
+ const user=await identity(req); const url=new URL(req.url); const token=url.searchParams.get('invite'); const database=db();
  if(token){const c:any=await database.prepare('SELECT id,q,tag,status,owner,a,evidence,story,workflow FROM cases WHERE invite=?').bind(token).first(); if(!c) return fail('No encontramos esta invitación.',404);return reply({invitation:{id:c.id,story:c.story,workflow:c.workflow,q:c.q,tag:c.tag,status:validDefenses(readDefenses(c.a))?c.status:'incomplete',mine:c.owner===user,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id)+'&invite='+encodeURIComponent(token):null}});}
  const [cs,vs,rs]=await database.batch([database.prepare("SELECT * FROM cases WHERE status != 'removed' ORDER BY created DESC LIMIT 300"),database.prepare('SELECT case_id,choice,count(*) n FROM votes GROUP BY case_id,choice'),database.prepare('SELECT case_id,count(*) n FROM reports GROUP BY case_id')]);
  const personal=user?await database.prepare('SELECT case_id,choice,at FROM votes WHERE user_id=?').bind(user).all():{results:[]};
@@ -22,7 +29,7 @@ export async function GET(req:Request){try{
  return reply({cases:data,profile:{votes:personal.results.length,xp:personal.results.length*5,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
- const user=identity(req);if(!user)return fail('Inicia sesión para guardar tu participación.',401);
+ const user=await identity(req);if(!user)return fail('Inicia sesión para guardar tu participación.',401);
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
  let data:any;try{data=await boundedJson(req);}catch(error){return fail(error instanceof Error?error.message:'Solicitud no válida.');} const database=db();const now=Date.now();
  if(data.action==='reset_round'){
