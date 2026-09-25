@@ -5,8 +5,8 @@ import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/u
 import {EvidenceViewer} from './evidence';
 import type {Case} from '@/lib/cases';
 type Side='a'|'both'|'b'|'none';
-type Props={c:Case;canVote:boolean;pressed:Side|null;choose:(s:Side)=>void;onNext:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void;ready:boolean;onResult:()=>void};
-export function DuelBoard({c,canVote,pressed,choose,onNext,onShare,onRevise,ready,onResult}:Props){
+type Props={c:Case;canVote:boolean;pressed:Side|null;choose:(s:Side)=>void;onNext:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void};
+export function DuelBoard({c,canVote,pressed,choose,onNext,onShare,onRevise}:Props){
  const root=useRef<HTMLDivElement>(null);const question=useRef<HTMLHeadingElement>(null);
  const [reading,setReading]=useState(false),[photo,setPhoto]=useState(false),[questionLong,setQuestionLong]=useState(false);
  useLayoutEffect(()=>{
@@ -29,7 +29,7 @@ export function DuelBoard({c,canVote,pressed,choose,onNext,onShare,onRevise,read
    <button className={'vote-both'+(c.choice==='both'||pressed==='both'?' selected':'')} disabled={!eligible} onClick={()=>choose('both')} aria-label="Votar Ambos: los dos bandos tienen razón"><img className="both-art" src="/court-energy.webp" width={384} height={256} decoding="async" alt="" aria-hidden="true"/><span className="both-copy"><strong>AMBOS</strong><small>Los dos tienen razón</small></span>{pressed==='both'?<LoaderCircle size={21} className="spin"/>:c.choice==='both'?<Check size={21}/>:<ArrowRight size={21}/>}</button>
    <button className={'vote-both vote-none'+(c.choice==='none'||pressed==='none'?' selected':'')} disabled={!eligible} onClick={()=>choose('none')} aria-label="Votar Ninguno: aquí se pasaron los dos"><span className="both-copy"><strong>NINGUNO</strong><small>Se pasaron los dos</small></span>{pressed==='none'?<LoaderCircle size={21} className="spin"/>:c.choice==='none'?<Check size={21}/>:<ArrowRight size={21}/>}</button>
   </div>
-  <footer className="battle-footer">{c.needsDefenses&&c.mine?<button onClick={()=>onRevise(c)}>Completar defensas<ArrowRight size={16}/></button>:c.status==='waiting'&&c.invite?<button onClick={()=>onShare(c,true)}>Invitar al bando B<ArrowRight size={16}/></button>:ready?<button onClick={onResult}>Ver resultado<ArrowRight size={16}/></button>:<button disabled={!!pressed} onClick={onNext}>Saltar zanja<ChevronRight size={16}/></button>}</footer>
+  <footer className="battle-footer">{c.needsDefenses&&c.mine?<button onClick={()=>onRevise(c)}>Completar defensas<ArrowRight size={16}/></button>:c.status==='waiting'&&c.invite?<button onClick={()=>onShare(c,true)}>Invitar al bando B<ArrowRight size={16}/></button>:<button disabled={!!pressed} onClick={onNext}>Saltar zanja<ChevronRight size={16}/></button>}</footer>
   {c.evidenceUrl&&<EvidenceViewer src={c.evidenceUrl} open={photo} onOpenChange={setPhoto}/>}
   <Dialog open={reading} onOpenChange={setReading}><DialogContent className="duel-reading-dialog"><DialogTitle>{c.q}</DialogTitle><DialogDescription>Las tres defensas de cada bando.</DialogDescription>{c.story&&<p className="case-story">{c.story}</p>}{(['a','b'] as const).map(side=><section className={'reading-'+side} key={side}><h3>BANDO {side.toUpperCase()}</h3><ol>{c[side].map((text,i)=><li key={i}>{text}</li>)}</ol></section>)}<button className="game-btn yellow" onClick={()=>setReading(false)}>VOLVER AL DUELO</button></DialogContent></Dialog>
  </div>;

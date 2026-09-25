@@ -8,7 +8,7 @@
 // La tira ocupa una altura fija, se lee de un vistazo y deja sitio debajo
 // para La Sala. Las cifras exactas bajan a las fichas, donde no estorban.
 
-import {Check} from 'lucide-react';
+import {BookOpen,Check} from 'lucide-react';
 import {SIDES,SIDE_NAME,percentOf,verdictLead,verdictHeadline,verdictSubhead,verdictOf,type Side} from '@/lib/verdict';
 import type {Case} from '@/lib/cases';
 
@@ -23,7 +23,7 @@ function agujaEn(c:Case,elegido:Side,total:number){
  return 50;
 }
 
-export function Marcador({c}:{c:Case}){
+export function Marcador({c,onLado}:{c:Case;onLado:(l:'a'|'b')=>void}){
  const total=c.total||0;
  const fallo=verdictOf(c.counts||{},total);
  const cerrado=c.status==='closed';
@@ -60,14 +60,23 @@ export function Marcador({c}:{c:Case}){
   <div className="marcador-fichas">
    {orden.map(side=>{
     const votos=c.counts?.[side]||0;
-    return <span key={side} className={'ficha ficha-'+side+(elegido===side?' es-mia':'')}>
+    // Las fichas de A y B abren su versión; AMBOS y NINGUNO no tienen defensas
+    // que enseñar, así que se quedan como dato.
+    const lee=side==='a'||side==='b';
+    const dentro=<>
      <u/>
      <span className="ficha-nombre">
       <em>{SIDE_NAME[side]}{elegido===side&&<Check size={12} aria-label="tu voto"/>}</em>
       <small>{votos} {votos===1?'voto':'votos'}</small>
      </span>
      <b>{percentOf(c.counts||{},side,total)}%</b>
-    </span>;
+     {lee&&<BookOpen size={14} className="ficha-lee"/>}
+    </>;
+    const clases='ficha ficha-'+side+(elegido===side?' es-mia':'')+(lee?' es-lectura':'');
+    return lee
+     ?<button key={side} className={clases} onClick={()=>onLado(side as 'a'|'b')}
+       aria-label={`Ver la versión del ${SIDE_NAME[side]}`}>{dentro}</button>
+     :<span key={side} className={clases}>{dentro}</span>;
    })}
   </div>
  </div>;
