@@ -1,0 +1,7 @@
+El traspaso traía aquí un project_id del sitio original alojado en ChatGPT.
+Se ha retirado a propósito: el propio paquete advierte de no reutilizar esa
+identidad para desplegar otra aplicación.
+
+Sólo se conservan los nombres de los bindings, que es lo que la compilación
+necesita. Al desplegar de verdad, la plataforma que aloje la app inyectará sus
+propios valores de D1 (base de datos) y R2 (imágenes).

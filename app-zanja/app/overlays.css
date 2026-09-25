@@ -1,0 +1,11 @@
+/* Portals share one viewport layout; panel animations never set their anchor. */
+.modal-viewport{position:fixed;inset:0;z-index:50;box-sizing:border-box;width:100%;height:100dvh;max-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));pointer-events:none}
+.modal-viewport>[data-slot="dialog-content"],.modal-viewport>[data-slot="alert-dialog-content"]{position:relative!important;inset:auto!important;transform:none!important;translate:none!important;scale:none!important;margin:0!important;box-sizing:border-box;flex:0 1 auto;min-width:0;min-height:0;width:100%!important;max-width:480px!important;max-height:100%!important;overflow-y:auto;overscroll-behavior:contain;pointer-events:auto;animation:modal-appear .18s ease-out!important;overflow-wrap:anywhere}
+.modal-viewport:has(>.bottom-sheet){align-items:flex-end;padding-bottom:0;padding-left:0;padding-right:0}
+.modal-viewport:has(>.create-screen){padding:0}
+.modal-viewport>.create-screen{height:100%!important}
+.modal-viewport>.evidence-viewer{max-width:720px!important}
+.modal-viewport>[data-state=closed]{animation:none!important}
+@keyframes modal-appear{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.modal-viewport>[data-slot]{animation:none!important}}
+html[data-motion=off] .modal-viewport>[data-slot]{animation:none!important}
