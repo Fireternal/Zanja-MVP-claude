@@ -32,11 +32,15 @@ export function PulsoTarjeta({pulse,onOpen}:{pulse:PulseState|null;onOpen:()=>vo
   <div className="daily-question"><h3>{pulse.question}</h3></div>
   {pulse.choice
    ?<div className="pulso-avance">
+     <div className="pulso-marcador-dia">
+      <span className="pulso-lado-si"><em>SÍ</em><b>{percentOf(marca,'si')}%</b></span>
+      <small>{pulse.total} votos</small>
+      <span className="pulso-lado-no"><b>{percentOf(marca,'no')}%</b><em>NO</em></span>
+     </div>
      <div className="pulso-mini" aria-hidden="true">
       <i className="pulso-tramo pulso-si" style={{width:percentOf(marca,'si')+'%'}}/>
       <i className="pulso-tramo pulso-no" style={{width:percentOf(marca,'no')+'%'}}/>
      </div>
-     <div className="pulso-mini-cifras"><span>SÍ {percentOf(marca,'si')}%</span><span>{percentOf(marca,'no')}% NO</span></div>
     </div>
    :<span className="pulso-llamada">Sin responder</span>}
   <ArrowRight className="shortcut-arrow" aria-hidden="true"/>
