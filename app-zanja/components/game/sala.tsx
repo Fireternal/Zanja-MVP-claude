@@ -12,7 +12,7 @@ import {useCallback,useEffect,useRef,useState} from 'react';
 import {Gavel,LoaderCircle,Send,Trash2,Users} from 'lucide-react';
 import {COMMENT_MAX,COMMENT_MIN} from '@/lib/cases';
 
-type Voz={id:string;side:string;body:string;at:number;seconds:number;seconded:boolean;mine:boolean};
+type Voz={id:string;name:string;side:string;body:string;at:number;seconds:number;seconded:boolean;mine:boolean};
 type Estado={comments:Voz[];open:boolean;voted:boolean;spoke:boolean;protagonist:boolean};
 
 const BANDO:Record<string,string>={a:'BANDO A',both:'LOS DOS',b:'BANDO B',none:'NINGUNO',si:'SÍ',no:'NO'};
@@ -96,8 +96,9 @@ export function Sala({sala,titulo='LA SALA'}:{sala:string;titulo?:string}){
          placeholder="¿Por qué has votado así?" rows={2} maxLength={COMMENT_MAX} aria-label="Tu argumento"/>
         <div className="sala-turno-pie">
          <small>{texto.trim().length}/{COMMENT_MAX}</small>
-         <button className="game-btn yellow small" onClick={hablar} disabled={texto.trim().length<COMMENT_MIN||enviando}>
-          {enviando?<LoaderCircle size={17} className="spin"/>:<Send size={17}/>}HABLAR</button>
+         <button className="sala-enviar" onClick={hablar} aria-label="Publicar tu argumento"
+          disabled={texto.trim().length<COMMENT_MIN||enviando}>
+          {enviando?<LoaderCircle size={17} className="spin"/>:<Send size={17}/>}</button>
         </div>
        </div>}
 
@@ -105,7 +106,10 @@ export function Sala({sala,titulo='LA SALA'}:{sala:string;titulo?:string}){
 
   {voces.length
    ?<ul className="sala-voces">{voces.map(v=><li key={v.id} className={'voz voz-'+v.side+(v.mine?' voz-mia':'')}>
-     <div className="voz-cabecera"><span className="voz-bando">{BANDO[v.side]||v.side}</span><time>{cuando(v.at)}</time></div>
+     <div className="voz-cabecera">
+      <span className="voz-quien"><strong>{v.mine?'Tú':v.name}</strong><i className="voz-bando">{BANDO[v.side]||v.side}</i></span>
+      <time>{cuando(v.at)}</time>
+     </div>
      <p>{v.body}</p>
      <div className="voz-pie">
       <button className={'secundar'+(v.seconded?' is-on':'')} onClick={()=>secundar(v)}

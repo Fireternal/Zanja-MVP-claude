@@ -4,7 +4,7 @@ export const votes = sqliteTable('votes',{caseId:text('case_id').notNull(),userI
 export const reports = sqliteTable('reports',{caseId:text('case_id').notNull(),userId:text('user_id').notNull(),reason:text('reason').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.caseId,t.userId]})]);
 // La Sala: lo que dice el jurado después de votar. Un comentario por persona
 // y caso, sin respuestas, y SECUNDAR en vez de me gusta.
-export const comments = sqliteTable('comments',{id:text('id').primaryKey(),caseId:text('case_id').notNull(),userId:text('user_id').notNull(),side:text('side').notNull(),body:text('body').notNull(),at:integer('at').notNull()},t=>[index('comments_case').on(t.caseId),index('comments_author').on(t.caseId,t.userId)]);
+export const comments = sqliteTable('comments',{id:text('id').primaryKey(),caseId:text('case_id').notNull(),userId:text('user_id').notNull(),name:text('name').notNull().default('Jurado'),side:text('side').notNull(),body:text('body').notNull(),at:integer('at').notNull()},t=>[index('comments_case').on(t.caseId),index('comments_author').on(t.caseId,t.userId)]);
 export const seconds = sqliteTable('seconds',{commentId:text('comment_id').notNull(),userId:text('user_id').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.commentId,t.userId]})]);
 // El Pulso: un voto por persona y día. El día va como número entero, que es
 // como cuenta los días la partida.

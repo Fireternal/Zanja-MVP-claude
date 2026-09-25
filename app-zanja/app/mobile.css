@@ -48,8 +48,49 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
  font-size:10.5px;font-weight:1000;letter-spacing:1px;color:#fff}
 
 /* La hoja va dentro del diálogo, que ya es la tarjeta: aquí sólo el ritmo. */
-.pulso{display:flex;flex-direction:column;gap:11px}
-.pulso [data-slot=dialog-title]{font-size:21px!important;line-height:1.18}
+/* HOY en amarillo, como TÚ DECIDES: los dos botones del menú riman. */
+.pulso-tarjeta h2 b{color:var(--yellow);font-weight:inherit}
+
+.pulso{display:flex;flex-direction:column;gap:12px}
+.pulso-pantalla .court-toolbar h1{flex:1}
+.pulso-cierre{
+ display:flex;align-items:center;gap:6px;margin:0;
+ font-size:11px;font-weight:1000;letter-spacing:1.2px;color:var(--yellow)}
+.pulso-cierre b{
+ font-family:var(--display);font-weight:400;font-size:15px;color:#fff;
+ font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.pulso-cierre svg{animation:pulso-latido 1.6s ease-in-out infinite}
+@keyframes pulso-latido{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.2);opacity:1}}
+.pulso-enunciado{
+ margin:0;font-family:var(--display);font-weight:400;
+ font-size:clamp(22px,6.2vw,28px);line-height:1.14;color:#fff;
+ text-shadow:0 3px 0 #22112f;text-wrap:balance}
+.pulso-resumen{margin:0;font-size:13px;line-height:1.45;color:#cfc7de}
+.pulso-pantalla .pulso-duelo{height:62px}
+/* El tirón: la costura no se queda quieta y por los bandos pasa un brillo.
+   Es lo que hace que la pantalla parezca en tensión y no un gráfico. */
+@keyframes pulso-tirar{0%,100%{margin-left:-1.5px}26%{margin-left:-5px}62%{margin-left:2px}}
+@keyframes pulso-barrido{0%{transform:translateX(-110%)}55%,100%{transform:translateX(320%)}}
+/* Los botones brillan, no se mueven: un blanco que no para quieto no hay
+   quien lo pulse. */
+@keyframes pulso-invita{
+ 0%,100%{box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33}
+ 50%{box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33,0 0 20px #ffffff59}}
+.pulso-pantalla .pulso-costura{animation:pulso-tension 1.7s ease-in-out infinite,pulso-tirar 3.4s ease-in-out infinite}
+.pulso-pantalla .pulso-tramo{position:relative;overflow:hidden}
+.pulso-pantalla .pulso-tramo::after{
+ content:"";position:absolute;inset:0;width:45%;
+ background:linear-gradient(100deg,transparent,#ffffff33,transparent);
+ animation:pulso-barrido 3.8s linear infinite}
+.pulso-pantalla .pulso-no::after{animation-delay:1.9s}
+.pulso-pantalla .pulso-botones .pulso-boton{animation:pulso-invita 2.8s ease-in-out infinite}
+.pulso-pantalla .pulso-boton-no{animation-delay:1.4s}
+@media(prefers-reduced-motion:reduce){
+ .pulso-cierre svg,.pulso-pantalla .pulso-costura,.pulso-pantalla .pulso-tramo::after,
+ .pulso-pantalla .pulso-botones .pulso-boton{animation:none}}
+[data-motion=off] .pulso-cierre svg,[data-motion=off] .pulso-pantalla .pulso-costura,
+[data-motion=off] .pulso-pantalla .pulso-tramo::after,
+[data-motion=off] .pulso-pantalla .pulso-botones .pulso-boton{animation:none}
 .pulso-marcador{
  font-size:10.5px;font-weight:1000;letter-spacing:.8px;color:var(--ink);
  background:var(--yellow);border-radius:999px;padding:3px 9px;flex:0 0 auto}
@@ -107,3 +148,19 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 /* La zona de debate va dentro de la hoja, pegada al duelo. La hoja ya se
    desplaza sola, así que aquí no se mete otro scroll dentro. */
 .pulso .sala{margin-top:4px;padding-top:14px}
+
+/* Antes de responder: se ve que hay un reparto y un debate, pero no se
+   entra desde la barrera. Es lo que empuja a mojarse. */
+.pulso-tapado{
+ position:relative;display:grid;place-items:center;height:62px;border-radius:13px;
+ border:2px dashed #5b4a78;background:
+  repeating-linear-gradient(115deg,#241d3a 0 14px,#1d1733 14px 28px)}
+.pulso-tapado span{
+ font-size:10.5px;font-weight:1000;letter-spacing:1.4px;color:#8f86a4}
+.pulso-cerrojo{
+ display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;
+ border:2px solid #473860;background:linear-gradient(100deg,#2d2348,#241d3a);
+ box-shadow:0 4px 0 #14102399;color:#c9c1da}
+.pulso-cerrojo svg{flex:0 0 auto;color:var(--yellow)}
+.pulso-cerrojo strong{display:block;font-size:13.5px;color:#efe9fb}
+.pulso-cerrojo small{display:block;margin-top:3px;font-size:12px;line-height:1.4}

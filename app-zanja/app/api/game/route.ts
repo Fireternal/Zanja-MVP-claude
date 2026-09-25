@@ -8,6 +8,12 @@ const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
 // La identidad sale de la cookie firmada. La cabecera de la plataforma sólo se
 // acepta si el despliegue declara que tiene delante un proxy que la limpia.
+async function quienEs(req:Request){
+ const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
+ if(session)return {uid:session.uid,name:session.name};
+ const cabecera=trustsPlatformHeader()?req.headers.get('oai-authenticated-user-id'):null;
+ return cabecera?{uid:cabecera,name:'Jurado'}:null;
+}
 async function identity(req:Request){
  const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
  if(session)return session.uid;
@@ -39,10 +45,10 @@ async function sala(database:any,id:string,user:string|null){
  const contexto=await roomContext(database,id,user);
  if(!contexto.exists)return {error:'No encontramos esta sala.'};
  const [rows,backing]=await database.batch([
-  database.prepare('SELECT id,user_id,side,body,at FROM comments WHERE case_id=? ORDER BY at ASC').bind(id),
+  database.prepare('SELECT id,user_id,name,side,body,at FROM comments WHERE case_id=? ORDER BY at ASC').bind(id),
   database.prepare('SELECT s.comment_id,s.user_id FROM seconds s JOIN comments c ON c.id=s.comment_id WHERE c.case_id=?').bind(id)]);
  const comments=(rows.results as any[]).map(r=>({
-  id:r.id,side:r.side,body:r.body,at:r.at,
+  id:r.id,name:r.name||'Jurado',side:r.side,body:r.body,at:r.at,
   seconds:(backing.results as any[]).filter(s=>s.comment_id===r.id).length,
   seconded:!!user&&(backing.results as any[]).some(s=>s.comment_id===r.id&&s.user_id===user),
   mine:r.user_id===user}))
@@ -68,9 +74,10 @@ async function topComments(database:any){
 // para volver mañana.
 async function pulso(database:any,user:string|null){
  const hoy=dayOf(),ayer=hoy-1;
- const [recuento,mios]=await database.batch([
+ const [recuento,mios,voces]=await database.batch([
   database.prepare('SELECT day,choice,count(*) n FROM pulse GROUP BY day,choice'),
-  database.prepare('SELECT day,choice FROM pulse WHERE user_id=?').bind(user||'')]);
+  database.prepare('SELECT day,choice FROM pulse WHERE user_id=?').bind(user||''),
+  database.prepare('SELECT count(*) n FROM comments WHERE case_id=?').bind('pulso-'+dayOf())]);
  const marca=(d:number):Tally=>{const t:Tally={si:0,no:0};
   for(const r of recuento.results as any[])if(Number(r.day)===d&&(r.choice==='si'||r.choice==='no'))t[r.choice as Choice]=Number(r.n);
   return t;};
@@ -88,6 +95,7 @@ async function pulso(database:any,user:string|null){
 
  return {day:hoy,question:questionFor(hoy),choice:elegido,
   counts:elegido?hoyT:null,total:totalOf(hoyT),
+  voices:Number((voces.results as any[])[0]?.n||0),
   hits:aciertos,points:aciertos*PULSE_POINTS,
   yesterday:elegidoAyer?{question:questionFor(ayer),choice:elegidoAyer,winner:ganadorAyer,
    hit:!!ganadorAyer&&ganadorAyer===elegidoAyer,points:PULSE_POINTS,
@@ -115,7 +123,8 @@ export async function GET(req:Request){try{
  return reply({cases:data,pulse,profile:{votes:personal.results.length,xp:personal.results.length*5,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
- const user=await identity(req);if(!user)return fail('Inicia sesión para guardar tu participación.',401);
+ const quien=await quienEs(req);if(!quien)return fail('Inicia sesión para guardar tu participación.',401);
+ const user=quien.uid;
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
  let data:any;try{data=await boundedJson(req);}catch(error){return fail(error instanceof Error?error.message:'Solicitud no válida.');} const database=db();const now=Date.now();
  if(data.action==='reset_round'){
@@ -165,8 +174,8 @@ export async function POST(req:Request){try{
  const dicho:any=await database.prepare('SELECT id FROM comments WHERE case_id=? AND user_id=?').bind(sala,user).first();
  if(dicho)return fail('Ya has hablado aquí. Borra lo tuyo si quieres decirlo de otra forma.',409);
  const id=crypto.randomUUID();
- await database.prepare('INSERT INTO comments (id,case_id,user_id,side,body,at) VALUES (?,?,?,?,?,?)').bind(id,sala,user,contexto.side,body,now).run();
- return reply({id,side:contexto.side,body,at:now});
+ await database.prepare('INSERT INTO comments (id,case_id,user_id,name,side,body,at) VALUES (?,?,?,?,?,?,?)').bind(id,sala,user,quien.name,contexto.side,body,now).run();
+ return reply({id,name:quien.name,side:contexto.side,body,at:now});
  }
  if(data.action==='second'){
  const target:any=await database.prepare('SELECT id,user_id,case_id FROM comments WHERE id=?').bind(data.id||'').first();

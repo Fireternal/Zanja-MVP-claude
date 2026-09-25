@@ -1,0 +1,1 @@
+ALTER TABLE `comments` ADD `name` text DEFAULT 'Jurado' NOT NULL;

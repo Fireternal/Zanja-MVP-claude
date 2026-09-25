@@ -27,7 +27,7 @@ type Apoyo={comment_id:string;user_id:string;at:number};
 type Latido={day:number;user_id:string;choice:Choice;at:number};
 type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[]};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:vocesDeEjemplo(),seconds:[],pulse:[]});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[]});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
@@ -189,9 +189,9 @@ function guardarPartida(g:Guardado,data:any){
   if(!contexto.abierta)return error('Esta sala ya está cerrada.',409);
   if(!contexto.lado)return error('Aquí se habla después de votar.',403);
   if(g.comments.some(v=>v.case_id===cuarto&&v.user_id===user))return error('Ya has hablado aquí. Borra lo tuyo si quieres decirlo de otra forma.',409);
-  const voz={id:crypto.randomUUID(),case_id:cuarto,user_id:user,side:contexto.lado,body:cuerpo,at:ahora,base:0};
+  const voz={id:crypto.randomUUID(),case_id:cuarto,user_id:user,name:g.user?.name||'Jurado',side:contexto.lado,body:cuerpo,at:ahora,base:0};
   g.comments.push(voz);escribir(g);
-  return json({id:voz.id,side:voz.side,body:voz.body,at:voz.at});
+  return json({id:voz.id,name:voz.name,side:voz.side,body:voz.body,at:voz.at});
  }
  if(data.action==='second'){
   const voz=g.comments.find(v=>v.id===data.id);
@@ -274,7 +274,7 @@ function sala(g:Guardado,id:string){
  if(!contexto.existe)return error('No encontramos esta sala.',404);
  const user=g.user?.uid||null;
  const comments=g.comments.filter(v=>v.case_id===id).map(v=>({
-  id:v.id,side:v.side,body:v.body,at:v.at,seconds:apoyos(g,v),
+  id:v.id,name:v.name,side:v.side,body:v.body,at:v.at,seconds:apoyos(g,v),
   seconded:!!user&&g.seconds.some(s=>s.comment_id===v.id&&s.user_id===user),
   mine:v.user_id===user})).sort((x,y)=>y.seconds-x.seconds||x.at-y.at);
  return json({comments,open:contexto.abierta,voted:!!contexto.lado,
@@ -311,6 +311,7 @@ function pulso(g:Guardado){
   :0;
  return {day:hoy,question:questionFor(hoy),choice:elegido,
   counts:elegido?hoyT:null,total:totalOf(hoyT),
+  voices:g.comments.filter(v=>v.case_id==='pulso-'+hoy).length,
   hits:aciertos,points:aciertos*PULSE_POINTS,
   yesterday:elegidoAyer?{question:questionFor(ayer),choice:elegidoAyer,winner:ganadorAyer,
    hit:!!ganadorAyer&&ganadorAyer===elegidoAyer,points:PULSE_POINTS,

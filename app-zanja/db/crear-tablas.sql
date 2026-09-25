@@ -87,3 +87,7 @@ CREATE TABLE `pulse` (
 );
 CREATE INDEX `pulse_day` ON `pulse` (`day`);
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0004_marvelous_drax.sql');
+
+-- 0005_cooing_loki.sql
+ALTER TABLE `comments` ADD `name` text DEFAULT 'Jurado' NOT NULL;
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0005_cooing_loki.sql');
