@@ -43,9 +43,18 @@ export function verdictHeadline(v:Verdict){
  return `RAZÓN AL ${SIDE_NAME[v.side]}`;
 }
 
+/** El titular mientras la votación sigue abierta: nada está dicho todavía. */
+export function verdictLead(v:Verdict){
+ if(v.kind==='few')return 'TODAVÍA NO HAY JURADO';
+ if(v.kind==='tie')return 'EL JURADO ESTÁ PARTIDO';
+ if(v.side==='both')return 'EL JURADO DICE QUE LOS DOS';
+ if(v.side==='none')return 'EL JURADO DICE QUE NINGUNO';
+ return `EL JURADO VA CON EL ${SIDE_NAME[v.side]}`;
+}
+
 /** La línea de debajo, que explica el titular sin repetirlo. */
 export function verdictSubhead(v:Verdict){
- if(v.kind==='few')return `Sólo ${v.total} ${v.total===1?'voto':'votos'}. Hacen falta ${QUORUM}.`;
+ if(v.kind==='few')return `${v.total} ${v.total===1?'voto':'votos'}. Con ${QUORUM} habrá un resultado representativo.`;
  if(v.kind==='tie')return `Empate técnico entre ${v.sides.map(s=>SIDE_NAME[s]).join(' y ')}.`;
  return `${v.percent}% de ${v.total} votos.`;
 }

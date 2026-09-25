@@ -6,7 +6,7 @@ import ts from 'typescript';
 
 const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
 const source=compile(readFileSync(new URL('../lib/verdict.ts',import.meta.url),'utf8'));
-const {verdictOf,verdictHeadline,verdictSubhead,caseNumber,QUORUM,TIE_MARGIN}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {verdictOf,verdictHeadline,verdictLead,verdictSubhead,caseNumber,QUORUM,TIE_MARGIN}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 
 test('sin jurado suficiente no hay fallo',()=>{
  assert.deepEqual(verdictOf({a:2,b:2}),{kind:'few',total:4});
@@ -54,4 +54,13 @@ test('el número de caso es corto, estable y de cuatro cifras',()=>{
  assert.match(uno,/^\d{4}$/);
  assert.equal(uno,caseNumber('demo-diseno'));
  assert.notEqual(uno,caseNumber('pizza'));
+});
+
+test('mientras está abierta, nada está dicho todavía',()=>{
+ assert.equal(verdictLead(verdictOf({a:2})),'TODAVÍA NO HAY JURADO');
+ assert.equal(verdictLead(verdictOf({a:51,b:49})),'EL JURADO ESTÁ PARTIDO');
+ assert.equal(verdictLead(verdictOf({a:9,b:1})),'EL JURADO VA CON EL BANDO A');
+ assert.equal(verdictLead(verdictOf({both:9,a:1})),'EL JURADO DICE QUE LOS DOS');
+ // Y al cerrar, el mismo caso ya se afirma.
+ assert.equal(verdictHeadline(verdictOf({a:9,b:1})),'RAZÓN AL BANDO A');
 });
