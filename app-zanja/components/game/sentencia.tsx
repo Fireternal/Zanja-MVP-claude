@@ -13,7 +13,8 @@ import type {Case} from '@/lib/cases';
 
 const ANCHO=1080,ALTO=1350;
 const FONDO='#17122b',TINTA='#100d20',PAPEL='#faf8ff',ORO='#ffd13e',MALVA='#ad85ff',APAGADO='#bdb5cf';
-const COLOR:Record<Side,string>={a:'#5de1f3',both:'#ad85ff',b:'#ff858d',none:'#7d7394'};
+// La misma pareja de colores que el duelo y el marcador.
+const COLOR:Record<Side,string>={a:'#76d9fa',both:'#c9a6ff',b:'#ffa5b5',none:'#9a90b4'};
 
 const display=(px:number)=>`${px}px "Titan One", Georgia, serif`;
 const texto=(px:number,peso=700)=>`${peso} ${px}px "Nunito Sans", Arial, sans-serif`;

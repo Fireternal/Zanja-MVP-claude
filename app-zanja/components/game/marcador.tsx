@@ -52,7 +52,7 @@ export function Marcador({c}:{c:Case}){
     </div>
    :<p className="marcador-desierto">Nadie ha votado todavía.</p>}
 
-  <p className={'marcador-titular titular-'+fallo.kind}>
+  <p className={'marcador-titular titular-'+fallo.kind+(fallo.kind==='ruling'?' titular-'+fallo.side:'')}>
    {cerrado?verdictHeadline(fallo):verdictLead(fallo)}
    <small>{verdictSubhead(fallo)}</small>
   </p>
