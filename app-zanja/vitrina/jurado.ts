@@ -17,16 +17,26 @@ const hash=(texto:string)=>{
  return h>>>0;
 };
 
-/** El mismo caso da siempre el mismo reparto: la vitrina no parpadea. */
+/** El mismo caso da siempre el mismo reparto: la vitrina no parpadea.
+ *
+ * Los desplazamientos van con >>> y no con >>: el segundo trabaja con enteros
+ * con signo, así que para un hash grande daba un resto negativo y de ahí
+ * salían votos en negativo y un bando con el 112%. */
 export function repartoDe(id:string):Reparto{
  const h=hash(id);
  const total=14+(h%160);
- const a=30+(h>>7)%45;              // el bando A se lleva entre el 30% y el 75%
- const both=6+(h>>13)%18;
- const none=3+(h>>19)%10;
+ const a=30+(h>>>7)%45;             // el bando A se lleva entre el 30% y el 74%
+ const both=6+(h>>>13)%18;
+ const none=3+(h>>>19)%10;
  const b=Math.max(0,100-a-both-none);
- const parte=(p:number)=>Math.round(total*p/100);
- return {a:parte(a),both:parte(both),b:parte(b),none:parte(none)};
+ const parte=(p:number)=>Math.max(0,Math.round(total*p/100));
+ const reparto={a:parte(a),both:parte(both),b:parte(b),none:parte(none)};
+ // Los redondeos no tienen por qué sumar el total: la diferencia se la lleva
+ // el bando más votado, para que el recuento cuadre siempre con la suma.
+ const suma=reparto.a+reparto.both+reparto.b+reparto.none;
+ const mayor=(['a','b','both','none'] as const).reduce((x,y)=>reparto[y]>reparto[x]?y:x);
+ reparto[mayor]=Math.max(0,reparto[mayor]+total-suma);
+ return reparto;
 }
 
 export const juradoDeEjemplo=(ids:string[])=>Object.fromEntries(ids.map(id=>[id,repartoDe(id)]));

@@ -46,7 +46,7 @@ export function Marcador({c}:{c:Case}){
        const parte=percentOf(c.counts||{},side,total);
        if(!parte)return null;
        return <i key={side} className={'tramo tramo-'+side+(elegido===side?' es-mio':'')} style={{width:parte+'%'}}>
-        {parte>=15&&<b>{parte}%</b>}</i>;
+        {parte>=12&&<b>{parte}%</b>}</i>;
       })}
      </div>
     </div>
@@ -61,9 +61,12 @@ export function Marcador({c}:{c:Case}){
    {orden.map(side=>{
     const votos=c.counts?.[side]||0;
     return <span key={side} className={'ficha ficha-'+side+(elegido===side?' es-mia':'')}>
-     <u/>{SIDE_NAME[side]}
-     {elegido===side&&<Check size={13} aria-label="tu voto"/>}
-     <b>{votos}</b>
+     <u/>
+     <span className="ficha-nombre">
+      <em>{SIDE_NAME[side]}{elegido===side&&<Check size={12} aria-label="tu voto"/>}</em>
+      <small>{votos} {votos===1?'voto':'votos'}</small>
+     </span>
+     <b>{percentOf(c.counts||{},side,total)}%</b>
     </span>;
    })}
   </div>
