@@ -39,7 +39,7 @@ export default function Game(){
  const [afterSignIn,setAfterSignIn]=useState<string|null>(null);
  // Si entras desde el creador o desde una invitación, se vuelve a donde estabas.
  const openSignIn=(back:string|null=null)=>{setAfterSignIn(back);setModal('signin');};
- const stateRevision=useRef(0),returnedCase=useRef<string|null>(null),volverA=useRef('home');
+ const stateRevision=useRef(0),returnedCase=useRef<string|null>(null),volverA=useRef('home'),arrancado=useRef(false);
  const audio=useRef<AudioContext|null>(null);
  const mainRef=useRef<HTMLElement|null>(null);
  const scrollTop=()=>mainRef.current?.scrollTo({top:0,behavior:'instant'});
@@ -48,6 +48,32 @@ export default function Game(){
  useEffect(()=>{refresh();loadUser();try{const prefs=JSON.parse(localStorage.getItem('zanja-preferences')||'{}');setSound(!!prefs.sound);setMotion(prefs.motion!==false&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches);const saved=localStorage.getItem('zanja-draft');if(saved){const d=JSON.parse(saved);setDraft({...blank,...d,a:draftDefenses(d.a),b:draftDefenses(d.b)});}}catch{}const params=new URLSearchParams(location.search);const inv=params.get('invite');const id=params.get('case');if(inv){setToken(inv);setModal('invite');fetch('/api/game?invite='+encodeURIComponent(inv)).then(async r=>{const d:any=await r.json();if(!r.ok)throw Error(d.error);setInvitation(d.invitation);}).catch(e=>setInvError(e.message));}if(id){setActive(id);setView('arena');}},[refresh]);
  useEffect(()=>{if(loading)return;const id=new URLSearchParams(location.search).get('case');const c=cases.find(c=>c.id===id);if(c?.mine&&c.status==='ready'&&!modal&&returnedCase.current!==id){returnedCase.current=id;resume(c);}},[loading,cases]);
  useEffect(()=>{const id=setInterval(()=>refresh(),45000);return()=>clearInterval(id);},[refresh]);
+ // El botón de atrás del teléfono.
+ //
+ // La aplicación no cambia de página, así que sin esto el botón físico de
+ // Android saca de ZANJA en lugar de retroceder. Cada pantalla y cada diálogo
+ // dejan su entrada en el historial; cerrar un diálogo deshace la suya en vez
+ // de apilar otra, para que atrás no lo vuelva a abrir.
+ useEffect(()=>{
+  const estado={view,active,modal};
+  const previo=(history.state as any)?.zanja;
+  try{
+   if(!arrancado.current){arrancado.current=true;history.replaceState({zanja:estado},'');return;}
+   if(previo&&previo.view===view&&previo.active===active&&previo.modal===modal)return;
+   if(previo&&previo.modal&&!modal&&previo.view===view&&previo.active===active){history.back();return;}
+   history.pushState({zanja:estado},'');
+  }catch{}
+ },[view,active,modal]);
+ useEffect(()=>{
+  const atras=(e:PopStateEvent)=>{
+   const guardado=(e.state as any)?.zanja;
+   if(!guardado)return;
+   setModal(guardado.modal||null);setActive(guardado.active||null);setView(guardado.view||'home');
+  };
+  addEventListener('popstate',atras);
+  return()=>removeEventListener('popstate',atras);
+ },[]);
+
  useEffect(()=>{try{localStorage.setItem('zanja-draft',JSON.stringify(draft));}catch{}},[draft]);
  useEffect(()=>{document.documentElement.dataset.motion=motion?'on':'off';},[motion]);
  useEffect(()=>{const ctx=(document as any).modelContext;if(!ctx?.registerTool)return;const controller=new AbortController();Promise.resolve(ctx.registerTool({name:'navigate_zanja',description:'Open an existing ZANJA section without creating or voting.',inputSchema:{type:'object',properties:{section:{type:'string',enum:['home','arena','pulso','mine','profile']}},required:['section'],additionalProperties:false},annotations:{readOnlyHint:false},execute:async(input:any)=>{if(!['home','arena','pulso','mine','profile'].includes(input.section))throw Error('Invalid section');setView(input.section);setActive(null);return{section:input.section};}},{signal:controller.signal})).catch(()=>{});return()=>controller.abort();},[]);
