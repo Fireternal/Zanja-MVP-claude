@@ -12,3 +12,17 @@ export const pulse = sqliteTable('pulse',{day:integer('day').notNull(),userId:te
 
 // La campana. No se guardan los avisos —se deducen—, sólo cuándo miraste.
 export const seen = sqliteTable('seen',{userId:text('user_id').primaryKey(),at:integer('at').notNull()});
+
+// Las cuentas. Se guarda la huella de la contraseña, nunca la contraseña, y
+// las vueltas con las que se calculó, para poder subirlas más adelante sin
+// invalidar las cuentas que ya existen. Ver app/api/auth/LEEME.md.
+export const users = sqliteTable('users',{
+ uid:text('uid').primaryKey(),
+ name:text('name').notNull(),
+ handle:text('handle').notNull().unique(),
+ hash:text('hash').notNull(),
+ salt:text('salt').notNull(),
+ rounds:integer('rounds').notNull(),
+ created:integer('created').notNull(),
+ fails:integer('fails').notNull().default(0),
+ blocked:integer('blocked').notNull().default(0)});

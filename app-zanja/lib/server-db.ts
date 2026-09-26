@@ -24,3 +24,9 @@ export function sessionSecret(req:Request):string{
 export function trustsPlatformHeader():boolean{
  return (env as unknown as Record<string,unknown>).TRUST_PLATFORM_HEADER==='1';
 }
+
+// Vueltas de PBKDF2 al crear una cuenta. Se puede subir por variable de
+// entorno cuando el plan aguante más CPU; ver app/api/auth/LEEME.md.
+export function pbkdf2Rounds():unknown{
+ return (env as unknown as Record<string,unknown>).PBKDF2_ROUNDS;
+}

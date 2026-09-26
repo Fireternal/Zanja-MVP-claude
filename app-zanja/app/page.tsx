@@ -21,6 +21,7 @@ import {ExpedienteTarjeta,ExpedienteHoja} from '@/components/game/expediente';
 import {FichaCaso} from '@/components/game/ficha';
 import {Campana,AvisosHoja,type Campanario} from '@/components/game/avisos';
 import {Celebracion,type Fiesta} from '@/components/game/celebracion';
+import {Entrar,type Credenciales} from '@/components/game/entrar';
 import {useContador} from '@/hooks/use-contador';
 import type {Expediente} from '@/lib/expediente';
 import {EscaleraNiveles,LlaveHoja} from '@/components/game/nivel';
@@ -38,7 +39,7 @@ export default function Game(){
  const [modal,setModal]=useState<string|null>(null),[step,setStep]=useState(1),[draft,setDraft]=useState<Draft>(blank),[created,setCreated]=useState<{id:string;invite?:string}|null>(null),[report,setReport]=useState(''),[remove,setRemove]=useState<string|null>(null);
  const [sound,setSound]=useState(false),[motion,setMotion]=useState(true),[celebrate,setCelebrate]=useState(false),[invitation,setInvitation]=useState<any>(null),[token,setToken]=useState<string|null>(null),[response,setResponse]=useState({bt:'',b:['','',''] as [string,string,string],consent:false}),[invError,setInvError]=useState('');
  const [evidenceBusy,setEvidenceBusy]=useState(false);
- const [signInName,setSignInName]=useState(''),[displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false);
+ const [displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false);
  const [afterSignIn,setAfterSignIn]=useState<string|null>(null);
  // Si entras desde el creador o desde una invitación, se vuelve a donde estabas.
  const openSignIn=(back:string|null=null)=>{setAfterSignIn(back);setModal('signin');};
@@ -127,11 +128,20 @@ export default function Game(){
 
  // Sesión propia: el servidor firma una cookie a partir del nombre. Ver
  // app/api/auth/LEEME.md — es provisional y no sustituye a una cuenta real.
- async function signIn(){const name=signInName.trim();if(!name||signingIn)return;setSigningIn(true);try{
-  const res=await fetch('/api/auth',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name})});
-  const data:any=await res.json();if(!res.ok)throw new Error(data.error);
-  setDisplayName(data.user.name);setSignInName('');setModal(afterSignIn);setAfterSignIn(null);await refresh();blip();toast.success('Dentro, '+data.user.name+'.');
- }catch(e:any){toast.error(e.message);}finally{setSigningIn(false);}}
+ async function signIn({name,password,registrar}:Credenciales):Promise<string|null>{
+  if(signingIn)return null;
+  setSigningIn(true);
+  try{
+   const res=await fetch('/api/auth',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify(registrar?{action:'registrar',name,password}:{name,password})});
+   const data:any=await res.json();
+   if(!res.ok)return data.error||'No hemos podido entrar.';
+   setDisplayName(data.user.name);setModal(afterSignIn);setAfterSignIn(null);
+   await refresh();blip();
+   toast.success(registrar?'Bienvenido al Juzgado, '+data.user.name+'.':'Dentro, '+data.user.name+'.');
+   return null;
+  }catch{return 'No hemos podido conectar. Inténtalo otra vez.';}
+  finally{setSigningIn(false);}}
  async function signOut(){try{await fetch('/api/auth',{method:'DELETE'});setDisplayName(null);setModal(null);await refresh();toast.success('Sesión cerrada.');}catch{toast.error('No hemos podido cerrar la sesión.');}}
  async function resetRound(){if(busy)return;stateRevision.current++;setBusy(true);try{if(signedIn)await post({action:'reset_round'});setSkipped([]);setActive(null);setFilter('Todas');setCelebrate(false);await refresh();toast.success('Ronda reiniciada. Puedes volver a zanjar.');}catch(e:any){toast.error(e.message);}finally{setBusy(false);}}
  function next(){scrollTop();if(current)setSkipped(s=>[...s,current.id]);setActive(null);setCelebrate(false);}
@@ -180,7 +190,7 @@ export default function Game(){
    {modal==='sinllave'&&<LlaveHoja llave="crear" xp={profile.xp} signedIn={signedIn} onIr={()=>{setModal(null);play();}} onEntrar={()=>openSignIn()}/>}
    {modal==='rules'&&<><span className="eyebrow">BUEN CRITERIO. BUEN ROLLO.</span><DialogTitle>Las reglas del juego.</DialogTitle><DialogDescription>Un jurado para desacuerdos cotidianos.</DialogDescription><div className="rules-list"><div><span>01</span><section><h3>Lee las dos versiones</h3><p>No hay prisa. Si falta contexto, puedes saltar el caso.</p></section></div><div><span>02</span><section><h3>Juzga el argumento</h3><p>Lee las tres defensas de cada bando y toca su tarjeta para votar. Elige Ambos si los dos tienen razón. Cada caso admite un voto por persona.</p></section></div><div><span>03</span><section><h3>Respeta a quien piensa distinto</h3><p>Sin nombres, datos personales ni ataques. Denuncia el contenido que incumpla las reglas.</p></section></div><div><span>04</span><section><h3>Una opinión, no una sentencia</h3><p>El resultado cuenta los votos, no demuestra quién tiene razón. No publiques amenazas, violencia ni conflictos sensibles.</p></section></div></div><button className="game-btn yellow" onClick={()=>{setModal(null);play();}}>ENTENDIDO. A JUGAR.<Swords size={20}/></button></>}
    {modal==='settings'&&<><span className="eyebrow">A TU MANERA</span><DialogTitle>Ajusta la partida.</DialogTitle><DialogDescription>Preferencias de este dispositivo.</DialogDescription><label className="setting-row"><span><strong>Sonido</strong><small>Un pequeño efecto al votar y publicar.</small></span><Switch checked={sound} onCheckedChange={v=>prefs(v,motion)} aria-label="Activar sonido"/></label><label className="setting-row"><span><strong>Animaciones</strong><small>Movimiento en tarjetas y celebraciones.</small></span><Switch checked={motion} onCheckedChange={v=>prefs(sound,v)} aria-label="Activar animaciones"/></label><p className="notice">Respetamos la preferencia de movimiento reducido de tu dispositivo.</p>{signedIn?<div className="setting-row session-row"><span><strong>Sesión</strong><small>Estás dentro como {displayName||'jurado'}.</small></span><button className="quiet-btn" onClick={signOut}>Cerrar sesión</button></div>:<div className="setting-row session-row"><span><strong>Sesión</strong><small>Estás explorando sin entrar.</small></span><button className="quiet-btn" onClick={()=>openSignIn()}>Entrar</button></div>}</>}
-   {modal==='signin'&&<><span className="success-emblem"><UserRound size={44}/></span><DialogTitle>Tu voto merece contar.</DialogTitle><DialogDescription>Entra con un nombre para votar una sola vez por caso y guardar tu progreso.</DialogDescription><form className="signin-form" onSubmit={e=>{e.preventDefault();signIn();}}><label className="creator-label" htmlFor="signin-name">TU NOMBRE EN LA SALA</label><input id="signin-name" value={signInName} onChange={e=>setSignInName(e.target.value)} maxLength={24} autoComplete="nickname" placeholder="Lucía" autoFocus/><button className="game-btn yellow" type="submit" disabled={signInName.trim().length<2||signingIn}>{signingIn?<LoaderCircle className="spin"/>:<>ENTRAR<ArrowRight size={20}/></>}</button></form><p className="signin-note">Sin contraseña y sin correo. Quien escriba tu mismo nombre entrará como tú, así que es para la beta, no para abrir al público.</p><button className="quiet-btn" onClick={()=>setModal(null)}>Seguir explorando</button></>}
+   {modal==='signin'&&<Entrar ocupado={signingIn} onEnviar={signIn} onSalir={()=>setModal(null)}/>}
    {modal==='report'&&<><span className="eyebrow">CUIDEMOS EL JUZGADO</span><DialogTitle>¿Qué ocurre con este caso?</DialogTitle><DialogDescription>Dejará de aparecer en tu cola. Con tres denuncias de personas distintas se oculta del Juzgado.</DialogDescription><RadioGroup value={report} onValueChange={setReport} className="report-options">{['Datos personales','Acoso o insultos','Contenido sensible','Relato engañoso','Otro motivo'].map(r=><label key={r}><RadioGroupItem value={r}/>{r}</label>)}</RadioGroup><button className="game-btn yellow" disabled={!report||busy} onClick={async()=>{if(!signedIn){openSignIn();return;}setBusy(true);try{await post({action:'report',id:current?.id,reason:report});await refresh();setModal(null);next();toast.success('Denuncia registrada. Gracias por cuidar el Juzgado.');}catch(e:any){toast.error(e.message);}finally{setBusy(false);}}}>{busy?'ENVIANDO…':'ENVIAR DENUNCIA'}<Flag size={18}/></button></>}
    {modal==='invite'&&<InviteResponse onSignIn={()=>openSignIn('invite')} onHome={()=>{setModal(null);go('home');}} onBusy={setBusy} invitation={invitation} error={invError} token={token||''} signedIn={signedIn} onClose={()=>setModal(null)} onSend={async(b)=>{const result=await post({action:'respond',invite:token,b,consent:true});await refresh();return result.pendingPublication;}}/>}
 

@@ -17,3 +17,13 @@ html[data-motion=off] .modal-viewport>[data-slot]{animation:none!important}
 .signin-form .creator-label{margin:0}
 .signin-note{margin:0;color:#b89bcb;font-size:12px;line-height:1.45;text-align:center}
 .session-row button{margin:0;padding:0;min-height:auto;font-size:13px;white-space:nowrap}
+/* Entrar: dos modos, la contraseña que se puede mirar y el error a la vista. */
+.entrar-modos{display:flex;gap:6px;width:100%;margin:14px 0 2px;padding:4px;border:1px solid #533c63;border-radius:12px;background:#1f1830}
+.entrar-modos>button{flex:1;min-height:42px;border-radius:9px;font-size:13px;font-weight:900;color:#b39cc7}
+.entrar-modos>button.elegido{background:#7853a6;color:#fff;box-shadow:0 2px 0 #2a1a3f}
+.campo-clave{position:relative;display:flex;align-items:center}
+.campo-clave>input{padding-right:50px}
+.campo-clave>button{position:absolute;right:7px;color:#b39cc7}
+.campo-clave>button:hover{color:#fff}
+.entrar-error{width:100%;margin:2px 0 0;padding:11px 13px;border:1px solid #a4485c;border-radius:10px;background:#3a1f2b;color:#ffc3cf;font-size:13px;line-height:1.45}
+.signin-form>.game-btn{margin-top:4px}

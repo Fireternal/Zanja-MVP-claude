@@ -50,6 +50,13 @@
       "when": 1790386250478,
       "tag": "0006_abandoned_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790388748743,
+      "tag": "0007_rare_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

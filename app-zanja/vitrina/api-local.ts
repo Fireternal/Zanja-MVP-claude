@@ -14,6 +14,7 @@
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
+import {CLAVE_MIN,RONDAS,derivar,handleDe,iguales,limpiaClave,nuevaSal} from '@/lib/passwords';
 import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {expedienteDe} from '@/lib/expediente';
@@ -21,28 +22,24 @@ import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
 import {avisosDe} from '@/lib/avisos';
 
 const LLAVE='zanja-vitrina-v1';
-const SECRETO='vitrina-sin-servidor';
 
 type Ficha={answered?:number;id:string;owner:string;q:string;tag:string;at:string;a:string;bt:string;b:string;emoji:string;created:number;closes:number;status:string;invite:string|null;respondent:string|null;duration:number;evidence:string|null;story:string;audience:string;workflow:number};
 type Voto={case_id:string;user_id:string;choice:string;at:number};
 type Denuncia={case_id:string;user_id:string;reason:string;at:number};
 type Apoyo={comment_id:string;user_id:string;at:number};
+type Cuenta={uid:string;name:string;handle:string;hash:string;salt:string;rounds:number};
 type Latido={day:number;user_id:string;choice:Choice;at:number};
-type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[];seen:number};
+type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[];seen:number;cuentas:Cuenta[]};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[],seen:0});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[],seen:0,cuentas:[]});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
 }
 function escribir(g:Guardado){try{localStorage.setItem(LLAVE,JSON.stringify(g));}catch{}}
 
-/** El mismo identificador para el mismo nombre, como en el servidor. */
-async function identificador(nombre:string){
- const datos=new TextEncoder().encode(SECRETO+'\n'+nombre.trim().toLocaleLowerCase('es'));
- const resumen=new Uint8Array(await crypto.subtle.digest('SHA-256',datos));
- return 'u_'+[...resumen.slice(0,8)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+/** Un identificador nuevo, sin relación con el nombre, como en el servidor. */
+const nuevoUid=()=>'u_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
 
 const json=(cuerpo:unknown,status=200)=>new Response(JSON.stringify(cuerpo),{status,headers:{'Content-Type':'application/json'}});
 const error=(mensaje:string,status=400)=>json({error:mensaje},status);
@@ -54,9 +51,29 @@ async function auth(metodo:string,cuerpo:any){
  const g=leer();
  if(metodo==='GET')return json({user:g.user});
  if(metodo==='DELETE'){g.user=null;escribir(g);return json({user:null});}
+
  const nombre=cleanName(cuerpo?.name);
  if(!nombre)return error(`Escribe un nombre de entre ${NAME_MIN} y ${NAME_MAX} caracteres, sin símbolos raros.`);
- g.user={uid:await identificador(nombre),name:nombre};
+ const clave=limpiaClave(cuerpo?.password);
+ if(!clave)return error(`La contraseña necesita al menos ${CLAVE_MIN} caracteres.`);
+ const handle=handleDe(nombre);
+ g.cuentas=g.cuentas||[];
+
+ if(cuerpo?.action==='registrar'){
+  if(handleDe(clave)===handle)return error('La contraseña no puede ser tu propio nombre.');
+  if(g.cuentas.some(c=>c.handle===handle))return error('Ese nombre ya está cogido. Prueba con otro.',409);
+  const salt=nuevaSal(),uid=nuevoUid();
+  g.cuentas.push({uid,name:nombre,handle,salt,rounds:RONDAS,hash:await derivar(clave,salt,RONDAS)});
+  g.user={uid,name:nombre};
+ }else{
+  const cuenta=g.cuentas.find(c=>c.handle===handle);
+  // Igual que en el servidor: sin cuenta también se calcula, para no decir
+  // con el tiempo de respuesta qué nombres existen.
+  const hash=await derivar(clave,cuenta?.salt||'ZanjaNoExisteEstaCuenta',cuenta?.rounds||RONDAS);
+  if(!cuenta||!iguales(hash,cuenta.hash))return error('Nombre o contraseña incorrectos.',401);
+  g.user={uid:cuenta.uid,name:cuenta.name};
+ }
+
  sembrarEjemplos(g);
  escribir(g);
  return json({user:g.user});

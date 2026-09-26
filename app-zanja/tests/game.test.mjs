@@ -221,41 +221,8 @@ test('explicit create and publish actions no longer require the removed creator 
  const result=await request({...valid,consent:undefined},'no-checkbox-author');assert.equal(result.status,200);
 });
 
-// ---- sesión portable: la cookie firmada sustituye a la cabecera de la plataforma
-const authSource=readFileSync(new URL('../app/api/auth/route.ts',import.meta.url),'utf8').replace("import {sessionSecret} from '@/lib/server-db';","const sessionSecret=()=>globalThis.__zanjaTestSecret;").replace("'@/lib/session'",JSON.stringify(sessionUrl));
-const auth=await import(moduleUrl(compile(authSource)));
-const {verifySession}=await import(sessionUrl);
-const cookieValue=res=>{const raw=res.headers.get('set-cookie')||'';const m=raw.match(new RegExp(SESSION_COOKIE+'=([^;]*)'));return m?decodeURIComponent(m[1]):'';};
-
-test('entrar con nombre devuelve una cookie firmada y una identidad estable',async()=>{
- const res=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Lucía'})}));
- assert.equal(res.status,200);
- const {user}=await res.json();assert.equal(user.name,'Lucía');assert.match(user.uid,/^u_[0-9a-f]{16}$/);
- const session=await verifySession(cookieValue(res),globalThis.__zanjaTestSecret);
- assert.equal(session.uid,user.uid);
- // el mismo nombre, escrito de otra forma, es la misma persona
- const again=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'  lucía  '})}));
- assert.equal((await again.json()).user.uid,user.uid);
- // y otra persona es otra
- const otra=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Diego'})}));
- assert.notEqual((await otra.json()).user.uid,user.uid);
-});
-
-test('el nombre se valida y el origen cruzado se rechaza',async()=>{
- const post=(body,origin=base)=>auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin},body:JSON.stringify(body)}));
- for(const name of ['','a','x'.repeat(25),'<script>',{},null,42])assert.equal((await post({name})).status,400);
- assert.equal((await post({name:'Marta'},'https://otro.test')).status,403);
-});
-
-test('la sesión se comprueba y se cierra',async()=>{
- const res=await auth.POST(new Request(base+'/api/auth',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({name:'Marta'})}));
- const cookie=SESSION_COOKIE+'='+encodeURIComponent(cookieValue(res));
- assert.equal((await (await auth.GET(new Request(base+'/api/auth',{headers:{cookie}}))).json()).user.name,'Marta');
- assert.equal((await (await auth.GET(new Request(base+'/api/auth'))).json()).user,null);
- const out=await auth.DELETE(new Request(base+'/api/auth'));
- assert.match(out.headers.get('set-cookie'),/Max-Age=0/);
-});
-
+// ---- la cookie firmada, vista desde el juego. Crear cuenta y entrar se
+// prueban aparte, en tests/auth.test.mjs.
 test('una cookie manipulada, caducada o de otro secreto no vale',async()=>{
  const good=await cookieFor('tramposo');
  const corte=good.indexOf('.');

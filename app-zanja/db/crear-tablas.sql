@@ -99,3 +99,18 @@ CREATE TABLE `seen` (
 );
 ALTER TABLE `cases` ADD `answered` integer DEFAULT 0 NOT NULL;
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0006_abandoned_warlock.sql');
+
+-- 0007_rare_silver_samurai.sql
+CREATE TABLE `users` (
+	`uid` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`handle` text NOT NULL,
+	`hash` text NOT NULL,
+	`salt` text NOT NULL,
+	`rounds` integer NOT NULL,
+	`created` integer NOT NULL,
+	`fails` integer DEFAULT 0 NOT NULL,
+	`blocked` integer DEFAULT 0 NOT NULL
+);
+CREATE UNIQUE INDEX `users_handle_unique` ON `users` (`handle`);
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0007_rare_silver_samurai.sql');
