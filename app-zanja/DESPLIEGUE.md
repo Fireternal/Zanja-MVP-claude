@@ -100,6 +100,14 @@ Hasta que no exista, entrar devuelve error **a propósito**: la app prefiere
 fallar a arrancar con un secreto de desarrollo. No hace falta volver a
 publicar; el secreto se aplica al momento.
 
+### Otras variables (opcionales)
+
+| Variable | Para qué | Si no está |
+|---|---|---|
+| `PBKDF2_ROUNDS` | Vueltas al cifrar contraseñas nuevas. Con el plan de pago cabe `200000`. | 32.000, que es lo que cabe en el límite de CPU del plan gratuito. Ver `app/api/auth/LEEME.md`. |
+| `SITIO_URL` | La dirección pública, para las tarjetas de compartir. | Se deduce de la cabecera `Host` de cada petición, que es lo normal. Sólo hace falta si delante hay algo que no la reenvía. |
+
+
 ---
 
 ## Comprobar que funciona

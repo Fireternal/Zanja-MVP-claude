@@ -10,7 +10,7 @@ import '@/app/overlays.css';
 import '@/app/creator.css';
 import '@/app/motion.css';
 import {instalarApiLocal} from './api-local';
-import Game from '@/app/page';
+import Game from '@/components/game/zanja-app';
 
 instalarApiLocal();
 createRoot(document.getElementById('raiz')!).render(<StrictMode><Game/></StrictMode>);

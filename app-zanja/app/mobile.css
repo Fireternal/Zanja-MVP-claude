@@ -308,3 +308,7 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 .avisos-vacio p{font-size:13px;color:#ab9cc2;line-height:1.55;max-width:320px}
 @keyframes campanada{0%,88%,100%{transform:rotate(0)}91%{transform:rotate(11deg)}94%{transform:rotate(-9deg)}97%{transform:rotate(5deg)}}
 [data-motion=off] .campana.con-avisos svg{animation:none}
+
+/* Los casos del catálogo se distinguen de los de la gente. */
+.case-origin.del-juzgado{color:#e2c979}
+.case-origin.del-juzgado:before{content:'⚖ '}

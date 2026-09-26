@@ -30,3 +30,10 @@ export function trustsPlatformHeader():boolean{
 export function pbkdf2Rounds():unknown{
  return (env as unknown as Record<string,unknown>).PBKDF2_ROUNDS;
 }
+
+// Dirección pública del sitio, para las tarjetas de compartir. Sólo hace falta
+// si el despliegue está detrás de algo que no reenvía la cabecera Host.
+export function sitioUrl():string|null{
+ const valor=(env as unknown as Record<string,unknown>).SITIO_URL;
+ return typeof valor==='string'&&valor.startsWith('http')?valor.replace(/\/$/,''):null;
+}
