@@ -1,0 +1,157 @@
+Eres guionista de conflictos cotidianos para ZANJA, una app española donde la
+gente vota quién tiene razón en discusiones del día a día. Necesito 150 casos
+nuevos para el catálogo.
+
+Devuélveme SOLO un array JSON válido. Sin texto antes ni después, sin ```json,
+sin comentarios dentro del JSON.
+
+=====================================================================
+FORMATO EXACTO DE CADA ELEMENTO
+=====================================================================
+{
+  "id": "pizza",
+  "tag": "Comida",
+  "q": "¿La última porción es de quien la pide primero?",
+  "at": "La vi primero",
+  "a": [
+    "Pregunté si alguien quería más.",
+    "Nadie respondió cuando lo pregunté.",
+    "No puedo esperar toda la noche."
+  ],
+  "bt": "Se comparte",
+  "b": [
+    "Estaba hablando y no pude responder.",
+    "La pizza la hemos pagado entre los dos.",
+    "Podemos cortar esa porción por la mitad."
+  ],
+  "emoji": "🍕",
+  "editorial": 1,
+  "owner": "editorial",
+  "created": 0,
+  "closes": 0,
+  "status": "open"
+}
+
+Ese es un caso real de la app. Imita su forma y su tono, pero no lo copies.
+
+=====================================================================
+REGLAS CAMPO POR CAMPO
+=====================================================================
+
+id
+  Slug en minúsculas, sin tildes, sin eñes, sin espacios (guion si hacen falta
+  dos palabras). Una o dos palabras. Único dentro del array. No puedes usar
+  ninguno de los que ya existen (lista al final).
+
+tag
+  Exactamente uno de estos seis, escrito igual:
+  Convivencia | Pareja | Amigos | Comida | Trabajo | Viajes
+  Reparto obligatorio: 25 casos de cada categoría. 150 en total.
+
+q
+  La pregunta del caso. Empieza por ¿ y acaba en ?. Entre 30 y 80 caracteres.
+  Español de España. Tiene que ser un dilema de costumbres que se pueda
+  contestar con "tiene razón A" o "tiene razón B". Nunca un dato objetivo ni
+  un dilema moral grave. Redacción neutra: la pregunta no puede dejar ver cuál
+  es la respuesta "correcta".
+
+at / bt
+  El lema de cada bando, escrito como lo diría esa persona, en frase corta.
+  Entre 8 y 28 caracteres, sin punto final.
+  Ejemplos reales: "La vi primero" / "Se comparte", "Yo ya he cocinado" /
+  "Repartamos las tareas", "Es un momento" / "Pregunta primero".
+  No uses nunca "Bando A" ni "Bando B" como lema.
+
+a / b
+  Exactamente 3 frases cada uno: los argumentos del Bando A y del Bando B.
+  Reglas para las seis frases:
+  - Cada frase entre 12 y 160 caracteres. Apunta a 40-110.
+  - Acaban en punto.
+  - Las 3 frases de un mismo bando tienen que ser distintas de verdad: tres
+    argumentos diferentes, no tres maneras de decir lo mismo.
+  - Una idea por frase. Nada de "y además".
+  - En primera persona o describiendo el hecho. Nunca insultan ni juzgan al
+    otro bando.
+  - Sin nombres propios, sin marcas, sin ciudades, sin edades, sin datos
+    personales.
+  - Los dos bandos tienen que ser defendibles. Si al leerlos uno parece
+    claramente el culpable, reescribe hasta que el voto pueda salir repartido.
+    Ese es el criterio de calidad más importante de todos.
+
+emoji
+  Un único emoji que represente el caso. Varía: ningún emoji repetido más de
+  dos veces en todo el array.
+
+editorial, owner, created, closes, status
+  Siempre idénticos: 1, "editorial", 0, 0, "open".
+
+=====================================================================
+TONO
+=====================================================================
+Conflictos de adultos, cotidianos y reconocibles en España: piso compartido,
+pareja, grupo de amigos, comidas, oficina, viajes, coche, grupo de WhatsApp.
+Ligero, con gracia, nunca cruel. Es una discusión de bar, no una lección.
+Nada de política, religión, sexo explícito, salud, dinero grave, denuncias,
+maltrato, menores ni nada que pueda hacer daño a alguien.
+
+=====================================================================
+TEMAS YA USADOS: NO LOS REPITAS, NI CON OTRAS PALABRAS
+=====================================================================
+- ¿Hay que consultar al equipo antes de cambiar el diseño?
+- ¿La última porción es de quien la pide primero?
+- ¿Ver un capítulo sin tu pareja cuenta como traición?
+- Si uno cocina, ¿el otro tiene que fregar?
+- ¿Un audio de cinco minutos merece una llamada?
+- ¿Quien va en la ventana decide si baja la persiana?
+- ¿Una reunión que termina a tu hora de salida puede alargarse?
+- ¿Está bien dividir la cuenta si has pedido mucho menos?
+- ¿Puedes poner cinco alarmas si duermes acompañado?
+- ¿Los táperes vacíos se devuelven con comida?
+- ¿Hay que pedir permiso antes de subir una foto de grupo?
+- ¿Quien conduce elige la música?
+- ¿Puedes robar patatas después de decir que no querías?
+- ¿Llegar primero permite guardar sitio para todo el grupo?
+- ¿Se puede coger un cargador sin pedirlo?
+- ¿Cancelar un plan porque estás cansado es una mala excusa?
+- ¿Cambiar ingredientes convierte una receta en otra?
+- ¿Es de mala educación saltar la canción que ha puesto alguien?
+- ¿Se puede sacar la ropa de otra persona de la lavadora?
+- ¿Un regalo práctico es menos romántico?
+- ¿Se puede ocupar parte de la maleta de tu acompañante?
+- ¿Desayunar juntos obliga a esperar a quien se levanta tarde?
+- ¿Elegir el camino bonito justifica llegar más tarde?
+- ¿Un mensaje de trabajo fuera de horario exige respuesta?
+- ¿El aire acondicionado se decide por mayoría?
+- ¿Pedir un postre para compartir da derecho a la mitad exacta?
+- ¿Está bien dejar un puzle a medias en la mesa del salón?
+- ¿Decir sobre las ocho permite llegar a las ocho y media?
+- ¿Quien se levanta último tiene que hacer la cama?
+- ¿Se puede hablar bajito durante una película?
+- ¿Hay que aprovechar cada hora de un viaje?
+- ¿La última leche se repone aunque solo hayas usado un poco?
+- ¿Se puede volver a prestar un libro que te han prestado?
+- ¿Tener la cámara apagada hace que participes menos?
+- ¿Comprar pan de molde cuenta como traer pan?
+- ¿Quien lleva el mapa manda sobre la ruta?
+- ¿Mirar el móvil durante la cena rompe el momento?
+
+=====================================================================
+IDS PROHIBIDOS (ya están ocupados)
+=====================================================================
+demo-diseno pizza serie platos audio ventana reunion cumple alarma tupper foto musica patatas asiento cargador plan receta playlist lavadora regalo maleta desayuno camino chat oficina postre mesa hora cama cine turismo nevera prestamo zoom pan mapa movil
+
+=====================================================================
+ANTES DE ENTREGAR, REVÍSALO TÚ
+=====================================================================
+1. ¿Hay 150 elementos y 25 por categoría?
+2. ¿Todos los id son únicos y ninguno está en la lista de prohibidos?
+3. ¿Cada bando tiene exactamente 3 frases?
+4. ¿Alguna frase baja de 12 caracteres o pasa de 160? Corrígela.
+5. ¿Hay dos frases iguales o casi iguales dentro del mismo bando? Reescríbelas.
+6. ¿Algún caso tiene un bando claramente perdedor? Equilíbralo.
+7. ¿El JSON es válido y no lleva nada fuera del array?
+
+Entrega el resultado en tandas de 30 casos (5 por categoría en cada tanda),
+cada tanda como un array JSON independiente. Empieza por la tanda 1 y espera a
+que te diga "sigue" antes de la siguiente. No repitas ningún caso ni ningún id
+entre tandas.
