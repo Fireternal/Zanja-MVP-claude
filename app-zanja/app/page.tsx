@@ -26,6 +26,7 @@ import {useContador} from '@/hooks/use-contador';
 import type {Expediente} from '@/lib/expediente';
 import {EscaleraNiveles,LlaveHoja} from '@/components/game/nivel';
 import {progresoDe,puede} from '@/lib/niveles';
+import {ordenarCola} from '@/lib/cola';
 import type {Choice} from '@/lib/pulse';
 type Profile={votes:number;xp:number;today:number;created:number;dailyAchieved?:boolean};
 type Draft=ZanjaDraft;
@@ -98,7 +99,8 @@ export default function Game(){
  function prefs(s:boolean,m:boolean){setSound(s);setMotion(m);try{localStorage.setItem('zanja-preferences',JSON.stringify({sound:s,motion:m}));}catch{}}
  function blip(){if(!sound)return;try{audio.current ||= new AudioContext();const ctx=audio.current;ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(520,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+.12);gain.gain.setValueAtTime(.09,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.25);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.25);}catch{}}
  async function post(payload:any){const r=await fetch('/api/game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d:any=await r.json();if(!r.ok)throw new Error(d.error);return d;}
- const available=cases.filter(c=>c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&!c.reported&&!skipped.includes(c.id)&&(filter==='Todas'||c.tag===filter));
+ // El catálogo es relleno: la cola la abren las zanjas de la gente. Ver lib/cola.ts.
+ const available=ordenarCola(cases.filter(c=>c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&!c.reported&&!skipped.includes(c.id)&&(filter==='Todas'||c.tag===filter)),{votos:profile.votes});
  const current=active?cases.find(c=>c.id===active):available[0];
  const rango=progresoDe(profile.xp),level=rango.nivel;
  const votosVistos=useContador(profile.votes),xpVisto=useContador(profile.xp),creadasVistas=useContador(profile.created);
