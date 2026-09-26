@@ -233,8 +233,8 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 [data-motion=off] .mission-segments>i>span,[data-motion=off] .diligencia-barra>i{transition:none}
 
 /* Los niveles: la escalera, los candados y la hoja de la llave que falta. */
-.shortcut-llave{position:absolute;bottom:11px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid #a58ec6;border-radius:8px;background:#1d1230cc;color:#d9c8ee;font-size:10px;font-weight:1000;letter-spacing:.8px;box-shadow:0 2px 0 #110820}
-.home-shortcut.bajo-llave .shortcut-art{filter:grayscale(.55) brightness(.72)}
+.shortcut-llave{position:absolute;bottom:11px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:7px 9px;border:1px solid #47305e;border-radius:8px;background:#211434f2;color:#e6d8f7;font-size:10px;font-weight:1000;letter-spacing:.8px;box-shadow:0 2px 0 #0d0718}
+.shortcut-llave>svg{margin-top:-1px}
 .llave-bloqueada{display:flex;align-items:center;gap:11px;margin:14px 0 4px;padding:13px;border:1px dashed #6a5580;border-radius:12px;background:#ffffff05}
 .llave-candado{display:grid;place-items:center;width:34px;height:35px;flex-shrink:0;border:1px solid #58466e;border-radius:10px;color:#b49fd0;background:#231b33}
 .llave-bloqueada strong{display:block;font-size:13px;color:#dccbf0}
