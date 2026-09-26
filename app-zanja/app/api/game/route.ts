@@ -3,7 +3,8 @@ import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
-import {expedienteDe,SELLO_XP} from '@/lib/expediente';
+import {expedienteDe} from '@/lib/expediente';
+import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
@@ -103,6 +104,29 @@ async function pulso(database:any,user:string|null){
    counts:ayerT,total:totalOf(ayerT)}:null};
 }
 
+/**
+ * La experiencia de alguien, contada igual que en la pantalla de perfil.
+ *
+ * Los permisos por nivel se comprueban aquí y no sólo en la interfaz: el
+ * candado del botón es una cortesía, esto es la puerta.
+ */
+async function xpDeUsuario(database:any,user:string){
+ const [votos,latidos,charlas,todos]=await database.batch([
+  database.prepare('SELECT at FROM votes WHERE user_id=?').bind(user),
+  database.prepare('SELECT day,choice FROM pulse WHERE user_id=?').bind(user),
+  database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user),
+  database.prepare('SELECT day,choice,count(*) n FROM pulse GROUP BY day,choice')]);
+ const hoy=dayOf();
+ const marca=(d:number):Tally=>{const t:Tally={si:0,no:0};
+  for(const r of todos.results as any[])if(Number(r.day)===d&&(r.choice==='si'||r.choice==='no'))t[r.choice as Choice]=Number(r.n);
+  return t;};
+ const aciertos=(latidos.results as any[]).filter(r=>Number(r.day)<hoy&&winnerOf(marca(Number(r.day)))===r.choice).length;
+ const sellos=expedienteDe({votos:(votos.results as any[]).map(v=>Number(v.at)),
+  pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
+  comentarios:(charlas.results as any[]).map(r=>Number(r.at))}).sellos;
+ return xpDe({votos:(votos.results as any[]).length,aciertos,sellos});
+}
+
 const clean=(x:unknown,max:number,min=1)=>typeof x==='string'&&x.trim().length>=min&&x.trim().length<=max?x.trim():null;
 export async function GET(req:Request){try{
  const user=await identity(req); const url=new URL(req.url); const token=url.searchParams.get('invite'); const database=db();
@@ -128,7 +152,7 @@ export async function GET(req:Request){try{
   pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
   comentarios:(charlas.results as any[]).map(r=>Number(r.at))});
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
- return reply({cases:data,pulse,expediente,profile:{votes:personal.results.length,xp:personal.results.length*5+pulse.points+expediente.sellos*SELLO_XP,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
+ return reply({cases:data,pulse,expediente,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
  const quien=await quienEs(req);if(!quien)return fail('Inicia sesión para guardar tu participación.',401);
@@ -143,7 +167,12 @@ export async function POST(req:Request){try{
  const q=clean(data.q,1200,12), a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null, at='Bando A', b=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,bt='Bando B';
  if(!q||!a||!categories.slice(1).includes(data.tag)||!['invite','solo'].includes(data.mode)||(!b&&data.mode==='solo')||![900000,3600000,86400000].includes(data.duration))return fail('Cada bando necesita tres defensas distintas de 12 a 160 caracteres. Revisa también el relato y la duración.');
  const story=data.story==null?'':clean(data.story,1200,0);if(story===null||data.audience&&!['public','link'].includes(data.audience))return fail('Revisa el contexto y la audiencia del caso.');
- const recent:any=await database.prepare('SELECT count(*) n FROM cases WHERE owner=? AND created>?').bind(user,now-86400000).first();if(recent.n>=5)return fail('Puedes crear hasta 5 zanjas al día. Vuelve mañana.',429);
+ const xp=await xpDeUsuario(database,user);
+ if(!puede(xp,'crear'))return fail(pegaDeLlave('crear'),403);
+ if(data.mode==='invite'&&!puede(xp,'invitar'))return fail(pegaDeLlave('invitar'),403);
+ if(data.evidence&&!puede(xp,'prueba'))return fail(pegaDeLlave('prueba'),403);
+ const tope=limiteDiario(xp);
+ const recent:any=await database.prepare('SELECT count(*) n FROM cases WHERE owner=? AND created>?').bind(user,now-86400000).first();if(recent.n>=tope)return fail(`Puedes abrir hasta ${tope} zanjas al día. Vuelve mañana o sube de nivel.`,429);
  let evidenceBytes:Uint8Array|null;try{evidenceBytes=decodeEvidence(data.evidence);}catch(error){return fail((error as Error).message);}
  const id=crypto.randomUUID(),invite=data.mode==='invite'?crypto.randomUUID():null;const status=invite?'waiting':'open';
  const evidence=evidenceBytes?`cases/${id}/evidence.webp`:null;

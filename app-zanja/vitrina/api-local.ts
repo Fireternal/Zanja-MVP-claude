@@ -16,7 +16,8 @@ import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
 import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
-import {expedienteDe,SELLO_XP} from '@/lib/expediente';
+import {expedienteDe} from '@/lib/expediente';
+import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
 
 const LLAVE='zanja-vitrina-v1';
 const SECRETO='vitrina-sin-servidor';
@@ -119,7 +120,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
   pulsos:user?g.pulse.filter(l=>l.user_id===user).map(l=>l.day):[],
   comentarios:user?g.comments.filter(v=>v.user_id===user).map(v=>v.at):[]});
  return {cases:data,expediente,
-  profile:{votes:mios.length,xp:mios.length*5+latido.points+expediente.sellos*SELLO_XP,today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
+  profile:{votes:mios.length,xp:xpDe({votos:mios.length,aciertos:latido.hits,sellos:expediente.sellos}),today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
    dailyAchieved:Object.values(porDia).some(n=>n>=5),created:g.cases.filter(c=>c.owner===user&&c.status!=='removed').length},
   signedIn:!!user,daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
 }
@@ -147,7 +148,12 @@ function guardarPartida(g:Guardado,data:any){
    return error('Cada bando necesita tres defensas distintas de 12 a 160 caracteres. Revisa también el relato y la duración.');
   const story=data.story==null?'':limpio(data.story,1200,0);
   if(story===null||(data.audience&&!['public','link'].includes(data.audience)))return error('Revisa el contexto y la audiencia del caso.');
-  if(g.cases.filter(c=>c.owner===user&&c.created>ahora-86400000).length>=5)return error('Puedes crear hasta 5 zanjas al día. Vuelve mañana.',429);
+  const xp=xpDelJurado(g,user);
+  if(!puede(xp,'crear'))return error(pegaDeLlave('crear'),403);
+  if(data.mode==='invite'&&!puede(xp,'invitar'))return error(pegaDeLlave('invitar'),403);
+  if(data.evidence&&!puede(xp,'prueba'))return error(pegaDeLlave('prueba'),403);
+  const tope=limiteDiario(xp);
+  if(g.cases.filter(c=>c.owner===user&&c.created>ahora-86400000).length>=tope)return error(`Puedes abrir hasta ${tope} zanjas al día. Vuelve mañana o sube de nivel.`,429);
   try{decodeEvidence(data.evidence);}catch(e){return error((e as Error).message);}
   const id=crypto.randomUUID(),invite=data.mode==='invite'?crypto.randomUUID():null;
   g.cases.push({id,owner:user,q,tag:data.tag,at:'Bando A',a:JSON.stringify(a),bt:'Bando B',b:JSON.stringify(b||[]),
@@ -303,6 +309,16 @@ function latidos(g:Guardado,dia:number):Tally{
  const t:Tally={si:base.si,no:base.no};
  for(const l of g.pulse)if(l.day===dia)t[l.choice]++;
  return t;
+}
+
+/** La experiencia de quien mira, con la misma cuenta que hace el servidor. */
+function xpDelJurado(g:Guardado,user:string|null){
+ if(!user)return 0;
+ const mios=g.votes.filter(v=>v.user_id===user);
+ const expediente=expedienteDe({votos:mios.map(v=>v.at),
+  pulsos:g.pulse.filter(l=>l.user_id===user).map(l=>l.day),
+  comentarios:g.comments.filter(v=>v.user_id===user).map(v=>v.at)});
+ return xpDe({votos:mios.length,aciertos:pulso(g).hits,sellos:expediente.sellos});
 }
 
 function pulso(g:Guardado){

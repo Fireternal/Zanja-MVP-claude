@@ -15,16 +15,24 @@ globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Er
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
 const pulseUrl=moduleUrl(compile(readFileSync(new URL('../lib/pulse.ts',import.meta.url),'utf8')));
 const expedienteUrl=moduleUrl(compile(readFileSync(new URL('../lib/expediente.ts',import.meta.url),'utf8')));
+const nivelesUrl=moduleUrl(compile(readFileSync(new URL('../lib/niveles.ts',import.meta.url),'utf8')
+ .replace("'./pulse'",JSON.stringify(pulseUrl)).replace("'./expediente'",JSON.stringify(expedienteUrl))));
 const sessionUrl=moduleUrl(compile(readFileSync(new URL('../lib/session.ts',import.meta.url),'utf8')));
 globalThis.__zanjaTestSecret='secreto-de-pruebas-con-longitud-suficiente';
 globalThis.__zanjaTrustHeader=false;
 const {SESSION_COOKIE,signSession}=await import(sessionUrl);
 // Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
 const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
-async function request(data,user='juror'){return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{cookie:await cookieFor(user)}:{})},body:JSON.stringify(data)}));}
+/**
+ * Crear una zanja exige nivel. Estas pruebas van de otra cosa, así que a quien
+ * crea le damos por hecha la experiencia; la puerta se prueba aparte, pasando
+ * `false` en el tercer argumento.
+ */
+const conLlaves=user=>{const ins=sql.prepare('INSERT OR IGNORE INTO votes (case_id,user_id,choice,at) VALUES (?,?,?,?)');for(let i=0;i<200;i++)ins.run('xp-'+i,user,'a',Date.now());};
+async function request(data,user='juror',darLlaves=true){if(darLlaves&&user&&data?.action==='create')conLlaves(user);return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{cookie:await cookieFor(user)}:{})},body:JSON.stringify(data)}));}
 async function state(user='juror',suffix=''){const r=await GET(new Request(base+'/api/game'+suffix,{headers:user?{cookie:await cookieFor(user)}:{}}));assert.equal(r.status,200);return r.json();}
 const valid={action:'create',q:'¿Quien cocina también tiene que fregar?',tag:'Convivencia',at:'Yo cocino',a:['He preparado la cena para los dos.','He dedicado una hora a cocinar.','Quiero repartir las tareas de forma justa.'],bt:'Yo ordeno',b:['He ordenado toda la casa esta tarde.','También he trabajado durante una hora.','Yo necesito descansar después de limpiar.'],mode:'solo',duration:3600000,consent:true};
 test('votes are real, private until voting, unique and persisted',async()=>{
@@ -429,4 +437,25 @@ test('la sala del Pulso se cierra con el día',async()=>{
 
 test('una sala que no existe no se abre',async()=>{
  assert.equal((await sala_('pulso-no','callado')).status,404);
+});
+
+test('los niveles abren la creación, la invitación y las pruebas',async()=>{
+ const nuevo='recien-llegado';
+ const vota=n=>{const ins=sql.prepare('INSERT OR IGNORE INTO votes (case_id,user_id,choice,at) VALUES (?,?,?,?)');for(let i=0;i<n;i++)ins.run('nivel-'+i,nuevo,'a',Date.now());};
+ // Quien acaba de llegar no publica nada: primero tiene que ver casos.
+ assert.equal((await request(valid,nuevo,false)).status,403);
+
+ vota(12); // 60 XP: nivel 2, la llave de crear.
+ assert.equal((await request({...valid,mode:'invite',bt:'',b:''},nuevo,false)).status,403);
+ assert.equal((await request({...valid,evidence:'data:image/webp;base64,AAAA'},nuevo,false)).status,403);
+ assert.equal((await request({...valid,q:'¿La primera zanja de alguien de nivel dos vale?'},nuevo,false)).status,200);
+
+ vota(36); // 180 XP: nivel 3, la llave de invitar.
+ assert.equal((await request({...valid,q:'¿Y la invitación a la otra parte?',mode:'invite',bt:'',b:''},nuevo,false)).status,200);
+ assert.equal((await request({...valid,evidence:'data:image/webp;base64,AAAA'},nuevo,false)).status,403);
+
+ // Dos al día hasta el nivel cinco: la tercera ya no entra.
+ const tope=await request({...valid,q:'¿Cabe una tercera zanja el mismo día?'},nuevo,false);
+ assert.equal(tope.status,429);
+ assert.match((await tope.json()).error,/2 zanjas al día/);
 });

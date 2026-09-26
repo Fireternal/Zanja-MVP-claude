@@ -232,3 +232,31 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 @keyframes llama{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(-2deg) scale(1.06)}}
 [data-motion=off] .racha-bloque.viva .racha-llama,[data-motion=off] .sello-final.puesto{animation:none}
 [data-motion=off] .mission-segments>i>span,[data-motion=off] .diligencia-barra>i{transition:none}
+
+/* Los niveles: la escalera, los candados y la hoja de la llave que falta. */
+.shortcut-llave{position:absolute;bottom:11px;right:10px;display:inline-flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid #a58ec6;border-radius:8px;background:#1d1230cc;color:#d9c8ee;font-size:10px;font-weight:1000;letter-spacing:.8px;box-shadow:0 2px 0 #110820}
+.home-shortcut.bajo-llave .shortcut-art{filter:grayscale(.55) brightness(.72)}
+.llave-bloqueada{display:flex;align-items:center;gap:11px;margin:14px 0 4px;padding:13px;border:1px dashed #6a5580;border-radius:12px;background:#ffffff05}
+.llave-candado{display:grid;place-items:center;width:34px;height:35px;flex-shrink:0;border:1px solid #58466e;border-radius:10px;color:#b49fd0;background:#231b33}
+.llave-bloqueada strong{display:block;font-size:13px;color:#dccbf0}
+.llave-bloqueada small{display:block;font-size:12px;color:#a996bd;margin-top:3px}
+.llave-emblema{color:#ffd961}
+.llave-progreso{margin:16px 0 4px;padding:13px;border:1px solid #55436b;border-radius:12px;background:#241c38}
+.llave-progreso strong{display:block;font-size:14px}
+.llave-progreso small{display:block;font-size:12px;color:#b7a6cb;margin-top:3px}
+.llave-barra{display:block;height:8px;margin-top:11px;border:1px solid #56406b;border-radius:5px;background:#171020;overflow:hidden}
+.llave-barra>i{display:block;height:100%;background:linear-gradient(90deg,#eea527,#ffe36b);transition:width .6s}
+.escalera{list-style:none;margin:0 0 30px;padding:0;display:flex;flex-direction:column;gap:9px}
+.escalera>li{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid #453760;border-radius:12px;background:#241d37;opacity:.78}
+.escalera>li.abierto{opacity:1;border-color:#6f5a3a;background:#2f2a34}
+.escalera-marca{display:grid;place-items:center;width:34px;height:35px;flex-shrink:0;position:relative;border:1px solid #58466e;border-radius:10px;color:#a48fc4;background:#1e1730}
+.escalera>li.abierto .escalera-marca{color:#3c2a12;background:linear-gradient(145deg,#ffd964,#e2a92c);border-color:#ffe79a}
+.escalera-marca>b{position:absolute;right:-5px;bottom:-5px;min-width:17px;padding:0 3px;border:1px solid #241430;border-radius:5px;background:#3b2c52;color:#e5d6f7;font-size:10px;line-height:15px;text-align:center}
+.escalera>li.abierto .escalera-marca>b{background:#241430;color:var(--yellow)}
+.escalera-texto{flex:1;min-width:0}
+.escalera-texto strong{display:block;font-size:14px;line-height:1.3}
+.escalera-texto small{display:block;font-size:12px;color:#ac9cc0;margin-top:3px;line-height:1.4}
+.escalera-xp{flex-shrink:0;text-align:right;font-family:var(--display);font-size:15px;color:#9d8dba}
+.escalera>li.abierto .escalera-xp{color:#e2c979}
+.escalera-xp>i{display:block;font-family:'Nunito Sans',sans-serif;font-style:normal;font-size:9px;letter-spacing:1px;color:#8d7ea6}
+[data-motion=off] .llave-barra>i{transition:none}
