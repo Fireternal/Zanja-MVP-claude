@@ -3,6 +3,7 @@ import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
+import {expedienteDe,SELLO_XP} from '@/lib/expediente';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
@@ -119,8 +120,15 @@ export async function GET(req:Request){try{
  const vote:any=personal.results.find((v:any)=>v.case_id===c.id);const closed=c.closes>0&&c.closes<=now&&c.status!=='waiting';const counts={a:0,both:0,b:0,none:0};vs.results.filter((v:any)=>v.case_id===c.id).forEach((v:any)=>{counts[v.choice as keyof typeof counts]=Number(v.n);});
  return {id:c.id,story:c.story||'',audience:c.audience||'public',workflow:c.workflow||0,duration:c.duration,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id):(c.editorial?c.evidenceUrl||null:null),q:c.q,tag:c.tag,at:c.at,a:c.status==='ready'&&c.owner!==user?[]:a,bt:c.bt,b,needsDefenses,emoji:c.emoji,created:c.created,closes:c.closes,status:rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)?'review':closed?'closed':needsDefenses?'incomplete':c.status,editorial:c.editorial||0,mine:c.owner===user,participant:c.respondent===user,votedAt:vote?.at||0,bilateral:!!c.respondent,choice:vote?.choice||null,counts:vote||closed||c.owner===user?counts:null,voice:vote||closed||c.owner===user?voices.get(c.id)||null:null,total:Object.values(counts).reduce((a,b)=>a+b,0),invite:c.owner===user?c.invite:undefined,reported:reported.results.some((r:any)=>r.case_id===c.id)};
  });
+ // El expediente se deduce de lo que ya está guardado: votos, pulsos y voces.
+ const [charlas,latidos]=user?await database.batch([
+  database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user),
+  database.prepare('SELECT day FROM pulse WHERE user_id=?').bind(user)]):[{results:[]},{results:[]}];
+ const expediente=expedienteDe({votos:(personal.results as any[]).map(v=>Number(v.at)),
+  pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
+  comentarios:(charlas.results as any[]).map(r=>Number(r.at))});
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
- return reply({cases:data,pulse,profile:{votes:personal.results.length,xp:personal.results.length*5,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
+ return reply({cases:data,pulse,expediente,profile:{votes:personal.results.length,xp:personal.results.length*5+pulse.points+expediente.sellos*SELLO_XP,today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
  const quien=await quienEs(req);if(!quien)return fail('Inicia sesión para guardar tu participación.',401);

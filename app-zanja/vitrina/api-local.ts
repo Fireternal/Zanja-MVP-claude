@@ -16,6 +16,7 @@ import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
 import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
+import {expedienteDe,SELLO_XP} from '@/lib/expediente';
 
 const LLAVE='zanja-vitrina-v1';
 const SECRETO='vitrina-sin-servidor';
@@ -113,10 +114,14 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
  const porDia:Record<string,number>={};
  mios.forEach(v=>{const k=new Date(v.at).toISOString().slice(0,10);porDia[k]=(porDia[k]||0)+1;});
  const hoy=new Date(ahora).toISOString().slice(0,10);
- return {cases:data,
-  profile:{votes:mios.length,xp:mios.length*5,today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
+ const latido=pulso(g);
+ const expediente=expedienteDe({votos:mios.map(v=>v.at),
+  pulsos:user?g.pulse.filter(l=>l.user_id===user).map(l=>l.day):[],
+  comentarios:user?g.comments.filter(v=>v.user_id===user).map(v=>v.at):[]});
+ return {cases:data,expediente,
+  profile:{votes:mios.length,xp:mios.length*5+latido.points+expediente.sellos*SELLO_XP,today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
    dailyAchieved:Object.values(porDia).some(n=>n>=5),created:g.cases.filter(c=>c.owner===user&&c.status!=='removed').length},
-  signedIn:!!user,daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:pulso(g)};
+  signedIn:!!user,daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
 }
 
 function invitacion(g:Guardado,token:string){

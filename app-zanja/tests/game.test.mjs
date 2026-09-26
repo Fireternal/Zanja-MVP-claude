@@ -14,13 +14,14 @@ const blobs=new Map();let failStorage=false;
 globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Error('Storage unavailable');blobs.set(key,new Uint8Array(bytes));},get:async key=>{const bytes=blobs.get(key);return bytes?{body:bytes,size:bytes.length}:null;},delete:async key=>{blobs.delete(key);}};
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
 const pulseUrl=moduleUrl(compile(readFileSync(new URL('../lib/pulse.ts',import.meta.url),'utf8')));
+const expedienteUrl=moduleUrl(compile(readFileSync(new URL('../lib/expediente.ts',import.meta.url),'utf8')));
 const sessionUrl=moduleUrl(compile(readFileSync(new URL('../lib/session.ts',import.meta.url),'utf8')));
 globalThis.__zanjaTestSecret='secreto-de-pruebas-con-longitud-suficiente';
 globalThis.__zanjaTrustHeader=false;
 const {SESSION_COOKIE,signSession}=await import(sessionUrl);
 // Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
 const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
 async function request(data,user='juror'){return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{cookie:await cookieFor(user)}:{})},body:JSON.stringify(data)}));}
