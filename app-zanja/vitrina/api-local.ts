@@ -18,18 +18,19 @@ import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {expedienteDe} from '@/lib/expediente';
 import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
+import {avisosDe} from '@/lib/avisos';
 
 const LLAVE='zanja-vitrina-v1';
 const SECRETO='vitrina-sin-servidor';
 
-type Ficha={id:string;owner:string;q:string;tag:string;at:string;a:string;bt:string;b:string;emoji:string;created:number;closes:number;status:string;invite:string|null;respondent:string|null;duration:number;evidence:string|null;story:string;audience:string;workflow:number};
+type Ficha={answered?:number;id:string;owner:string;q:string;tag:string;at:string;a:string;bt:string;b:string;emoji:string;created:number;closes:number;status:string;invite:string|null;respondent:string|null;duration:number;evidence:string|null;story:string;audience:string;workflow:number};
 type Voto={case_id:string;user_id:string;choice:string;at:number};
 type Denuncia={case_id:string;user_id:string;reason:string;at:number};
 type Apoyo={comment_id:string;user_id:string;at:number};
 type Latido={day:number;user_id:string;choice:Choice;at:number};
-type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[]};
+type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[];seen:number};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[]});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[],seen:0});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
@@ -119,7 +120,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
  const expediente=expedienteDe({votos:mios.map(v=>v.at),
   pulsos:user?g.pulse.filter(l=>l.user_id===user).map(l=>l.day):[],
   comentarios:user?g.comments.filter(v=>v.user_id===user).map(v=>v.at):[]});
- return {cases:data,expediente,
+ return {cases:data,expediente,avisos:campanaDe(g,user,latido),
   profile:{votes:mios.length,xp:xpDe({votos:mios.length,aciertos:latido.hits,sellos:expediente.sellos}),today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
    dailyAchieved:Object.values(porDia).some(n=>n>=5),created:g.cases.filter(c=>c.owner===user&&c.status!=='removed').length},
   signedIn:!!user,daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
@@ -140,6 +141,7 @@ function guardarPartida(g:Guardado,data:any){
 
  if(data.action==='reset_round'){g.votes=g.votes.filter(v=>v.user_id!==user);escribir(g);return json({ok:true});}
 
+ if(data.action==='seen'){g.seen=ahora;escribir(g);return json({ok:true});}
  if(data.action==='create'){
   const q=limpio(data.q,1200,12);
   const a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null;
@@ -309,6 +311,24 @@ function latidos(g:Guardado,dia:number):Tally{
  const t:Tally={si:base.si,no:base.no};
  for(const l of g.pulse)if(l.day===dia)t[l.choice]++;
  return t;
+}
+
+/** La campana, deducida igual que en el servidor. */
+function campanaDe(g:Guardado,user:string|null,latido:ReturnType<typeof pulso>){
+ if(!user)return {items:[],nuevos:0};
+ const titulo=(id:string)=>{const m=/^pulso-(\d+)$/.exec(id);
+  return m?questionFor(Number(m[1])):(g.cases.find(c=>c.id===id)?.q||seeds.find(x=>x.id===id)?.q||'');};
+ const mios=g.cases.filter(c=>c.owner===user&&c.status!=='removed');
+ const apoyos=g.seconds.flatMap(a=>{
+  const voz=g.comments.find(c=>c.id===a.comment_id);
+  return voz&&voz.user_id===user&&a.user_id!==user
+   ?[{commentId:a.comment_id,caseId:voz.case_id,q:titulo(voz.case_id),at:a.at}]:[];});
+ const voces=g.comments.filter(v=>v.user_id!==user&&mios.some(c=>c.id===v.case_id))
+  .map(v=>({caseId:v.case_id,q:titulo(v.case_id),at:v.at}));
+ return avisosDe({
+  mios:mios.map(c=>({id:c.id,q:c.q,status:c.status,closes:c.closes,answered:c.answered||0,respondent:c.respondent})),
+  apoyos,voces,
+  pulso:latido.yesterday?{acierto:!!latido.yesterday.hit,dia:dayOf()-1}:null},g.seen||0);
 }
 
 /** La experiencia de quien mira, con la misma cuenta que hace el servidor. */

@@ -43,6 +43,13 @@
       "when": 1790362079271,
       "tag": "0005_cooing_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790386250478,
+      "tag": "0006_abandoned_warlock",
+      "breakpoints": true
     }
   ]
 }

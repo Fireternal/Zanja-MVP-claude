@@ -91,3 +91,11 @@ INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0004_marvelous_drax.sql');
 -- 0005_cooing_loki.sql
 ALTER TABLE `comments` ADD `name` text DEFAULT 'Jurado' NOT NULL;
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0005_cooing_loki.sql');
+
+-- 0006_abandoned_warlock.sql
+CREATE TABLE `seen` (
+	`user_id` text PRIMARY KEY NOT NULL,
+	`at` integer NOT NULL
+);
+ALTER TABLE `cases` ADD `answered` integer DEFAULT 0 NOT NULL;
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0006_abandoned_warlock.sql');

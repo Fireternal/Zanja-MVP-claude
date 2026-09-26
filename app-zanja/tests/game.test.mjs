@@ -15,6 +15,7 @@ globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Er
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
 const pulseUrl=moduleUrl(compile(readFileSync(new URL('../lib/pulse.ts',import.meta.url),'utf8')));
 const expedienteUrl=moduleUrl(compile(readFileSync(new URL('../lib/expediente.ts',import.meta.url),'utf8')));
+const avisosUrl=moduleUrl(compile(readFileSync(new URL('../lib/avisos.ts',import.meta.url),'utf8')));
 const nivelesUrl=moduleUrl(compile(readFileSync(new URL('../lib/niveles.ts',import.meta.url),'utf8')
  .replace("'./pulse'",JSON.stringify(pulseUrl)).replace("'./expediente'",JSON.stringify(expedienteUrl))));
 const sessionUrl=moduleUrl(compile(readFileSync(new URL('../lib/session.ts',import.meta.url),'utf8')));
@@ -23,7 +24,7 @@ globalThis.__zanjaTrustHeader=false;
 const {SESSION_COOKIE,signSession}=await import(sessionUrl);
 // Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
 const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl)).replace("'@/lib/avisos'",JSON.stringify(avisosUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
 /**
@@ -458,4 +459,29 @@ test('los niveles abren la creación, la invitación y las pruebas',async()=>{
  const tope=await request({...valid,q:'¿Cabe una tercera zanja el mismo día?'},nuevo,false);
  assert.equal(tope.status,429);
  assert.match((await tope.json()).error,/2 zanjas al día/);
+});
+
+test('la campana avisa de lo tuyo y se calla al mirarla',async()=>{
+ const autor='dueño-campana';
+ assert.equal((await state(autor)).avisos.nuevos,0);
+ const {id}=await(await request({...valid,q:'¿Avisa la campana cuando se zanja esto?'},autor)).json();
+ // Con el caso abierto todavía no hay nada que contar.
+ assert.equal((await state(autor)).avisos.items.length,0);
+
+ sql.prepare('UPDATE cases SET closes=? WHERE id=?').run(Date.now()-1000,id);
+ const zanjado=await state(autor);
+ assert.equal(zanjado.avisos.nuevos,1);
+ assert.equal(zanjado.avisos.items[0].tipo,'zanjada');
+ assert.equal(zanjado.avisos.items[0].caseId,id);
+ assert.equal(zanjado.avisos.items[0].nuevo,true);
+ // A los demás no les llega nada de esto.
+ assert.equal((await state('ajena-campana')).avisos.items.length,0);
+
+ assert.equal((await request({action:'seen'},autor)).status,200);
+ const mirado=await state(autor);
+ assert.equal(mirado.avisos.nuevos,0);
+ assert.equal(mirado.avisos.items.length,1,'el aviso sigue en la lista, pero ya no es nuevo');
+ assert.equal(mirado.avisos.items[0].nuevo,false);
+ // Sin sesión no hay campana que valga.
+ assert.equal((await request({action:'seen'},null)).status,401);
 });

@@ -1,5 +1,5 @@
 import {sqliteTable,text,integer,primaryKey,index} from 'drizzle-orm/sqlite-core';
-export const cases = sqliteTable('cases', {id:text('id').primaryKey(),owner:text('owner').notNull(),q:text('q').notNull(),tag:text('tag').notNull(),at:text('at').notNull(),a:text('a').notNull(),bt:text('bt').notNull(),b:text('b').notNull(),emoji:text('emoji').notNull(),created:integer('created').notNull(),closes:integer('closes').notNull(),status:text('status').notNull(),story:text('story').notNull().default(''),audience:text('audience').notNull().default('public'),workflow:integer('workflow').notNull().default(0),evidence:text('evidence'),invite:text('invite'),respondent:text('respondent'),duration:integer('duration').notNull()}, t=>[index('cases_owner').on(t.owner),index('cases_status').on(t.status)]);
+export const cases = sqliteTable('cases', {id:text('id').primaryKey(),owner:text('owner').notNull(),q:text('q').notNull(),tag:text('tag').notNull(),at:text('at').notNull(),a:text('a').notNull(),bt:text('bt').notNull(),b:text('b').notNull(),emoji:text('emoji').notNull(),created:integer('created').notNull(),closes:integer('closes').notNull(),status:text('status').notNull(),story:text('story').notNull().default(''),audience:text('audience').notNull().default('public'),workflow:integer('workflow').notNull().default(0),evidence:text('evidence'),invite:text('invite'),respondent:text('respondent'),answered:integer('answered').notNull().default(0),duration:integer('duration').notNull()}, t=>[index('cases_owner').on(t.owner),index('cases_status').on(t.status)]);
 export const votes = sqliteTable('votes',{caseId:text('case_id').notNull(),userId:text('user_id').notNull(),choice:text('choice').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.caseId,t.userId]}),index('votes_user').on(t.userId)]);
 export const reports = sqliteTable('reports',{caseId:text('case_id').notNull(),userId:text('user_id').notNull(),reason:text('reason').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.caseId,t.userId]})]);
 // La Sala: lo que dice el jurado después de votar. Un comentario por persona
@@ -9,3 +9,6 @@ export const seconds = sqliteTable('seconds',{commentId:text('comment_id').notNu
 // El Pulso: un voto por persona y día. El día va como número entero, que es
 // como cuenta los días la partida.
 export const pulse = sqliteTable('pulse',{day:integer('day').notNull(),userId:text('user_id').notNull(),choice:text('choice').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.day,t.userId]}),index('pulse_day').on(t.day)]);
+
+// La campana. No se guardan los avisos —se deducen—, sólo cuándo miraste.
+export const seen = sqliteTable('seen',{userId:text('user_id').primaryKey(),at:integer('at').notNull()});

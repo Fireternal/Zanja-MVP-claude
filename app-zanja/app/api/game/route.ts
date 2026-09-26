@@ -5,6 +5,7 @@ import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {expedienteDe} from '@/lib/expediente';
 import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
+import {avisosDe} from '@/lib/avisos';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
 const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
@@ -127,6 +128,26 @@ async function xpDeUsuario(database:any,user:string){
  return xpDe({votos:(votos.results as any[]).length,aciertos,sellos});
 }
 
+// --- La campana ----------------------------------------------------------
+// Los avisos se deducen; lo único guardado es cuándo se miró por última vez.
+async function avisos(database:any,user:string|null,pulse:any){
+ if(!user)return {items:[],nuevos:0};
+ const [mios,apoyos,voces,visto]=await database.batch([
+  database.prepare("SELECT id,q,status,closes,answered,respondent FROM cases WHERE owner=? AND status!='removed'").bind(user),
+  database.prepare('SELECT s.comment_id,s.at,c.case_id,ca.q FROM seconds s JOIN comments c ON c.id=s.comment_id LEFT JOIN cases ca ON ca.id=c.case_id WHERE c.user_id=? AND s.user_id!=?').bind(user,user),
+  database.prepare('SELECT co.case_id,co.at,ca.q FROM comments co JOIN cases ca ON ca.id=co.case_id WHERE ca.owner=? AND co.user_id!=?').bind(user,user),
+  database.prepare('SELECT at FROM seen WHERE user_id=?').bind(user)]);
+ // La sala puede ser de un caso del catálogo o del Pulso, que no están en la tabla.
+ const titulo=(id:string,q:string|null)=>{const dia=pulseDay(id);
+  return q||(dia!==null?questionFor(dia):seeds.find(x=>x.id===id)?.q||'');};
+ return avisosDe({
+  mios:(mios.results as any[]).map(c=>({id:c.id,q:c.q,status:c.status,closes:Number(c.closes),answered:Number(c.answered||0),respondent:c.respondent})),
+  apoyos:(apoyos.results as any[]).map(r=>({commentId:r.comment_id,caseId:r.case_id,q:titulo(r.case_id,r.q),at:Number(r.at)})),
+  voces:(voces.results as any[]).map(r=>({caseId:r.case_id,q:titulo(r.case_id,r.q),at:Number(r.at)})),
+  pulso:pulse.yesterday?{acierto:!!pulse.yesterday.hit,dia:dayOf()-1}:null},
+  Number((visto.results as any[])[0]?.at||0));
+}
+
 const clean=(x:unknown,max:number,min=1)=>typeof x==='string'&&x.trim().length>=min&&x.trim().length<=max?x.trim():null;
 export async function GET(req:Request){try{
  const user=await identity(req); const url=new URL(req.url); const token=url.searchParams.get('invite'); const database=db();
@@ -138,6 +159,7 @@ export async function GET(req:Request){try{
  const voices=await topComments(database);
  const pulse=await pulso(database,user);
  const reported=user?await database.prepare('SELECT case_id FROM reports WHERE user_id=?').bind(user).all():{results:[]};
+ const campana=await avisos(database,user,pulse);
  const now=Date.now(); const editorialIds=new Set(seeds.map(c=>c.id)); const records=[...seeds,...cs.results.filter((c:any)=>!editorialIds.has(c.id))] as any[];
  const data=records.filter(c=>!['waiting','ready'].includes(c.status)||c.owner===user||(c.status==='ready'&&c.respondent===user)).filter(c=>c.audience!=='link'||c.owner===user||c.respondent===user||c.id===url.searchParams.get('case')).filter(c=>c.owner===user||!rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)).map(c=>{
  const a=readDefenses(c.a),b=readDefenses(c.b);const needsDefenses=!validDefenses(a)||(c.status!=='waiting'&&!validDefenses(b));
@@ -152,13 +174,17 @@ export async function GET(req:Request){try{
   pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
   comentarios:(charlas.results as any[]).map(r=>Number(r.at))});
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
- return reply({cases:data,pulse,expediente,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
+ return reply({cases:data,pulse,expediente,avisos:campana,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
  const quien=await quienEs(req);if(!quien)return fail('Inicia sesión para guardar tu participación.',401);
  const user=quien.uid;
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
  let data:any;try{data=await boundedJson(req);}catch(error){return fail(error instanceof Error?error.message:'Solicitud no válida.');} const database=db();const now=Date.now();
+ if(data.action==='seen'){
+ await database.prepare('INSERT INTO seen (user_id,at) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET at=?').bind(user,now,now).run();
+ return reply({ok:true});
+ }
  if(data.action==='reset_round'){
  await database.prepare('DELETE FROM votes WHERE user_id=?').bind(user).run();
  return reply({ok:true});
@@ -182,7 +208,7 @@ export async function POST(req:Request){try{
  if(data.action==='respond'){
  const a=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,at='Bando B';if(!a||!data.consent)return fail('Escribe tres defensas distintas de 12 a 160 caracteres y confirma la pregunta.');
  const invited:any=await database.prepare('SELECT a,workflow FROM cases WHERE invite=?').bind(data.invite).first();if(!invited||!validDefenses(readDefenses(invited.a)))return fail('Esta invitación es anterior al nuevo formato. Pide al autor una nueva zanja.',409);
- const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow});
+ const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow});
  }
  if(data.action==='pulse'){
  if(!CHOICES.includes(data.choice))return fail('Elige sí o no.');
