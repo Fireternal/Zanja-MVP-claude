@@ -159,3 +159,10 @@
 [data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
 [data-motion=off] .xp-track>[data-slot=progress-indicator]:after,[data-motion=off] .play-zone>.game-btn:after{display:none}
 
+
+/* --- La mascota ----------------------------------------------------------
+ * Flota despacio para que la pantalla vacía no parezca una pantalla rota.
+ */
+.mascota{width:190px;height:auto;margin:0 auto 6px;display:block;
+ filter:drop-shadow(0 18px 24px #0e0a1c99);animation:mascota-flota 4.5s ease-in-out infinite}
+@keyframes mascota-flota{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
