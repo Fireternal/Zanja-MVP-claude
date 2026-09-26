@@ -129,12 +129,27 @@
 .secundar.is-on>svg{animation:secundado .45s var(--salto)}
 @keyframes secundado{0%{transform:scale(1)}40%{transform:scale(1.45) rotate(-9deg)}100%{transform:scale(1)}}
 
+/* --- Detalles que se tocan mucho ----------------------------------------- */
+/* Elegir categoría en el Juzgado. */
+.category-scroll>button{transition:transform .18s var(--salto),background .18s,color .18s,border-color .18s}
+.category-scroll>button:active{transform:scale(.94)}
+.category-scroll>button.selected{animation:categoria-elegida .4s var(--salto)}
+@keyframes categoria-elegida{0%{transform:scale(.9)}55%{transform:scale(1.07)}100%{transform:scale(1)}}
+
+/* Las pestañas de Mis zanjas. */
+.mine-tabs button{transition:background .2s var(--suave),color .2s}
+
+/* El botón grande del menú respira muy despacio: sin llamar la atención, pero
+ * la pantalla no se queda nunca completamente parada. */
+.play-zone>.game-btn:after{content:'';position:absolute;inset:0;transform:translateX(-120%);
+ background:linear-gradient(100deg,transparent 30%,#ffffff5c 50%,transparent 70%);animation:brillo-pasa 5.5s ease-in-out 2s infinite;pointer-events:none}
+
 /* --- Todo lo de arriba se apaga aquí ------------------------------------- */
 @media(prefers-reduced-motion:reduce){
  .entra-lista>*,.screen-in,.mobile-nav button.active>svg,.campana-marca,.brillo:after,
  .fiesta,.fiesta-rayos,.fiesta-aro,.fiesta-emblema,.fiesta.sello .fiesta-emblema,.fiesta.sello .fiesta-cuerpo,
  .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned{animation:none!important}
- .fiesta-confeti,.fiesta-aro,.brillo:after,.xp-track>[data-slot=progress-indicator]:after{display:none}
+ .fiesta-confeti,.fiesta-aro,.brillo:after,.xp-track>[data-slot=progress-indicator]:after,.play-zone>.game-btn:after{display:none}
  .pulsable{transition:none}
 }
 /* El interruptor de Ajustes apaga el movimiento de toda la aplicación, no
@@ -142,5 +157,5 @@
  * cada animación nueva y siempre se olvidaba alguna. */
 [data-motion=off] *,[data-motion=off] *:before,[data-motion=off] *:after{animation:none!important;transition:none!important}
 [data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
-[data-motion=off] .xp-track>[data-slot=progress-indicator]:after{display:none}
+[data-motion=off] .xp-track>[data-slot=progress-indicator]:after,[data-motion=off] .play-zone>.game-btn:after{display:none}
 
