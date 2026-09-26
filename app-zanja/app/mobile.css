@@ -190,7 +190,6 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 /* ---------- Tú ---------- */
 /* Perfil y Mis zanjas eran dos pestañas y una estaba vacía para quien acaba
    de entrar. Juntas son una sola pantalla que siempre tiene algo: tus votos. */
-.tus-casos{margin:26px 0 30px;display:flex;flex-direction:column;gap:14px}
 
 /* El expediente del día: la tarjeta del lobby y la hoja que abre. */
 .mission-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:#cbb3de;white-space:nowrap}
