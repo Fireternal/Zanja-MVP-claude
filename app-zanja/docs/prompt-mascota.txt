@@ -1,0 +1,132 @@
+================================================================================
+CÓMO PEDÍRSELO A CHATGPT
+================================================================================
+1. Abre ChatGPT y sube las CUATRO imágenes de referencia que te he mandado
+   (arena-menu.png, my-cases-menu.png, daily-menu.png, create-case-menu.png).
+2. Pega el PROMPT 1 tal cual. Te devolverá UNA imagen: la pose de reposo.
+3. Míralas con calma. Si el estilo no pega con las referencias, dile qué falla
+   y que lo repita. NO SIGAS hasta que esa primera te guste: todas las demás
+   van a copiarla.
+4. Cuando te guste, pega el PROMPT 2 una vez por cada pose, cambiando sólo el
+   trozo entre [corchetes]. Mantén la conversación abierta para que tenga
+   delante la imagen aprobada.
+5. Descarga las siete con los nombres exactos que pone abajo y me las pasas
+   por aquí. Yo las meto en la app.
+
+================================================================================
+PROMPT 1 · LA POSE DE REPOSO (una sola imagen)
+================================================================================
+Estoy diseñando la mascota de ZANJA, una app española donde la gente vota quién
+tiene razón en discusiones cotidianas. Te he subido cuatro ilustraciones de la
+propia app: son mi referencia de estilo y la mascota tiene que parecer que sale
+del mismo sitio.
+
+LA MASCOTA
+Un mazo de juez con cara: el mango es su cuerpo y la cabeza del mazo es su
+cabeza. Tiene dos ojos grandes y expresivos y dos manos pequeñas de guante
+blanco (estilo dibujo animado clásico) que flotan sin brazos. No tiene boca
+dibujada salvo que la pose lo pida. Es simpático y con carácter, ni infantil
+ni agresivo. Sin género.
+
+ESTILO (mira las referencias subidas)
+- Render 3D de dibujo animado, tipo icono de juego móvil premium.
+- Formas gruesas y redondeadas, con brillo satinado y bordes biselados.
+- Madera dorada y latón pulido, como el mazo de la referencia.
+- Luz de foco teatral desde arriba, con un reborde de luz claro en los cantos.
+- Colores de la app: morado #6f3295, morado claro #b389ec, oro #ffd13e,
+  azul del bando A #76d9fa, coral del bando B #ffa5b5, fondo oscuro #17122b.
+- Nada de trazo negro de cómic, nada de acuarela, nada de pixel art, nada
+  fotorrealista.
+
+POSE DE ESTA IMAGEN
+En reposo, de frente, flotando, con las manos relajadas y expresión atenta,
+como esperando a que empiece el juicio. Es la pose base de la que van a salir
+todas las demás, así que déjala lo más neutra y clara posible.
+
+REQUISITOS TÉCNICOS (importantes)
+- PNG cuadrado de 1024×1024 con FONDO TRANSPARENTE de verdad.
+- El personaje centrado, ocupando alrededor del 80% del alto, con aire
+  alrededor.
+- Cámara frontal, a la altura de los ojos. Esta cámara no cambiará nunca.
+- Sin texto, sin letras, sin números, sin logos, sin marcos, sin viñetas.
+- Sin sombra proyectada en el suelo ni superficie debajo: el personaje va a ir
+  encima de fondos distintos.
+- Un solo personaje por imagen.
+
+================================================================================
+PROMPT 2 · LAS SEIS POSES RESTANTES (una imagen por vez)
+================================================================================
+Repite esta misma mascota EXACTAMENTE igual —mismo personaje, mismo estilo,
+mismos colores, mismos ojos, misma cámara frontal, mismo tamaño dentro del
+cuadro, fondo transparente, PNG 1024×1024, sin texto ni sombra en el suelo—
+cambiando sólo la pose y la expresión:
+
+[AQUÍ LA POSE]
+
+Si algo se te desvía del personaje aprobado, corrígelo: la continuidad entre
+las siete imágenes es lo más importante de todo.
+
+--------------------------------------------------------------------------------
+LAS SEIS POSES, UNA POR MENSAJE
+--------------------------------------------------------------------------------
+1) Golpeando. Descargando el mazo hacia abajo con fuerza, ojos entornados de
+   concentración, chispas doradas saltando por el impacto. Es el momento en que
+   se dicta un veredicto.
+
+2) Celebrando. Saltando de alegría con las dos manos arriba, ojos brillantes y
+   felices, confeti dorado y morado alrededor. Es cuando subes de nivel.
+
+3) Dudando. Ligeramente ladeado, una mano en la cabeza y la otra abierta, ojos
+   mirando de lado, con cara de "no me aclaro". Es cuando el jurado queda
+   empatado.
+
+4) Esperando. Sentado y aburrido, apoyado en una mano, con los ojos entornados
+   y un pequeño reloj de arena flotando al lado. Es cuando no quedan casos por
+   votar.
+
+5) Señalando. Inclinado hacia delante, una mano señalando hacia el frente
+   (hacia quien mira), ojos animados, invitando a participar. Es cuando la app
+   te propone crear tu primera zanja.
+
+6) Sellando. Sujetando con las dos manos un sello de tinta grande, recién
+   estampado, con una nubecilla de polvo y una estrella dorada. Es cuando
+   cierras el expediente del día.
+
+--------------------------------------------------------------------------------
+CÓMO GUARDARLAS (nombres exactos, en minúsculas)
+--------------------------------------------------------------------------------
+  mazo-reposo.png      la del PROMPT 1
+  mazo-golpe.png       pose 1
+  mazo-celebra.png     pose 2
+  mazo-duda.png        pose 3
+  mazo-espera.png      pose 4
+  mazo-senala.png      pose 5
+  mazo-sella.png       pose 6
+
+================================================================================
+PROMPT 3 · OPCIONAL, LOS EFECTOS SUELTOS
+================================================================================
+Sólo si te sobran ganas. Con esto puedo cambiar el confeti dibujado por CSS
+—que es lo que hay ahora— por piezas de verdad.
+
+  Con el mismo estilo de las referencias (render 3D de dibujo animado, brillo
+  satinado, luz de foco), dame una sola imagen PNG de 1024×1024 con fondo
+  transparente que contenga estos seis objetos sueltos, separados entre sí,
+  repartidos en una rejilla de 3×2, cada uno centrado en su casilla y sin
+  tocarse: una estrella dorada, una moneda dorada con un rayo grabado, una
+  llama naranja, un sello de tinta morado, una chispa de impacto blanca y
+  dorada, y un trozo de confeti azul #76d9fa. Sin texto, sin sombras en el
+  suelo, sin fondo.
+
+  Guárdala como: efectos.png
+
+================================================================================
+SI ALGO SALE MAL
+================================================================================
+- Si el fondo sale blanco en vez de transparente: pídele explícitamente
+  "PNG con canal alfa, fondo completamente transparente, sin tablero de
+  cuadros". Si aun así no puede, mándamela igual y yo le quito el fondo.
+- Si el personaje cambia de cara entre imágenes: vuelve a subir la imagen
+  aprobada en el mismo mensaje y dile "usa esta imagen como referencia exacta
+  del personaje".
+- Si sale con sombra pegada debajo: no pasa nada, dímelo y la recorto.
