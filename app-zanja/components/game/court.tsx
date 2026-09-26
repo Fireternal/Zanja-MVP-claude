@@ -10,9 +10,9 @@ import {Sentencia} from '@/components/game/sentencia';
 import {Sala} from '@/components/game/sala';
 import {Marcador} from '@/components/game/marcador';
 import {Defensas} from '@/components/game/defensas';
-type Props={current?:Case;cases:Case[];filter:string;loading:boolean;busy:boolean;celebrate:boolean;onFilter:(s:string)=>void;onBack:()=>void;onVote:(side:'a'|'both'|'b'|'none')=>Promise<boolean>;onNext:()=>void;onCreate:()=>void;onReport:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void;};
+type Props={onCambio?:()=>void;current?:Case;cases:Case[];filter:string;loading:boolean;busy:boolean;celebrate:boolean;onFilter:(s:string)=>void;onBack:()=>void;onVote:(side:'a'|'both'|'b'|'none')=>Promise<boolean>;onNext:()=>void;onCreate:()=>void;onReport:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void;};
 function time(c:Case){if(c.status==='closed')return 'Cerrado';if(c.status==='waiting')return 'Esperando a B';if(!c.closes)return 'Sin límite';const m=Math.max(1,Math.ceil((c.closes-Date.now())/60000));return m>60?`${Math.ceil(m/60)} h`:`${m} min`;}
-export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,onBack,onVote,onNext,onCreate,onReport,onShare,onRevise}:Props){
+export function Court({onCambio,current:c,cases,filter,loading,busy,celebrate,onFilter,onBack,onVote,onNext,onCreate,onReport,onShare,onRevise}:Props){
  const [filters,setFilters]=useState(false),[choice,setChoice]=useState(filter),[pressed,setPressed]=useState<'a'|'both'|'b'|'none'|null>(null);
  const [sentencia,setSentencia]=useState(false),[defensas,setDefensas]=useState<'a'|'b'|null>(null);
  const heading=useRef<HTMLHeadingElement>(null);
@@ -30,7 +30,7 @@ export function Court({current:c,cases,filter,loading,busy,celebrate,onFilter,on
    <div className="verdict-context"><p className="verdict-status">{c.status==='closed'?'Resultado final':'Votación abierta'} · {c.total||0} {(c.total||0)===1?'voto':'votos'}</p>{c.evidenceUrl&&<EvidenceAccess src={c.evidenceUrl}/>}</div>
    <Marcador c={c} onLado={setDefensas}/>
    <div className="verdict-actions"><button className="quiet-btn" onClick={()=>setDefensas('a')}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>
-   <Sala key={'sala-'+c.id} sala={c.id}/>
+   <Sala key={'sala-'+c.id} sala={c.id} onCambio={onCambio}/>
    </div>
    <div className="court-salida"><button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button></div>
   </div>:<DuelBoard key={c.id} c={c} canVote={canVote} pressed={pressed} choose={choose} onNext={onNext} onShare={onShare} onRevise={onRevise} />}

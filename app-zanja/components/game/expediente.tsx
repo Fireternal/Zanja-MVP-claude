@@ -56,9 +56,9 @@ export function ExpedienteHoja({expediente,onIr}:{expediente:Expediente|null;onI
    {e.mejorRacha>0&&<span className="racha-record">RÉCORD<b>{e.mejorRacha}</b></span>}
   </div>
 
-  <ol className="diligencias">{e.misiones.map((m,i)=>{
+  <ol className="diligencias entra-lista">{e.misiones.map((m,i)=>{
    const Icono=ICONOS[m.id];
-   return <li key={m.id} className={m.hecho?'hecha':''}>
+   return <li key={m.id} className={m.hecho?'hecha':''} style={{'--i':i} as React.CSSProperties}>
     <span className="diligencia-num">{String(i+1).padStart(2,'0')}</span>
     <span className="diligencia-icono"><Icono size={19}/></span>
     <div className="diligencia-texto">

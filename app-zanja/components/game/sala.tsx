@@ -27,7 +27,7 @@ function cuando(at:number){
  return dias===1?'ayer':`hace ${dias} días`;
 }
 
-export function Sala({sala,titulo='LA SALA'}:{sala:string;titulo?:string}){
+export function Sala({sala,titulo='LA SALA',onCambio}:{sala:string;titulo?:string;onCambio?:()=>void}){
  const [estado,setEstado]=useState<Estado|null>(null);
  const [texto,setTexto]=useState('');
  const [enviando,setEnviando]=useState(false);
@@ -55,7 +55,7 @@ export function Sala({sala,titulo='LA SALA'}:{sala:string;titulo?:string}){
   const cuerpo=texto.trim();
   if(cuerpo.length<COMMENT_MIN||enviando)return;
   setEnviando(true);setError('');
-  try{await envia({action:'comment',id:sala,body:cuerpo});setTexto('');await cargar();}
+  try{await envia({action:'comment',id:sala,body:cuerpo});setTexto('');await cargar();onCambio?.();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
  }

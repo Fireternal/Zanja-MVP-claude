@@ -30,9 +30,9 @@ export function restante(c:Case){
  return m>60?`${Math.ceil(m/60)} h`:`${m} min`;
 }
 
-export function FichaCaso({c,onOpen,onShare,onRemove}:{c:Case;onOpen:()=>void;onShare:()=>void;onRemove:()=>void}){
+export function FichaCaso({c,indice=0,onOpen,onShare,onRemove}:{c:Case;indice?:number;onOpen:()=>void;onShare:()=>void;onRemove:()=>void}){
  const {estado,rotulo}=estadoDe(c),tiempo=restante(c);
- return <article className="ficha-caso" data-estado={estado}>
+ return <article className="ficha-caso" data-estado={estado} style={{'--i':indice} as React.CSSProperties}>
   <button className="ficha-abrir" onClick={onOpen}>
    <div className="ficha-alto">
     <span className="ficha-num">CASO {caseNumber(c.id)}</span>

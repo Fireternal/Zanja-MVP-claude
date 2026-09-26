@@ -8,6 +8,7 @@ import '@/app/mobile.css';
 import '@/app/court.css';
 import '@/app/overlays.css';
 import '@/app/creator.css';
+import '@/app/motion.css';
 import {instalarApiLocal} from './api-local';
 import Game from '@/app/page';
 

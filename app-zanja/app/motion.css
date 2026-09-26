@@ -1,0 +1,137 @@
+/* El movimiento de ZANJA.
+ *
+ * Una app de juzgado que no se mueve parece un formulario. Aquí está todo lo
+ * que da vida a lo que ya existía: las entradas escalonadas, la respuesta al
+ * dedo, las celebraciones y los golpes.
+ *
+ * Tres reglas para no pasarse:
+ *   1. Nada dura más de un segundo salvo una celebración, que se gana el sitio.
+ *   2. Todo lo que se mueve responde a algo que ha hecho la persona.
+ *   3. Todo se apaga con prefers-reduced-motion y con [data-motion=off].
+ *      Si añades una animación aquí, apágala al final del archivo.
+ */
+
+:root{
+ /* Con rebote, para lo que aparece. */
+ --salto:cubic-bezier(.34,1.56,.64,1);
+ /* La curva de la casa, para lo que se mueve de un sitio a otro. */
+ --suave:cubic-bezier(.2,.7,.3,1);
+ /* Frenada seca, para los golpes. */
+ --golpe:cubic-bezier(.16,1,.3,1);
+}
+
+/* --- Entradas escalonadas ------------------------------------------------
+ * Una lista que aparece de golpe se lee como una tabla; escalonada se lee
+ * como algo que está pasando. El componente pone --i en cada hijo.
+ */
+.entra-lista>*{animation:entra-item .44s var(--suave) both;animation-delay:calc(var(--i,0)*45ms)}
+@keyframes entra-item{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+/* --- Respuesta al dedo ---------------------------------------------------
+ * Lo que se puede tocar se hunde. Sin esto una tarjeta grande parece un
+ * cartel y no un botón.
+ */
+.pulsable,.mission-tile,.home-shortcut,.ficha-abrir,.pulso-tarjeta,.avisos>li>button,.escalera>li{transition:transform .16s var(--suave),box-shadow .16s var(--suave)}
+.pulsable:active,.mission-tile:active,.home-shortcut:active,.ficha-abrir:active,.pulso-tarjeta:active,.avisos>li>button:active{transform:scale(.972)}
+
+/* --- Pantallas -----------------------------------------------------------
+ * Entran desde abajo con un punto de rebote, no con un desvanecido plano.
+ */
+.screen-in{animation:screen-in .44s var(--suave) both}
+@keyframes screen-in{from{opacity:0;transform:translateY(16px) scale(.99)}to{opacity:1;transform:none}}
+
+/* --- La pestaña del menú de abajo --------------------------------------- */
+.mobile-nav button.active>svg{animation:nav-bote .5s var(--salto)}
+@keyframes nav-bote{0%{transform:scale(1)}35%{transform:scale(1.28) translateY(-3px)}100%{transform:scale(1)}}
+
+/* --- Contadores y barras ------------------------------------------------- */
+.brillo{position:relative;overflow:hidden}
+.brillo:after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+ background:linear-gradient(100deg,transparent 20%,#ffffff55 50%,transparent 80%);animation:brillo-pasa 2.6s ease-in-out .4s infinite}
+@keyframes brillo-pasa{0%{transform:translateX(-100%)}55%,100%{transform:translateX(100%)}}
+
+/* La barra de experiencia tiene un brillo que la recorre: una barra parada
+ * parece un dato y una que se mueve parece un progreso. */
+.xp-track>[data-slot=progress-indicator]{position:relative;overflow:hidden}
+.xp-track>[data-slot=progress-indicator]:after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+ background:linear-gradient(100deg,transparent 18%,#ffffff70 50%,transparent 82%);animation:brillo-pasa 3.6s ease-in-out 1.2s infinite}
+
+/* El expediente recién sellado da un salto en el menú. */
+.mission-tile.tile-sellada{animation:sello-tile .55s var(--salto) both}
+@keyframes sello-tile{0%{transform:scale(.96)}55%{transform:scale(1.035)}100%{transform:scale(1)}}
+
+/* --- La marca de la campana --------------------------------------------- */
+.campana-marca{animation:marca-pop .45s var(--salto) both}
+@keyframes marca-pop{0%{transform:scale(0)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+/* --- Celebraciones -------------------------------------------------------
+ * El nivel nuevo y el expediente sellado son los dos momentos que la app
+ * puede permitirse celebrar a pantalla completa. Uno tiene que sentirse como
+ * una puerta que se abre y el otro como un sello que cae.
+ */
+.fiesta{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+ padding:30px 22px calc(30px + env(safe-area-inset-bottom,0px));text-align:center;
+ background:radial-gradient(ellipse at 50% 38%,#4a2a7ceb,#110c1ff2 70%),#100c1bfa;animation:fiesta-fondo .35s ease-out both}
+@keyframes fiesta-fondo{from{opacity:0}to{opacity:1}}
+.fiesta-rayos{position:absolute;top:calc(50% - 150px);left:50%;width:520px;height:520px;margin:-260px 0 0 -260px;pointer-events:none;
+ background:repeating-conic-gradient(from 0deg,#ffd13e42 0deg 10deg,transparent 10deg 30deg);border-radius:50%;
+ -webkit-mask-image:radial-gradient(circle,#000 14%,#000a 34%,transparent 66%);mask-image:radial-gradient(circle,#000 14%,#000a 34%,transparent 66%);
+ animation:fiesta-rayos 14s linear infinite,fiesta-rayos-entra .8s var(--suave) both}
+@keyframes fiesta-rayos{to{transform:rotate(360deg)}}
+@keyframes fiesta-rayos-entra{from{opacity:0;scale:.4}to{opacity:1;scale:1}}
+.fiesta-aro{position:absolute;top:calc(50% - 150px);left:50%;width:150px;height:150px;margin:-75px 0 0 -75px;border:3px solid #ffd13e;border-radius:50%;
+ opacity:0;animation:fiesta-aro 1.1s var(--golpe) both;pointer-events:none}
+.fiesta-aro:nth-of-type(2){animation-delay:.16s}
+.fiesta-aro:nth-of-type(3){animation-delay:.32s}
+@keyframes fiesta-aro{0%{opacity:.75;transform:scale(.35)}100%{opacity:0;transform:scale(2.9)}}
+.fiesta-emblema{position:relative;display:grid;place-items:center;width:132px;height:138px;margin-bottom:22px;
+ border:4px solid #ffe79a;border-radius:34px;color:#3c2a12;background:linear-gradient(150deg,#ffe27a,#e9a825);
+ box-shadow:0 10px 0 #120b22,0 0 60px #ffbe2a55;animation:fiesta-emblema .85s var(--salto) both}
+@keyframes fiesta-emblema{0%{opacity:0;transform:scale(.2) rotate(-28deg)}55%{opacity:1;transform:scale(1.14) rotate(6deg)}75%{transform:scale(.96) rotate(-3deg)}100%{opacity:1;transform:scale(1) rotate(-4deg)}}
+.fiesta-emblema>b{position:absolute;bottom:-16px;padding:2px 15px;border:3px solid #241430;border-radius:12px;
+ background:#ffd13e;color:#432349;font-family:var(--display);font-size:27px;line-height:1.25}
+/* El sello cae de arriba y el suelo tiembla. */
+.fiesta.sello .fiesta-emblema{border-radius:26px;animation:fiesta-sello .7s var(--golpe) both}
+@keyframes fiesta-sello{0%{opacity:0;transform:translateY(-190px) scale(1.9) rotate(-16deg)}
+ 62%{opacity:1;transform:translateY(0) scale(.9) rotate(-4deg)}78%{transform:translateY(-14px) scale(1.03) rotate(-6deg)}100%{transform:translateY(0) scale(1) rotate(-5deg)}}
+.fiesta.sello .fiesta-cuerpo{animation:fiesta-temblor .5s .5s ease-out both}
+@keyframes fiesta-temblor{0%,100%{transform:none}20%{transform:translateY(4px)}45%{transform:translateY(-3px)}70%{transform:translateY(2px)}}
+.fiesta-cuerpo{position:relative;display:flex;flex-direction:column;align-items:center;max-width:340px}
+.fiesta-eyebrow{display:block;color:#ffd98f;font-size:12px;letter-spacing:2px;font-weight:1000;animation:fiesta-texto .5s .45s var(--suave) both}
+.fiesta h2{margin:12px 0 0;font-size:31px;line-height:1.18;text-shadow:0 4px 0 #2b1255;animation:fiesta-texto .5s .55s var(--suave) both}
+.fiesta>.fiesta-cuerpo>p{margin-top:12px;font-size:14px;line-height:1.6;color:#d9c8ee;animation:fiesta-texto .5s .65s var(--suave) both}
+@keyframes fiesta-texto{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.fiesta-llave{display:flex;align-items:center;gap:11px;margin-top:20px;padding:13px 15px;border:2px solid #d3a53f;border-radius:14px;
+ background:linear-gradient(120deg,#41301b,#2b2138);text-align:left;animation:fiesta-llave .6s .8s var(--salto) both}
+@keyframes fiesta-llave{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
+.fiesta-llave>span{display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:11px;color:#3c2a12;background:var(--yellow)}
+.fiesta-llave small{display:block;color:#e2c979;font-size:10px;letter-spacing:1.2px;font-weight:1000}
+.fiesta-llave strong{display:block;margin-top:3px;font-size:14px;line-height:1.3}
+.fiesta-xp{margin-top:18px;font-family:var(--display);font-size:22px;color:var(--yellow);text-shadow:0 3px 0 #2b1255;animation:fiesta-texto .5s .7s var(--suave) both}
+.fiesta-salir{margin-top:26px;min-width:210px;animation:fiesta-texto .5s .95s var(--suave) both}
+/* El confeti: cada trozo lleva su ángulo y su color en el estilo. */
+.fiesta-confeti{position:absolute;top:calc(50% - 150px);left:50%;width:10px;height:14px;border-radius:2px;
+ background:var(--color,#ffd13e);opacity:0;animation:fiesta-confeti 1.5s var(--golpe) both;animation-delay:var(--tarda,0s)}
+@keyframes fiesta-confeti{
+ 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.4)}
+ 12%{opacity:1}
+ 100%{opacity:0;transform:translate(calc(-50% + var(--x,0px)),calc(-50% + var(--y,0px))) rotate(var(--giro,360deg)) scale(1)}}
+
+/* --- Golpe de XP al votar ------------------------------------------------ */
+.xp-earned{animation:xp-llega .55s var(--salto) both}
+@keyframes xp-llega{0%{opacity:0;transform:translateY(14px) scale(.8)}60%{opacity:1;transform:translateY(-3px) scale(1.06)}100%{opacity:1;transform:none}}
+
+/* --- Todo lo de arriba se apaga aquí ------------------------------------- */
+@media(prefers-reduced-motion:reduce){
+ .entra-lista>*,.screen-in,.mobile-nav button.active>svg,.campana-marca,.brillo:after,
+ .fiesta,.fiesta-rayos,.fiesta-aro,.fiesta-emblema,.fiesta.sello .fiesta-emblema,.fiesta.sello .fiesta-cuerpo,
+ .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned{animation:none!important}
+ .fiesta-confeti,.fiesta-aro,.brillo:after,.xp-track>[data-slot=progress-indicator]:after{display:none}
+ .pulsable{transition:none}
+}
+/* El interruptor de Ajustes apaga el movimiento de toda la aplicación, no
+ * sólo el de este archivo: antes había que acordarse de añadir una regla por
+ * cada animación nueva y siempre se olvidaba alguna. */
+[data-motion=off] *,[data-motion=off] *:before,[data-motion=off] *:after{animation:none!important;transition:none!important}
+[data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
+[data-motion=off] .xp-track>[data-slot=progress-indicator]:after{display:none}

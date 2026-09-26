@@ -20,6 +20,8 @@ import {PulsoTarjeta,PulsoPantalla,type PulseState} from '@/components/game/puls
 import {ExpedienteTarjeta,ExpedienteHoja} from '@/components/game/expediente';
 import {FichaCaso} from '@/components/game/ficha';
 import {Campana,AvisosHoja,type Campanario} from '@/components/game/avisos';
+import {Celebracion,type Fiesta} from '@/components/game/celebracion';
+import {useContador} from '@/hooks/use-contador';
 import type {Expediente} from '@/lib/expediente';
 import {EscaleraNiveles,LlaveHoja} from '@/components/game/nivel';
 import {progresoDe,puede} from '@/lib/niveles';
@@ -31,7 +33,7 @@ const initProfile={votes:0,xp:0,today:0,created:0};
 const navs=[{id:'home',label:'Inicio',Icon:Home},{id:'arena',label:'Juzgado',Icon:Gavel},{id:'profile',label:'Tú',Icon:UserRound}];
 export default function Game(){
  const [view,setView]=useState('home'),[cases,setCases]=useState<Case[]>(seeds),[profile,setProfile]=useState<Profile>(initProfile),[signedIn,setSignedIn]=useState(false),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[busy,setBusy]=useState(false);
- const [pulse,setPulse]=useState<PulseState|null>(null),[expediente,setExpediente]=useState<Expediente|null>(null),[campana,setCampana]=useState<Campanario|null>(null),[hojaAvisos,setHojaAvisos]=useState<Campanario|null>(null);
+ const [pulse,setPulse]=useState<PulseState|null>(null),[expediente,setExpediente]=useState<Expediente|null>(null),[campana,setCampana]=useState<Campanario|null>(null),[hojaAvisos,setHojaAvisos]=useState<Campanario|null>(null),[cola,setCola]=useState<Fiesta[]>([]);
  const [filter,setFilter]=useState('Todas'),[active,setActive]=useState<string|null>(null),[daily,setDaily]=useState('pizza'),[skipped,setSkipped]=useState<string[]>([]),[mineTab,setMineTab]=useState('created');
  const [modal,setModal]=useState<string|null>(null),[step,setStep]=useState(1),[draft,setDraft]=useState<Draft>(blank),[created,setCreated]=useState<{id:string;invite?:string}|null>(null),[report,setReport]=useState(''),[remove,setRemove]=useState<string|null>(null);
  const [sound,setSound]=useState(false),[motion,setMotion]=useState(true),[celebrate,setCelebrate]=useState(false),[invitation,setInvitation]=useState<any>(null),[token,setToken]=useState<string|null>(null),[response,setResponse]=useState({bt:'',b:['','',''] as [string,string,string],consent:false}),[invError,setInvError]=useState('');
@@ -40,7 +42,7 @@ export default function Game(){
  const [afterSignIn,setAfterSignIn]=useState<string|null>(null);
  // Si entras desde el creador o desde una invitación, se vuelve a donde estabas.
  const openSignIn=(back:string|null=null)=>{setAfterSignIn(back);setModal('signin');};
- const stateRevision=useRef(0),returnedCase=useRef<string|null>(null),volverA=useRef('home'),arrancado=useRef(false);
+ const stateRevision=useRef(0),returnedCase=useRef<string|null>(null),volverA=useRef('home'),arrancado=useRef(false),celebrado=useRef<{nivel:number;sellado:boolean;dentro:boolean}|null>(null);
  const audio=useRef<AudioContext|null>(null);
  const mainRef=useRef<HTMLElement|null>(null);
  const scrollTop=()=>mainRef.current?.scrollTo({top:0,behavior:'instant'});
@@ -49,6 +51,7 @@ export default function Game(){
  useEffect(()=>{refresh();loadUser();try{const prefs=JSON.parse(localStorage.getItem('zanja-preferences')||'{}');setSound(!!prefs.sound);setMotion(prefs.motion!==false&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches);const saved=localStorage.getItem('zanja-draft');if(saved){const d=JSON.parse(saved);setDraft({...blank,...d,a:draftDefenses(d.a),b:draftDefenses(d.b)});}}catch{}const params=new URLSearchParams(location.search);const inv=params.get('invite');const id=params.get('case');if(inv){setToken(inv);setModal('invite');fetch('/api/game?invite='+encodeURIComponent(inv)).then(async r=>{const d:any=await r.json();if(!r.ok)throw Error(d.error);setInvitation(d.invitation);}).catch(e=>setInvError(e.message));}if(id){setActive(id);setView('arena');}},[refresh]);
  useEffect(()=>{if(loading)return;const id=new URLSearchParams(location.search).get('case');const c=cases.find(c=>c.id===id);if(c?.mine&&c.status==='ready'&&!modal&&returnedCase.current!==id){returnedCase.current=id;resume(c);}},[loading,cases]);
  useEffect(()=>{const id=setInterval(()=>refresh(),45000);return()=>clearInterval(id);},[refresh]);
+
  // El botón de atrás del teléfono.
  //
  // La aplicación no cambia de página, así que sin esto el botón físico de
@@ -97,6 +100,21 @@ export default function Game(){
  const available=cases.filter(c=>c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&!c.reported&&!skipped.includes(c.id)&&(filter==='Todas'||c.tag===filter));
  const current=active?cases.find(c=>c.id===active):available[0];
  const rango=progresoDe(profile.xp),level=rango.nivel;
+ const votosVistos=useContador(profile.votes),xpVisto=useContador(profile.xp),creadasVistas=useContador(profile.created);
+ // Subir de nivel y sellar el expediente se celebran. Se comparan con lo que
+ // se vio la última vez, nunca con un valor inicial: entrar en la app o
+ // iniciar sesión no puede disparar una fiesta que no has ganado ahora.
+ useEffect(()=>{
+  if(loading)return;
+  const ahora={nivel:level,sellado:!!expediente?.sellado,dentro:signedIn};
+  const previo=celebrado.current;
+  celebrado.current=ahora;
+  if(!previo||previo.dentro!==ahora.dentro)return;
+  const nuevas:Fiesta[]=[];
+  if(ahora.sellado&&!previo.sellado)nuevas.push({tipo:'sello',racha:expediente?.racha||1});
+  if(ahora.nivel>previo.nivel)nuevas.push({tipo:'nivel',nivel:ahora.nivel});
+  if(nuevas.length)setCola(c=>[...c,...nuevas]);
+ },[loading,level,expediente,signedIn]);
  const puedeCrear=puede(profile.xp,'crear');
  const recent=cases.filter(c=>c.choice).sort((a,b)=>(b.votedAt||0)-(a.votedAt||0)),own=cases.filter(c=>c.mine);
  const displayed=mineTab==='created'?own:recent;
@@ -105,7 +123,7 @@ export default function Game(){
  function resume(c:Case){setDraft({...blank,story:c.story||'',q:c.q,tag:c.tag,a:draftDefenses(c.a),b:draftDefenses(c.b),pendingId:c.id,invite:c.invite,duration:c.duration||3600000,audience:c.audience||'public'});setModal('create');}
  function play(id?:string){recordar();const c=cases.find(c=>c.id===id);if(c?.mine&&['waiting','ready'].includes(c.status)){resume(c);return;}setCelebrate(false);setActive(id||null);setView('arena');scrollTop();}
 
- async function vote(choice:string){if(!current||busy)return false;if(!signedIn){openSignIn();return false;}const caseId=current.id;stateRevision.current++;setBusy(true);blip();try{const result=await post({action:'vote',id:caseId,choice});setCases(items=>items.map(c=>c.id===caseId?{...c,choice:result.choice,counts:result.counts,total:result.total,votedAt:Date.now()}:c));setProfile(p=>({...p,votes:p.votes+1,xp:p.xp+result.xp,today:p.today+1}));setActive(caseId);scrollTop();setCelebrate(true);return true;}catch(e:any){toast.error(e.message);return false;}finally{setBusy(false);}}
+ async function vote(choice:string){if(!current||busy)return false;if(!signedIn){openSignIn();return false;}const caseId=current.id;stateRevision.current++;setBusy(true);blip();try{const result=await post({action:'vote',id:caseId,choice});setCases(items=>items.map(c=>c.id===caseId?{...c,choice:result.choice,counts:result.counts,total:result.total,votedAt:Date.now()}:c));setProfile(p=>({...p,votes:p.votes+1,xp:p.xp+result.xp,today:p.today+1}));setActive(caseId);scrollTop();setCelebrate(true);refresh();return true;}catch(e:any){toast.error(e.message);return false;}finally{setBusy(false);}}
 
  // Sesión propia: el servidor firma una cookie a partir del nombre. Ver
  // app/api/auth/LEEME.md — es provisional y no sustituye a una cuenta real.
@@ -125,6 +143,7 @@ export default function Game(){
   try{
    const r=await post({action:'pulse',choice});
    setPulse(p=>p&&{...p,choice:r.choice,counts:r.counts,total:r.total});
+   refresh();
    return true;
   }catch(e:any){toast.error(e.message);return false;}
   finally{setBusy(false);}
@@ -140,17 +159,17 @@ export default function Game(){
   </header>
   <main className="main-wrap" ref={mainRef}>
    {failed&&<div className="connection-banner" role="alert">No podemos conectar. Puedes explorar los casos; tus acciones necesitan conexión.<button onClick={()=>{setLoading(true);refresh();}}>Reintentar</button></div>}
-   {view==='home'&&<div key="home" className="screen-in phone-home sketch-menu"><h1 className="sr-only">Inicio de ZANJA</h1>
+   {view==='home'&&<div key="home" className="screen-in phone-home sketch-menu entra-lista"><h1 className="sr-only">Inicio de ZANJA</h1>
     <ExpedienteTarjeta expediente={expediente} onOpen={()=>setModal('expediente')}/>
     <section className="mobile-lobby-hero"><div className="lobby-scene"><img width={768} height={512} fetchPriority="high" decoding="async" src="/arena-menu.webp" alt="Mazo dorado del Juzgado entre los bandos azul y coral"/><div className="scene-tint"/><span className="ribbon">JUZGADO</span><div className="scene-title">DOS BANDOS.<br/><span>TÚ DECIDES.</span></div><span className="scene-vs" aria-hidden="true">A <b>VS</b> B</span></div><div className="play-zone"><button className="game-btn yellow" onClick={()=>{setFilter('Todas');play();}}>¡A ZANJAR!<Gavel size={24}/></button></div></section>
     <PulsoTarjeta pulse={pulse} onOpen={()=>go('pulso')}/>
     <div className="home-shortcuts"><button className="home-shortcut shortcut-mine" onClick={()=>{setMineTab('created');go('mine');}}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/my-cases-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>MIS<br/>ZANJAS</h2><ArrowRight className="shortcut-arrow" size={21}/></button><button className={'home-shortcut shortcut-create'+(puedeCrear?'':' bajo-llave')} onClick={openCreate}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/create-case-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>CREAR<br/>ZANJA</h2>{puedeCrear?<ArrowRight className="shortcut-arrow" size={21}/>:<span className="shortcut-llave"><LockKeyhole size={12}/>NIVEL 2</span>}</button></div>
     
    </div>}
-   {view==='pulso'&&<PulsoPantalla pulse={pulse} busy={busy} onAnswer={answerPulse} onBack={volver}/>}
-   {view==='arena'&&<Court current={current} cases={cases} filter={filter} loading={loading} busy={busy} celebrate={celebrate} onBack={volver} onVote={vote} onNext={next} onCreate={openCreate} onFilter={cat=>{setFilter(cat);setActive(null);setSkipped([]);scrollTop();}} onReport={()=>{setReport('');setModal('report');}} onShare={share} onRevise={revise}/>}
-   {view==='mine'&&<div key="mine" className="screen-in"><div className="page-heading"><div><span className="eyebrow">CADA DISCUSIÓN TIENE SU HISTORIA</span><h1>Mis zanjas</h1><p>Tus casos, tus votos y lo que pasó después.</p></div><button className="game-btn yellow small" onClick={openCreate}><Plus size={19}/>Crear zanja</button></div><Tabs value={mineTab} onValueChange={setMineTab}><TabsList className="mine-tabs"><TabsTrigger value="created">Mis casos <span>{own.length}</span></TabsTrigger><TabsTrigger value="voted">He votado <span>{recent.length}</span></TabsTrigger></TabsList></Tabs>{displayed.length?<div className="case-grid">{displayed.map(c=><FichaCaso key={c.id} c={c} onOpen={()=>play(c.id)} onShare={()=>share(c,true)} onRemove={()=>setRemove(c.id)}/>)}</div>:<section className="empty-state"><span className="empty-icon"><Layers size={44}/></span><h2>{mineTab==='created'?'Tu primera zanja empieza aquí.':'Todavía no has tomado partido.'}</h2><p>{mineTab==='created'?'¿Una discusión que siempre vuelve a la mesa? Dale dos versiones y un jurado.':'Entra en el Juzgado, lee las dos versiones y deja tu voto. Aquí podrás volver al resultado.'}</p><button className="game-btn yellow" onClick={mineTab==='created'?openCreate:()=>play()}>{mineTab==='created'?'CREAR MI PRIMERA ZANJA':'ENTRAR AL JUZGADO'}<ArrowRight size={20}/></button></section>}</div>}
-   {view==='profile'&&<div key="profile" className="screen-in profile-view"><div className="page-heading"><div><span className="eyebrow">EL CRITERIO SE ENTRENA</span><h1>Tú</h1><p>Tu nivel, tu escalera y lo que llevas conseguido.</p></div><button className="quiet-btn" onClick={()=>setModal('settings')}><Settings2 size={18}/>Ajustes</button></div><section className="profile-hero panel"><div className="large-medal"><ShieldCheck size={62}/><span>{level}</span></div><div><span className="tag amber">NIVEL {level}</span><h2>{rango.titulo}</h2><p>{rango.falta} XP para {rango.siguiente?rango.siguiente.titulo:'el siguiente nivel'}</p><Progress className="xp-track" value={rango.hecho/(rango.hasta-rango.desde)*100} aria-label="Experiencia"/></div></section><div className="stat-grid"><div className="panel"><Gavel/><strong>{profile.votes}</strong><span>Decisiones tomadas</span></div><div className="panel"><Zap/><strong>{profile.xp}</strong><span>Experiencia total</span></div><div className="panel"><Layers/><strong>{profile.created}</strong><span>Zanjas creadas</span></div></div><div className="section-label"><h2>Lo que abre cada nivel</h2><span>TU ESCALERA</span></div><EscaleraNiveles xp={profile.xp}/><div className="section-label"><h2>Pequeñas grandes victorias</h2><span>TUS LOGROS</span></div><div className="achievement-grid">{[{name:'Primer veredicto',desc:'Emite tu primer voto',ok:profile.votes>=1,Icon:Gavel},{name:'A pleno criterio',desc:'Juzga 50 dilemas',ok:profile.votes>=50,Icon:Trophy},{name:'Abre el debate',desc:'Crea tu primera zanja',ok:profile.created>=1,Icon:Zap},{name:'Expediente sellado',desc:'Completa las tres diligencias de un día',ok:(expediente?.sellos||0)>=1,Icon:Stamp},{name:'Siete días seguidos',desc:'Encadena una racha de una semana',ok:(expediente?.mejorRacha||0)>=7,Icon:Flame}].map(({name,desc,ok,Icon})=><div className={'achievement panel '+(ok?'unlocked':'')} key={name}><span><Icon size={27}/></span><h3>{name}</h3><p>{desc}</p><small>{ok?'CONSEGUIDO':<><LockKeyhole size={12}/>POR DESCUBRIR</>}</small></div>)}</div><div className="principle"><ShieldCheck/><p>Tu nivel premia la participación. <strong>No mide quién tiene razón.</strong></p></div></div>}
+   {view==='pulso'&&<PulsoPantalla pulse={pulse} busy={busy} onAnswer={answerPulse} onBack={volver} onCambio={refresh}/>}
+   {view==='arena'&&<Court current={current} cases={cases} filter={filter} loading={loading} busy={busy} celebrate={celebrate} onBack={volver} onCambio={refresh} onVote={vote} onNext={next} onCreate={openCreate} onFilter={cat=>{setFilter(cat);setActive(null);setSkipped([]);scrollTop();}} onReport={()=>{setReport('');setModal('report');}} onShare={share} onRevise={revise}/>}
+   {view==='mine'&&<div key="mine" className="screen-in"><div className="page-heading"><div><span className="eyebrow">CADA DISCUSIÓN TIENE SU HISTORIA</span><h1>Mis zanjas</h1><p>Tus casos, tus votos y lo que pasó después.</p></div><button className="game-btn yellow small" onClick={openCreate}><Plus size={19}/>Crear zanja</button></div><Tabs value={mineTab} onValueChange={setMineTab}><TabsList className="mine-tabs"><TabsTrigger value="created">Mis casos <span>{own.length}</span></TabsTrigger><TabsTrigger value="voted">He votado <span>{recent.length}</span></TabsTrigger></TabsList></Tabs>{displayed.length?<div className="case-grid entra-lista" key={mineTab}>{displayed.map((c,i)=><FichaCaso key={c.id} indice={i} c={c} onOpen={()=>play(c.id)} onShare={()=>share(c,true)} onRemove={()=>setRemove(c.id)}/>)}</div>:<section className="empty-state"><span className="empty-icon"><Layers size={44}/></span><h2>{mineTab==='created'?'Tu primera zanja empieza aquí.':'Todavía no has tomado partido.'}</h2><p>{mineTab==='created'?'¿Una discusión que siempre vuelve a la mesa? Dale dos versiones y un jurado.':'Entra en el Juzgado, lee las dos versiones y deja tu voto. Aquí podrás volver al resultado.'}</p><button className="game-btn yellow" onClick={mineTab==='created'?openCreate:()=>play()}>{mineTab==='created'?'CREAR MI PRIMERA ZANJA':'ENTRAR AL JUZGADO'}<ArrowRight size={20}/></button></section>}</div>}
+   {view==='profile'&&<div key="profile" className="screen-in profile-view entra-lista"><div className="page-heading"><div><span className="eyebrow">EL CRITERIO SE ENTRENA</span><h1>Tú</h1><p>Tu nivel, tu escalera y lo que llevas conseguido.</p></div><button className="quiet-btn" onClick={()=>setModal('settings')}><Settings2 size={18}/>Ajustes</button></div><section className="profile-hero panel"><div className="large-medal"><ShieldCheck size={62}/><span>{level}</span></div><div><span className="tag amber">NIVEL {level}</span><h2>{rango.titulo}</h2><p>{rango.falta} XP para {rango.siguiente?rango.siguiente.titulo:'el siguiente nivel'}</p><Progress className="xp-track" value={rango.hecho/(rango.hasta-rango.desde)*100} aria-label="Experiencia"/></div></section><div className="stat-grid"><div className="panel"><Gavel/><strong>{votosVistos}</strong><span>Decisiones tomadas</span></div><div className="panel"><Zap/><strong>{xpVisto}</strong><span>Experiencia total</span></div><div className="panel"><Layers/><strong>{creadasVistas}</strong><span>Zanjas creadas</span></div></div><div className="section-label"><h2>Lo que abre cada nivel</h2><span>TU ESCALERA</span></div><EscaleraNiveles xp={profile.xp}/><div className="section-label"><h2>Pequeñas grandes victorias</h2><span>TUS LOGROS</span></div><div className="achievement-grid">{[{name:'Primer veredicto',desc:'Emite tu primer voto',ok:profile.votes>=1,Icon:Gavel},{name:'A pleno criterio',desc:'Juzga 50 dilemas',ok:profile.votes>=50,Icon:Trophy},{name:'Abre el debate',desc:'Crea tu primera zanja',ok:profile.created>=1,Icon:Zap},{name:'Expediente sellado',desc:'Completa las tres diligencias de un día',ok:(expediente?.sellos||0)>=1,Icon:Stamp},{name:'Siete días seguidos',desc:'Encadena una racha de una semana',ok:(expediente?.mejorRacha||0)>=7,Icon:Flame}].map(({name,desc,ok,Icon})=><div className={'achievement panel '+(ok?'unlocked':'')} key={name}><span><Icon size={27}/></span><h3>{name}</h3><p>{desc}</p><small>{ok?'CONSEGUIDO':<><LockKeyhole size={12}/>POR DESCUBRIR</>}</small></div>)}</div><div className="principle"><ShieldCheck/><p>Tu nivel premia la participación. <strong>No mide quién tiene razón.</strong></p></div></div>}
   </main>
   <nav className="mobile-nav" aria-label="Navegación móvil">{navs.map(({id,label,Icon})=><button key={id} aria-current={view===id?'page':undefined} className={view===id?'active':''} onClick={()=>go(id)}><Icon size={22}/><span>{label}</span></button>)}</nav>
   <Dialog open={!!modal} onOpenChange={open=>{if(!open&&!busy)setModal(null);}}><DialogContent className={'zanja-dialog '+(['create','invite'].includes(modal||'')?'create-screen creator-shell':'bottom-sheet')} showCloseButton={false}>{!['create','invite'].includes(modal||'')&&<button className="dialog-x icon-btn" aria-label="Cerrar" disabled={busy} onClick={()=>setModal(null)}><X size={21}/></button>}
@@ -166,6 +185,7 @@ export default function Game(){
    {modal==='invite'&&<InviteResponse onSignIn={()=>openSignIn('invite')} onHome={()=>{setModal(null);go('home');}} onBusy={setBusy} invitation={invitation} error={invError} token={token||''} signedIn={signedIn} onClose={()=>setModal(null)} onSend={async(b)=>{const result=await post({action:'respond',invite:token,b,consent:true});await refresh();return result.pendingPublication;}}/>}
 
   </DialogContent></Dialog>
+  {cola[0]&&<Celebracion fiesta={cola[0]} onCerrar={()=>setCola(c=>c.slice(1))}/>}
   <AlertDialog open={!!remove} onOpenChange={o=>!o&&setRemove(null)}><AlertDialogContent className="zanja-dialog"><AlertDialogTitle>¿Retirar esta zanja?</AlertDialogTitle><AlertDialogDescription>Dejará de estar disponible en el Juzgado y en tus casos. Esta acción no se puede deshacer.</AlertDialogDescription><AlertDialogFooter><AlertDialogCancel>Volver</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={async()=>{setBusy(true);try{await post({action:'remove',id:remove});setRemove(null);await refresh();toast.success('Zanja retirada');}catch(e:any){toast.error(e.message);}finally{setBusy(false);}}}>Retirar zanja</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
  </div>;
 }

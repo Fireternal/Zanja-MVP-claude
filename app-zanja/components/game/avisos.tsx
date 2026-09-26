@@ -42,9 +42,9 @@ export function AvisosHoja({campana,onIr}:{campana:Campanario|null;onIr:(a:Aviso
    ?'Toca cualquiera para ir a donde ha pasado.'
    :'Cuando tus zanjas se muevan, te enterarás aquí.'}</DialogDescription>
   {items.length
-   ?<ol className="avisos">{items.map(a=>{
+   ?<ol className="avisos entra-lista">{items.map((a,i)=>{
      const Icono=ICONOS[a.tipo],{titulo,pie}=texto(a);
-     return <li key={a.id} className={a.nuevo?'nuevo':''}>
+     return <li key={a.id} className={a.nuevo?'nuevo':''} style={{'--i':i} as React.CSSProperties}>
       <button onClick={()=>onIr(a)}>
        <span className="aviso-icono"><Icono size={18}/></span>
        <div className="aviso-texto"><strong>{titulo}</strong>{pie&&<small>{pie}</small>}</div>

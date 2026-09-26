@@ -18,9 +18,9 @@ export function LlaveBloqueada({llave,xp}:{llave:Llave;xp:number}){
 
 export function EscaleraNiveles({xp}:{xp:number}){
  const nivel=nivelDe(xp);
- return <ol className="escalera">{rangos.map(r=>{
+ return <ol className="escalera entra-lista">{rangos.map((r,i)=>{
   const abierto=nivel>=r.nivel;
-  return <li key={r.nivel} className={abierto?'abierto':''}>
+  return <li key={r.nivel} className={abierto?'abierto':''} style={{'--i':i} as React.CSSProperties}>
    <span className="escalera-marca">{abierto?<Check size={15}/>:<LockKeyhole size={13}/>}<b>{r.nivel}</b></span>
    <div className="escalera-texto"><strong>{r.titulo}</strong><small>{r.desbloqueo}</small></div>
    <span className="escalera-xp">{r.xp?<>{r.xp}<i>XP</i></>:<i>DE SALIDA</i>}</span>

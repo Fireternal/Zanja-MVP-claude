@@ -73,7 +73,7 @@ function restante(){
 }
 
 /** La pantalla del Pulso: responder, ver el tirón y debatir. */
-export function PulsoPantalla({pulse,busy,onAnswer,onBack}:{pulse:PulseState|null;busy:boolean;onAnswer:(c:Choice)=>Promise<boolean>;onBack:()=>void}){
+export function PulsoPantalla({pulse,busy,onAnswer,onBack,onCambio}:{pulse:PulseState|null;busy:boolean;onAnswer:(c:Choice)=>Promise<boolean>;onBack:()=>void;onCambio?:()=>void}){
  const [pulsado,setPulsado]=useState<Choice|null>(null);
  const [abierto,setAbierto]=useState(false);
  const respondido=!!pulse?.choice;
@@ -144,7 +144,7 @@ export function PulsoPantalla({pulse,busy,onAnswer,onBack}:{pulse:PulseState|nul
      </div>
     </>}
 
-  {respondido&&<Sala sala={'pulso-'+pulse.day} titulo="ZONA DE DEBATE"/>}
+  {respondido&&<Sala sala={'pulso-'+pulse.day} titulo="ZONA DE DEBATE" onCambio={onCambio}/>}
 
   {ayer&&<p className={'pulso-ayer'+(ayer.hit?' es-acierto':'')}>
    {ayer.hit
