@@ -105,7 +105,7 @@ export function Sala({sala,titulo='LA SALA',onCambio}:{sala:string;titulo?:strin
   {error&&<p className="sala-error" role="alert">{error}</p>}
 
   {voces.length
-   ?<ul className="sala-voces">{voces.map(v=><li key={v.id} className={'voz voz-'+v.side+(v.mine?' voz-mia':'')}>
+   ?<ul className="sala-voces entra-lista">{voces.map((v,i)=><li key={v.id} style={{'--i':Math.min(i,8)} as React.CSSProperties} className={'voz voz-'+v.side+(v.mine?' voz-mia':'')}>
      <div className="voz-cabecera">
       <span className="voz-quien"><strong>{v.mine?'Tú':v.name}</strong><i className="voz-bando">{BANDO[v.side]||v.side}</i></span>
       <time>{cuando(v.at)}</time>

@@ -121,6 +121,14 @@
 .xp-earned{animation:xp-llega .55s var(--salto) both}
 @keyframes xp-llega{0%{opacity:0;transform:translateY(14px) scale(.8)}60%{opacity:1;transform:translateY(-3px) scale(1.06)}100%{opacity:1;transform:none}}
 
+/* --- La Sala -------------------------------------------------------------
+ * Secundar es el único gesto social de la app: tiene que devolver algo.
+ */
+.secundar{transition:transform .18s var(--salto),color .18s,background .18s}
+.secundar:active{transform:scale(.9)}
+.secundar.is-on>svg{animation:secundado .45s var(--salto)}
+@keyframes secundado{0%{transform:scale(1)}40%{transform:scale(1.45) rotate(-9deg)}100%{transform:scale(1)}}
+
 /* --- Todo lo de arriba se apaga aquí ------------------------------------- */
 @media(prefers-reduced-motion:reduce){
  .entra-lista>*,.screen-in,.mobile-nav button.active>svg,.campana-marca,.brillo:after,
@@ -135,3 +143,4 @@
 [data-motion=off] *,[data-motion=off] *:before,[data-motion=off] *:after{animation:none!important;transition:none!important}
 [data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
 [data-motion=off] .xp-track>[data-slot=progress-indicator]:after{display:none}
+
