@@ -6,7 +6,7 @@
 // celebra en pequeño —un golpe, un destello— para que estos dos signifiquen
 // algo cuando llegan.
 import {useEffect} from 'react';
-import {ShieldCheck,Stamp,KeyRound,Flame,ArrowRight} from 'lucide-react';
+import {KeyRound,Flame,ArrowRight} from 'lucide-react';
 import {rangos,tituloDe} from '@/lib/niveles';
 import {SELLO_XP} from '@/lib/expediente';
 
@@ -41,8 +41,9 @@ export function Celebracion({fiesta,onCerrar}:{fiesta:Fiesta;onCerrar:()=>void})
   {CONFETI.map((c,i)=><span key={i} className="fiesta-confeti" aria-hidden="true"
    style={{'--x':c.x+'px','--y':c.y+'px','--color':c.color,'--tarda':c.tarda+'s','--giro':c.giro+'deg'} as React.CSSProperties}/>)}
 
-  <span className="fiesta-emblema">
-   {fiesta.tipo==='nivel'?<><ShieldCheck size={62}/><b>{fiesta.nivel}</b></>:<Stamp size={62}/>}
+  <span className="fiesta-emblema con-mascota">
+   <img width={380} height={380} src={fiesta.tipo==='nivel'?'/mazo-celebra.webp':'/mazo-sella.webp'} alt="" aria-hidden="true"/>
+   {fiesta.tipo==='nivel'&&<b>{fiesta.nivel}</b>}
   </span>
 
   <div className="fiesta-cuerpo">

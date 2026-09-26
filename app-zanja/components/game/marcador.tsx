@@ -52,6 +52,7 @@ export function Marcador({c,onLado}:{c:Case;onLado:(l:'a'|'b')=>void}){
     </div>
    :<p className="marcador-desierto">Nadie ha votado todavía.</p>}
 
+  {cerrado&&fallo.kind==='ruling'&&<img className="mascota mascota-fallo" width={240} height={240} src="/mazo-golpe.webp" alt="" aria-hidden="true"/>}
   <p className={'marcador-titular titular-'+fallo.kind+(fallo.kind==='ruling'?' titular-'+fallo.side:'')}>
    {cerrado?verdictHeadline(fallo):verdictLead(fallo)}
    <small>{verdictSubhead(fallo)}</small>

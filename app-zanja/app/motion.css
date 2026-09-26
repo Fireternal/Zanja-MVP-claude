@@ -166,3 +166,15 @@
 .mascota{width:190px;height:auto;margin:0 auto 6px;display:block;
  filter:drop-shadow(0 18px 24px #0e0a1c99);animation:mascota-flota 4.5s ease-in-out infinite}
 @keyframes mascota-flota{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+
+/* La mascota en las celebraciones: sin marco, que ya es ella el emblema. */
+.fiesta-emblema.con-mascota{width:230px;height:230px;margin-bottom:10px;border:0;border-radius:0;background:none;
+ box-shadow:none;filter:drop-shadow(0 16px 26px #0a0714cc) drop-shadow(0 0 48px #ffbe2a3d)}
+.fiesta-emblema.con-mascota>img{width:100%;height:auto}
+.fiesta-emblema.con-mascota>b{bottom:6px}
+.court-empty .mascota{width:170px}
+
+/* El mazazo remata el fallo, sólo cuando el caso ya está cerrado. */
+.mascota-fallo{width:112px;margin:4px auto -4px;animation:mazazo .7s var(--golpe) both}
+@keyframes mazazo{0%{opacity:0;transform:translateY(-52px) rotate(-26deg) scale(1.25)}
+ 58%{opacity:1;transform:translateY(0) rotate(0) scale(.94)}78%{transform:translateY(-6px) scale(1.02)}100%{transform:none}}
