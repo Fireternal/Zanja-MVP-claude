@@ -47,13 +47,16 @@ export function ajustes() {
     nombre: env.ZANJA_D1_NOMBRE || archivo.d1?.nombre,
     id: env.ZANJA_D1_ID || archivo.d1?.id,
   };
-  const r2 = {nombre: env.ZANJA_R2_NOMBRE || archivo.r2?.nombre};
+  // El almacén de imágenes es opcional a propósito. R2 es lo único de la
+  // cuenta que puede acumular gasto si se desborda, así que se puede
+  // desplegar sin él: la app arranca igual y sólo adjuntar una prueba
+  // gráfica deja de estar disponible.
+  const r2 = {nombre: env.ZANJA_R2_NOMBRE || archivo.r2?.nombre || null};
 
   const falta = [];
   if (!worker) falta.push('el nombre del Worker (worker / ZANJA_WORKER)');
   if (!d1.nombre) falta.push('el nombre de la base (d1.nombre / ZANJA_D1_NOMBRE)');
   if (!d1.id) falta.push('el identificador de la base (d1.id / ZANJA_D1_ID)');
-  if (!r2.nombre) falta.push('el nombre del almacén (r2.nombre / ZANJA_R2_NOMBRE)');
 
   if (falta.length) {
     aborta(

@@ -26,11 +26,14 @@ const config = JSON.parse(readFileSync(generado, 'utf8'));
 config.name = worker;
 config.topLevelName = worker;
 config.d1_databases = [{binding: 'DB', database_name: d1.nombre, database_id: d1.id}];
-config.r2_buckets = [{binding: 'BUCKET', bucket_name: r2.nombre}];
+// Sin almacén no se declara la atadura: wrangler falla si se le nombra un
+// bucket que no existe en la cuenta.
+if (r2.nombre) config.r2_buckets = [{binding: 'BUCKET', bucket_name: r2.nombre}];
+else delete config.r2_buckets;
 delete config.dev;
 writeFileSync(destino, JSON.stringify(config, null, 2));
 
-console.log(`Worker: ${worker}\nBase de datos: ${d1.nombre}\nImágenes: ${r2.nombre}\n`);
+console.log(`Worker: ${worker}\nBase de datos: ${d1.nombre}\nImágenes: ${r2.nombre || 'sin almacén (no se podrán adjuntar pruebas)'}\n`);
 
 const argumentos = [wrangler, 'deploy', '--config', destino, ...process.argv.slice(2)];
 const salida = spawnSync(process.execPath, argumentos, {cwd: raiz, stdio: 'inherit'});

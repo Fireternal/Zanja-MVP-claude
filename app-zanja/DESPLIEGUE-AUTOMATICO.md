@@ -48,6 +48,17 @@ Es donde se guardan las fotos que la gente adjunta como prueba en un caso.
 Si Cloudflare pide activar R2 antes, actívalo; puede pedirte un método de
 pago aunque con el plan gratuito no llegues a pagar nada.
 
+**Este paso es opcional.** R2 es lo único de toda la cuenta que puede
+acumular gasto si se desborda, porque es de pago por uso desde el primer
+byte que pase de los 10 GB gratis. Workers y D1 no: cuando se pasan de su
+límite gratuito devuelven error y dejan de servir, pero no cobran.
+
+Si prefieres cero exposición, **sáltate este paso y deja `ZANJA_R2_NOMBRE`
+sin poner** en el paso 5. La app despliega y funciona igual; lo único que
+no estará disponible es adjuntar una prueba gráfica, que además sólo se
+desbloquea en el nivel 4. Se puede añadir cuando quieras: creas el bucket,
+añades la variable y vuelve a compilar solo.
+
 ## 4. Conectar GitHub
 
 Panel → **Workers & Pages** → **Create** → pestaña **Workers** →
@@ -84,7 +95,7 @@ compilación**, no del Worker:
 | `ZANJA_WORKER` | `zanja` |
 | `ZANJA_D1_NOMBRE` | `zanja` |
 | `ZANJA_D1_ID` | el identificador del paso 1 |
-| `ZANJA_R2_NOMBRE` | `zanja-pruebas` |
+| `ZANJA_R2_NOMBRE` | `zanja-pruebas` · déjala sin poner si te saltaste el paso 3 |
 
 Sin ellas la compilación se para y te dice cuál falta. Ninguna es secreta:
 son nombres, y para usarlos hace falta entrar en tu cuenta.
