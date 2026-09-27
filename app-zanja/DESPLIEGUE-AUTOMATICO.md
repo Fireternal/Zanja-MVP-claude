@@ -33,8 +33,9 @@ Abre el archivo [`db/crear-tablas.sql`](db/crear-tablas.sql) de este
 repositorio, copia todo su contenido, pégalo en la consola y dale a
 **Execute**.
 
-Eso crea las tres tablas: casos, votos y denuncias. Es lo único de todo el
-proceso que hay que hacer una vez y sólo una.
+Eso crea las ocho tablas: casos, votos, denuncias, comentarios, apoyos, el
+Pulso, los avisos vistos y las cuentas. Es lo único de todo el proceso que
+hay que hacer una vez y sólo una.
 
 ## 3. El almacén de imágenes
 
@@ -122,9 +123,11 @@ añade algo que hay que guardar.
 
 ## Cosas que conviene tener claras
 
-- **Entrar es provisional.** Cualquiera que escriba tu nombre entra como tú.
-  Vale para enseñárselo a gente conocida; no para anunciarlo en público. El
-  detalle está en [`app/api/auth/LEEME.md`](app/api/auth/LEEME.md).
+- **Entrar ya es de verdad.** Nombre y contraseña, con la contraseña
+  guardada sólo como huella (PBKDF2-SHA256 con sal por persona) y la sesión
+  firmada. Lo que todavía no hay es forma de recuperar una contraseña
+  olvidada: si alguien la pierde, se pierde la cuenta. El detalle está en
+  [`app/api/auth/LEEME.md`](app/api/auth/LEEME.md).
 - **Los datos son de verdad desde el primer minuto.** Los votos que se emitan
   en esa dirección se guardan. Si en algún momento quieres empezar de cero,
   se borra la base en el panel y se repiten los pasos 1 y 2.
