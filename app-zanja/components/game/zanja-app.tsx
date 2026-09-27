@@ -41,6 +41,10 @@ export default function ZanjaApp(){
  // La presentación sale una sola vez, y en este aparato: no es un dato de la
  // cuenta, es como el sonido o las animaciones.
  const [presentacion,setPresentacion]=useState(false);
+ // El chip de la cabecera acusa cada experiencia que entra: es el único sitio
+ // donde se ve el progreso sin ir al perfil, y sin moverse no se nota.
+ const [xpLlega,setXpLlega]=useState(false);
+ const xpAnterior=useRef<number|null>(null);
  const [displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false);
  const [afterSignIn,setAfterSignIn]=useState<string|null>(null);
  // Si entras desde el creador o desde una invitación, se vuelve a donde estabas.
@@ -113,6 +117,14 @@ export default function ZanjaApp(){
  // El catálogo es relleno: la cola la abren las zanjas de la gente. Ver lib/cola.ts.
  const available=ordenarCola(cases.filter(c=>c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&!c.reported&&!skipped.includes(c.id)&&(filter==='Todas'||c.tag===filter)),{votos:profile.votes});
  const current=active?cases.find(c=>c.id===active):available[0];
+ useEffect(()=>{
+  if(xpAnterior.current===null){xpAnterior.current=profile.xp;return;}
+  if(profile.xp<=xpAnterior.current){xpAnterior.current=profile.xp;return;}
+  xpAnterior.current=profile.xp;
+  setXpLlega(true);
+  const reloj=setTimeout(()=>setXpLlega(false),700);
+  return()=>clearTimeout(reloj);
+ },[profile.xp]);
  const rango=progresoDe(profile.xp),level=rango.nivel;
  const votosVistos=useContador(profile.votes),xpVisto=useContador(profile.xp),creadasVistas=useContador(profile.created);
  // Subir de nivel y sellar el expediente se celebran. Se comparan con lo que
@@ -182,7 +194,7 @@ export default function ZanjaApp(){
   {presentacion&&<Presentacion onCerrar={cerrarPresentacion}/>}
   <Toaster theme="dark" position="top-center" richColors/>
   <header className="topbar"><button className="brand" onClick={()=>go('home')} aria-label="ZANJA, inicio"><span className="brand-bolt"><Zap fill="currentColor"/></span><span>ZANJA<span className="brand-dot">.</span></span><span className="beta-tag">BETA</span></button>{view==='home'&&<button className="dev-reset" onClick={resetRound} disabled={busy} aria-label="Reiniciar mi ronda de pruebas" title="Desarrollo: borra mis votos de prueba y recupera los casos saltados">{busy?<LoaderCircle size={15} className="spin"/>:<RotateCcw size={15}/>}<span>REINICIAR<small>DEV</small></span></button>}
-   <div className="header-right"><Campana campana={campana} onOpen={abrirAvisos}/><button className="level-chip" onClick={()=>go('profile')} aria-label={`Tu perfil, nivel ${level}`}><Star fill="currentColor" size={18}/><span>NIV. {level}</span></button><button className="avatar" onClick={()=>go('profile')} aria-label="Mi perfil"><UserRound size={21}/></button></div>
+   <div className="header-right"><Campana campana={campana} onOpen={abrirAvisos}/><button className={'level-chip'+(xpLlega?' xp-entra':'')} onClick={()=>go('profile')} aria-label={`Tu perfil, nivel ${level}`}><Star fill="currentColor" size={18}/><span>NIV. {level}</span></button><button className="avatar" onClick={()=>go('profile')} aria-label="Mi perfil"><UserRound size={21}/></button></div>
   </header>
   <main className="main-wrap" ref={mainRef}>
    {failed&&<div className="connection-banner" role="alert">No podemos conectar. Puedes explorar los casos; tus acciones necesitan conexión.<button onClick={()=>{setLoading(true);refresh();}}>Reintentar</button></div>}

@@ -5,6 +5,7 @@
 // no robarle sitio al lobby. Todo lo que hay que explicar —las tres
 // diligencias, la racha y el sello— vive en la hoja, que sólo se abre si te
 // interesa.
+import {useEffect,useRef,useState} from 'react';
 import {ChevronRight,Flame,Gavel,Zap,MessagesSquare,Check,Stamp,ArrowRight,ClipboardList} from 'lucide-react';
 import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {SELLO_XP,type Expediente,type MisionId} from '@/lib/expediente';
@@ -22,6 +23,19 @@ export const expedienteVacio:Expediente={
 
 export function ExpedienteTarjeta({expediente,onOpen}:{expediente:Expediente|null;onOpen:()=>void}){
  const e=expediente||expedienteVacio;
+ // El tramo que se acaba de completar se enciende, pero sólo esa vez: si la
+ // animación fuera sólo de CSS se repetiría cada vez que vuelves al inicio.
+ const [recien,setRecien]=useState(false);
+ const hechasAntes=useRef<number|null>(null);
+ useEffect(()=>{
+  const hechas=e.misiones.filter(m=>m.hecho).length;
+  if(hechasAntes.current===null){hechasAntes.current=hechas;return;}
+  if(hechas<=hechasAntes.current){hechasAntes.current=hechas;return;}
+  hechasAntes.current=hechas;
+  setRecien(true);
+  const reloj=setTimeout(()=>setRecien(false),900);
+  return()=>clearTimeout(reloj);
+ },[e.misiones]);
  return <button className={'mission-tile'+(e.sellado?' tile-sellada':'')} onClick={onOpen} aria-label={`Expediente del día, ${e.completas} de 3 diligencias`}>
   <span className="mission-icon">{e.sellado?<Stamp size={21}/>:<ClipboardList size={21}/>}</span>
   <div>
@@ -29,7 +43,7 @@ export function ExpedienteTarjeta({expediente,onOpen}:{expediente:Expediente|nul
     <strong>{e.sellado?'¡Expediente sellado!':'Expediente del día'}</strong>
     <span className="mission-meta">{e.racha>0&&<b className="racha-chip"><Flame size={11} fill="currentColor"/>{e.racha}</b>}<span>{e.completas}/3</span></span>
    </div>
-   <div className="mission-segments" aria-hidden="true">{e.misiones.map(m=><i key={m.id} className={m.hecho?'done':''}><span style={{width:Math.round(Math.min(m.hechos/m.meta,1)*100)+'%'}}/></i>)}</div>
+   <div className={'mission-segments'+(recien?' recien-hecha':'')} aria-hidden="true">{e.misiones.map(m=><i key={m.id} className={m.hecho?'done':''}><span style={{width:Math.round(Math.min(m.hechos/m.meta,1)*100)+'%'}}/></i>)}</div>
   </div>
   <ChevronRight size={19}/>
  </button>;

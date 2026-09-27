@@ -33,6 +33,9 @@ export function Sala({sala,titulo='LA SALA',onCambio}:{sala:string;titulo?:strin
  const [enviando,setEnviando]=useState(false);
  const [error,setError]=useState('');
  const campo=useRef<HTMLTextAreaElement>(null);
+ // Lo que acabas de decir se enciende un momento al aparecer: en una lista de
+ // voces ajenas, saber cuál es la tuya sin buscarla.
+ const [recien,setRecien]=useState(false);
 
  const cargar=useCallback(async()=>{
   try{
@@ -55,7 +58,7 @@ export function Sala({sala,titulo='LA SALA',onCambio}:{sala:string;titulo?:strin
   const cuerpo=texto.trim();
   if(cuerpo.length<COMMENT_MIN||enviando)return;
   setEnviando(true);setError('');
-  try{await envia({action:'comment',id:sala,body:cuerpo});setTexto('');await cargar();onCambio?.();}
+  try{await envia({action:'comment',id:sala,body:cuerpo});setTexto('');await cargar();setRecien(true);setTimeout(()=>setRecien(false),1600);onCambio?.();}
   catch(e:any){setError(e.message);}
   finally{setEnviando(false);}
  }
@@ -105,7 +108,7 @@ export function Sala({sala,titulo='LA SALA',onCambio}:{sala:string;titulo?:strin
   {error&&<p className="sala-error" role="alert">{error}</p>}
 
   {voces.length
-   ?<ul className="sala-voces entra-lista">{voces.map((v,i)=><li key={v.id} style={{'--i':Math.min(i,8)} as React.CSSProperties} className={'voz voz-'+v.side+(v.mine?' voz-mia':'')}>
+   ?<ul className="sala-voces entra-lista">{voces.map((v,i)=><li key={v.id} style={{'--i':Math.min(i,8)} as React.CSSProperties} className={'voz voz-'+v.side+(v.mine?' voz-mia':'')+(v.mine&&recien?' voz-recien':'')}>
      <div className="voz-cabecera">
       <span className="voz-quien"><strong>{v.mine?'Tú':v.name}</strong><i className="voz-bando">{BANDO[v.side]||v.side}</i></span>
       <time>{cuando(v.at)}</time>

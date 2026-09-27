@@ -11,16 +11,29 @@ import {Sala} from '@/components/game/sala';
 import {Marcador} from '@/components/game/marcador';
 import {Defensas} from '@/components/game/defensas';
 type Props={onCambio?:()=>void;current?:Case;cases:Case[];filter:string;loading:boolean;busy:boolean;celebrate:boolean;onFilter:(s:string)=>void;onBack:()=>void;onVote:(side:'a'|'both'|'b'|'none')=>Promise<boolean>;onNext:()=>void;onCreate:()=>void;onReport:()=>void;onShare:(c:Case,invite?:boolean)=>void;onRevise:(c:Case)=>void;};
+/** Lo que tarda en cerrarse el voto: lo mismo que su animación. */
+const SELLADO=520;
 function time(c:Case){if(c.status==='closed')return 'Cerrado';if(c.status==='waiting')return 'Esperando a B';if(!c.closes)return 'Sin límite';const m=Math.max(1,Math.ceil((c.closes-Date.now())/60000));return m>60?`${Math.ceil(m/60)} h`:`${m} min`;}
 export function Court({onCambio,current:c,cases,filter,loading,busy,celebrate,onFilter,onBack,onVote,onNext,onCreate,onReport,onShare,onRevise}:Props){
  const [filters,setFilters]=useState(false),[choice,setChoice]=useState(filter),[pressed,setPressed]=useState<'a'|'both'|'b'|'none'|null>(null);
  const [sentencia,setSentencia]=useState(false),[defensas,setDefensas]=useState<'a'|'b'|null>(null);
+ // El voto se cierra con medio segundo de animación. Sin esto el resultado
+ // entraba en cuanto contestaba el servidor —en local, al instante— y la
+ // única recompensa de la acción central de la app no se veía nunca.
+ const [sellando,setSellando]=useState(false);
  const heading=useRef<HTMLHeadingElement>(null);
- const result=!!c?.counts&&!!(c.choice||c.status==='closed'||c.mine&&c.status==='open');
- useEffect(()=>{setPressed(null);setDefensas(null);},[c?.id]);
- useEffect(()=>{if(c?.choice){setPressed(null);heading.current?.focus({preventScroll:true});}},[c?.choice]);
+ const result=!sellando&&!!c?.counts&&!!(c.choice||c.status==='closed'||c.mine&&c.status==='open');
+ useEffect(()=>{setPressed(null);setSellando(false);setDefensas(null);},[c?.id]);
+ useEffect(()=>{if(c?.choice&&!sellando){setPressed(null);heading.current?.focus({preventScroll:true});}},[c?.choice,sellando]);
  const canVote=!!c&&c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&validDefenses(c.a)&&validDefenses(c.b)&&!loading&&!busy;
- const choose=async(side:'a'|'both'|'b'|'none')=>{if(!canVote||pressed)return;setPressed(side);if(!await onVote(side))setPressed(null);};
+ const choose=async(side:'a'|'both'|'b'|'none')=>{
+  if(!canVote||pressed)return;
+  setPressed(side);setSellando(true);
+  const animacion=new Promise(listo=>setTimeout(listo,SELLADO));
+  if(!await onVote(side)){setPressed(null);setSellando(false);return;}
+  await animacion;
+  setSellando(false);
+ };
  return <section className={'court-screen '+(result?'court-results':'')}>
   <div className="court-ambiente" aria-hidden="true"><span/><i/></div>
   <header className="court-toolbar"><button className="icon-btn" aria-label="Volver al inicio" onClick={onBack}><ArrowLeft size={22}/></button><h1 tabIndex={-1} ref={heading}>{result?'Tu veredicto':'El Juzgado'}</h1>{c&&<button className="icon-btn court-report" aria-label="Denunciar caso" onClick={onReport}><Flag size={19}/></button>}<button className={'court-filter icon-btn '+(filter!=='Todas'?'is-filtered':'')} aria-label={filter==='Todas'?'Filtrar casos':`Filtrar casos: ${filter}`} onClick={()=>{setChoice(filter);setFilters(true);}}><SlidersHorizontal size={21}/>{filter!=='Todas'&&<i/>}</button></header>

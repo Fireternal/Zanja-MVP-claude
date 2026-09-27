@@ -144,11 +144,66 @@
 .play-zone>.game-btn:after{content:'';position:absolute;inset:0;transform:translateX(-120%);
  background:linear-gradient(100deg,transparent 30%,#ffffff5c 50%,transparent 70%);animation:brillo-pasa 5.5s ease-in-out 2s infinite;pointer-events:none}
 
+/* --- El momento del voto -------------------------------------------------
+ * Es la acción central de la app y se estaba resolviendo con un 1,2 % de
+ * escala: literalmente no se veía. Ahora la carta elegida se cierra con un
+ * destello de oro que la recorre y las otras se apartan un poco.
+ */
+.vote-pending .vote-team.selected,.vote-pending .vote-both.selected{
+ animation:voto-cerrado .5s var(--golpe) both;
+ box-shadow:0 0 0 3px #ffd650,0 0 34px #ffd65066,var(--game-bevel)}
+@keyframes voto-cerrado{
+ 0%{transform:scale(1)}
+ 26%{transform:scale(.955)}
+ 62%{transform:scale(1.022)}
+ 100%{transform:scale(1)}}
+.vote-pending .vote-team.selected:after,.vote-pending .vote-both.selected:after{
+ content:'';position:absolute;inset:0;z-index:3;pointer-events:none;
+ background:linear-gradient(104deg,transparent 34%,#fff5c9aa 50%,transparent 66%);
+ transform:translateX(-115%);animation:voto-destello .55s .06s var(--suave) both}
+@keyframes voto-destello{to{transform:translateX(115%)}}
+/* Y lo que no has elegido se retira: apagado y un punto más pequeño. */
+.vote-pending .vote-team:not(.selected),.vote-pending .vote-both:not(.selected){
+ animation:voto-descartado .42s var(--suave) both}
+@keyframes voto-descartado{to{filter:saturate(.4) brightness(.72);transform:scale(.975)}}
+
+/* --- Las diligencias del expediente --------------------------------------
+ * Al volver de votar la barra avanza sola (ya tenía transición), pero el
+ * tramo que se completa no decía nada. Ahora se enciende.
+ */
+.mission-segments.recien-hecha>i.done{animation:diligencia-hecha .6s var(--salto) both}
+@keyframes diligencia-hecha{
+ 0%{box-shadow:0 0 0 #ffd03300;transform:scaleY(1)}
+ 40%{box-shadow:0 0 16px #ffd033cc;transform:scaleY(1.9)}
+ 100%{box-shadow:0 0 8px #ffd03335;transform:scaleY(1)}}
+
+/* --- El chip de nivel acusa la experiencia que entra --------------------- */
+.level-chip.xp-entra{animation:xp-entra .68s var(--salto) both}
+.level-chip.xp-entra>svg{animation:xp-estrella .68s var(--salto) both}
+@keyframes xp-entra{
+ 0%{transform:scale(1)}
+ 30%{transform:scale(1.13);border-color:var(--yellow);box-shadow:0 3px 0 var(--uva-hundido),0 0 20px #ffd13e70}
+ 100%{transform:scale(1)}}
+@keyframes xp-estrella{0%{transform:rotate(0) scale(1)}35%{transform:rotate(-22deg) scale(1.4)}100%{transform:rotate(0) scale(1)}}
+
+/* --- Tu voz recién dicha en La Sala --------------------------------------
+ * En una lista de voces ajenas, saber cuál es la tuya sin tener que buscarla.
+ */
+.voz-recien{animation:voz-recien 1.6s var(--suave) both}
+@keyframes voz-recien{
+ 0%{box-shadow:0 0 0 2px #ffd13e00}
+ 18%{box-shadow:0 0 0 2px #ffd13ecc,0 0 26px #ffd13e40}
+ 100%{box-shadow:0 0 0 2px #ffd13e00}}
+
 /* --- Todo lo de arriba se apaga aquí ------------------------------------- */
 @media(prefers-reduced-motion:reduce){
  .entra-lista>*,.screen-in,.mobile-nav button.active>svg,.campana-marca,.brillo:after,
  .fiesta,.fiesta-rayos,.fiesta-aro,.fiesta-emblema,.fiesta.sello .fiesta-emblema,.fiesta.sello .fiesta-cuerpo,
- .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned{animation:none!important}
+ .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned,
+ .vote-pending .vote-team.selected,.vote-pending .vote-both.selected,
+ .vote-pending .vote-team:not(.selected),.vote-pending .vote-both:not(.selected),
+ .mission-segments.recien-hecha>i.done,.level-chip.xp-entra,.level-chip.xp-entra>svg,.voz-recien{animation:none!important}
+ .vote-pending .vote-team.selected:after,.vote-pending .vote-both.selected:after{display:none}
  .fiesta-confeti,.fiesta-aro,.brillo:after,.xp-track>[data-slot=progress-indicator]:after,.play-zone>.game-btn:after{display:none}
  .pulsable{transition:none}
 }
@@ -157,7 +212,8 @@
  * cada animación nueva y siempre se olvidaba alguna. */
 [data-motion=off] *,[data-motion=off] *:before,[data-motion=off] *:after{animation:none!important;transition:none!important}
 [data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
-[data-motion=off] .xp-track>[data-slot=progress-indicator]:after,[data-motion=off] .play-zone>.game-btn:after{display:none}
+[data-motion=off] .xp-track>[data-slot=progress-indicator]:after,[data-motion=off] .play-zone>.game-btn:after,
+[data-motion=off] .vote-pending .vote-team.selected:after,[data-motion=off] .vote-pending .vote-both.selected:after{display:none}
 
 
 /* --- La mascota ----------------------------------------------------------
