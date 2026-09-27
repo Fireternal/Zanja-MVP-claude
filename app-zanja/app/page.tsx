@@ -8,6 +8,8 @@ import type {Metadata} from 'next';
 import {headers} from 'next/headers';
 import {seeds} from '@/lib/cases';
 import {db,sitioUrl} from '@/lib/server-db';
+import {descripcionDe} from '@/lib/comparte';
+import type {Counts} from '@/lib/verdict';
 import ZanjaApp from '@/components/game/zanja-app';
 
 const TITULO='ZANJA · Dos bandos. Un jurado. Un veredicto.';
@@ -24,30 +26,37 @@ async function origen():Promise<string>{
 }
 
 /**
- * La pregunta de un caso, para el título de la tarjeta.
+ * Lo que se puede contar de un caso en la vista previa de un enlace.
  *
  * Sólo se anuncian los casos públicos. Uno compartido sólo por enlace puede
  * tener contexto que su autora no quiere ver en la vista previa de nadie, así
  * que ésos llevan la tarjeta genérica. Si la base de datos no contesta, se
  * anuncia lo de siempre: una tarjeta fea es mejor que una página caída.
  */
-async function preguntaDe(id:string):Promise<string|null>{
+async function resumenDe(id:string):Promise<{q:string;cerrado:boolean;counts:Counts;total:number}|null>{
  const editorial=seeds.find(c=>c.id===id);
- if(editorial)return editorial.q;
  try{
-  const fila=await db().prepare("SELECT q FROM cases WHERE id=? AND audience='public' AND status IN ('open','closed')")
-   .bind(id).first() as {q:string}|null;
-  return fila?.q||null;
- }catch{return null;}
+  const base=editorial
+   ?{q:editorial.q,closes:editorial.closes,status:editorial.status}
+   :await db().prepare("SELECT q,closes,status FROM cases WHERE id=? AND audience='public' AND status IN ('open','closed')")
+     .bind(id).first() as {q:string;closes:number;status:string}|null;
+  if(!base)return null;
+  const votos=await db().prepare('SELECT choice,count(*) n FROM votes WHERE case_id=? GROUP BY choice').bind(id).all();
+  const counts:Counts={};let total=0;
+  for(const fila of votos.results as {choice:string;n:number}[]){
+   counts[fila.choice as keyof Counts]=Number(fila.n);total+=Number(fila.n);
+  }
+  return {q:base.q,cerrado:Number(base.closes)>0&&Number(base.closes)<=Date.now(),counts,total};
+ }catch{return editorial?{q:editorial.q,cerrado:false,counts:{},total:0}:null;}
 }
 
 export async function generateMetadata({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}):Promise<Metadata>{
  const parametros=await searchParams.catch(()=>({} as Record<string,string|undefined>));
  const id=typeof parametros?.case==='string'?parametros.case:null;
- const caso=id?await preguntaDe(id):null;
+ const caso=id?await resumenDe(id):null;
  const base=await origen();
- const titulo=caso?`${caso} · ZANJA`:TITULO;
- const descripcion=caso?`Dos bandos, dos versiones. Entra, lee las dos y vota quién tiene razón.`:DESCRIPCION;
+ const titulo=caso?`${caso.q} · ZANJA`:TITULO;
+ const descripcion=caso?descripcionDe(caso):DESCRIPCION;
  const imagen=base+'/og.jpg';
  return {
   metadataBase:new URL(base),
