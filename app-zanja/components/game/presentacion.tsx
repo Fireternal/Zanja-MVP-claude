@@ -16,6 +16,8 @@ import {ArrowRight,ArrowLeft,ClipboardList,KeyRound,Zap} from 'lucide-react';
 
 /** A partir de aquí es un gesto y no un toque. */
 const ARRASTRE=46;
+/** Y a partir de aquí el dedo ha decidido si va en horizontal o en vertical. */
+const EJE=10;
 
 type Lamina={
  id:string;
@@ -69,7 +71,10 @@ const DIARIO=[
 export function Presentacion({onCerrar}:{onCerrar:(alJuzgado:boolean)=>void}){
  const [i,setI]=useState(0);
  const [arrastre,setArrastre]=useState(0);
- const origen=useRef<number|null>(null);
+ // El gesto: dónde empezó el dedo y, en cuanto se sabe, hacia dónde va. Sin
+ // fijar el eje, bajar por el texto arrastraba también el carril de lado y la
+ // lámina temblaba mientras se lee.
+ const origen=useRef<{x:number;y:number;eje:'?'|'x'|'y';dx:number}|null>(null);
  const titulo=useRef<HTMLHeadingElement|null>(null);
  const visor=useRef<HTMLDivElement|null>(null);
  const ultima=i===LAMINAS.length-1;
@@ -110,10 +115,35 @@ export function Presentacion({onCerrar}:{onCerrar:(alJuzgado:boolean)=>void}){
   </header>
 
   <div className="presentacion-visor" ref={visor}
-   onTouchStart={e=>{origen.current=e.touches[0].clientX;}}
-   onTouchMove={e=>{if(origen.current!==null)setArrastre(e.touches[0].clientX-origen.current);}}
+   onTouchStart={e=>{origen.current={x:e.touches[0].clientX,y:e.touches[0].clientY,eje:'?',dx:0};}}
+   onTouchMove={e=>{
+    const g=origen.current;
+    if(!g)return;
+    const dx=e.touches[0].clientX-g.x,dy=e.touches[0].clientY-g.y;
+    // El primer tramo del gesto decide el eje, y ya no cambia: o pasas de
+    // lámina o lees la que tienes, nunca las dos cosas a la vez.
+    if(g.eje==='?'){
+     if(Math.abs(dx)<EJE&&Math.abs(dy)<EJE)return;
+     g.eje=Math.abs(dx)>Math.abs(dy)?'x':'y';
+    }
+    if(g.eje!=='x')return;
+    // El recorrido se guarda en el ref además de en el estado: en un
+    // deslizar rápido, touchend llega antes de que React haya confirmado el
+    // estado, y el gesto se perdía entero.
+    g.dx=dx;
+    // En los extremos el carril cede un tercio: se nota que no hay más.
+    const tope=(dx<0&&i===LAMINAS.length-1)||(dx>0&&i===0);
+    setArrastre(tope?dx/3:dx);
+   }}
    onTouchEnd={()=>{
-    if(Math.abs(arrastre)>ARRASTRE)mueve(arrastre<0?1:-1);
+    const g=origen.current;
+    if(g?.eje==='x'&&Math.abs(g.dx)>ARRASTRE)mueve(g.dx<0?1:-1);
+    origen.current=null;setArrastre(0);
+   }}
+   onTouchCancel={()=>{
+    // Si el navegador se queda el gesto a medias —el deslizar para volver de
+    // Android, una llamada— no llega ningún touchend y el carril se quedaba
+    // descolocado para siempre.
     origen.current=null;setArrastre(0);
    }}>
    <div className="presentacion-carril" style={{transform:`translateX(calc(${-i*100}% + ${arrastre}px))`}}>

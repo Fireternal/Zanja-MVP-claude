@@ -57,8 +57,11 @@ export default function ZanjaApp(){
  const refresh=useCallback(async()=>{const revision=stateRevision.current;try{const res=await fetch('/api/game'+(new URLSearchParams(location.search).get('case')?'?case='+encodeURIComponent(new URLSearchParams(location.search).get('case')!):''),{cache:'no-store'});const data:any=await res.json();if(!res.ok)throw new Error(data.error);if(revision!==stateRevision.current)return true;setCases(data.cases);setProfile(data.profile);setPulse(data.pulse||null);setExpediente(data.expediente||null);setCampana(data.avisos||null);setSignedIn(data.signedIn);setDaily(data.daily);setFailed(false);return true;}catch{setFailed(true);return false;}finally{setLoading(false);}},[]);
  useEffect(()=>{refresh();loadUser();try{const prefs=JSON.parse(localStorage.getItem('zanja-preferences')||'{}');setSound(!!prefs.sound);setMotion(prefs.motion!==false&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches);const saved=localStorage.getItem('zanja-draft');if(saved){const d=JSON.parse(saved);setDraft({...blank,...d,a:draftDefenses(d.a),b:draftDefenses(d.b)});}}catch{}const params=new URLSearchParams(location.search);const inv=params.get('invite');const id=params.get('case');
   // Quien llega por un enlace a un caso o a una invitación viene a algo
-  // concreto: la presentación esperaría a la próxima vez.
-  try{if(!inv&&!id&&!localStorage.getItem('zanja-presentacion'))setPresentacion(true);}catch{}if(inv){setToken(inv);setModal('invite');fetch('/api/game?invite='+encodeURIComponent(inv)).then(async r=>{const d:any=await r.json();if(!r.ok)throw Error(d.error);setInvitation(d.invitation);}).catch(e=>setInvError(e.message));}if(id){setActive(id);setView('arena');}},[refresh]);
+  // concreto: la presentación esperaría a la próxima vez. Y ?presentacion en
+  // la dirección la vuelve a abrir aunque ya se haya visto, para poder
+  // enseñarla o probarla sin tener que borrar los datos del navegador.
+  try{if(params.has('presentacion'))setPresentacion(true);
+   else if(!inv&&!id&&!localStorage.getItem('zanja-presentacion'))setPresentacion(true);}catch{}if(inv){setToken(inv);setModal('invite');fetch('/api/game?invite='+encodeURIComponent(inv)).then(async r=>{const d:any=await r.json();if(!r.ok)throw Error(d.error);setInvitation(d.invitation);}).catch(e=>setInvError(e.message));}if(id){setActive(id);setView('arena');}},[refresh]);
  useEffect(()=>{if(loading)return;const id=new URLSearchParams(location.search).get('case');const c=cases.find(c=>c.id===id);if(c?.mine&&c.status==='ready'&&!modal&&returnedCase.current!==id){returnedCase.current=id;resume(c);}},[loading,cases]);
  useEffect(()=>{const id=setInterval(()=>refresh(),45000);return()=>clearInterval(id);},[refresh]);
 

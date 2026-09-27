@@ -8,7 +8,11 @@
  * ========================================================================== */
 
 .presentacion{
- position:fixed;inset:0;z-index:60;
+ /* Alto con svh y no inset:0. En el móvil, un fixed que llega a inset:0 usa
+  * el viewport grande, así que la barra del navegador se come el pie —y el
+  * pie es el botón que hace avanzar. Con svh el pie siempre se ve. */
+ position:fixed;top:0;left:0;right:0;z-index:60;
+ height:100svh;max-height:100svh;
  max-width:var(--phone-width);margin:0 auto;
  display:flex;flex-direction:column;
  background:radial-gradient(ellipse at 50% 12%,#3b2468,#150f24 68%),#120c1e;
@@ -31,7 +35,7 @@
 .presentacion-mando>.quiet-btn{margin-left:auto;font-size:13px}
 
 /* --- El carril ---------------------------------------------------------- */
-.presentacion-visor{position:relative;z-index:1;flex:1;min-height:0;overflow:hidden;touch-action:pan-y}
+.presentacion-visor{position:relative;z-index:1;flex:1;min-height:0;overflow:hidden;touch-action:pan-y;overscroll-behavior:contain}
 .presentacion-carril{
  display:flex;height:100%;
  transition:transform .34s cubic-bezier(.2,.8,.3,1)}
