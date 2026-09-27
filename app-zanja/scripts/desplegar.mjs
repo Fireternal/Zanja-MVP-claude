@@ -52,7 +52,12 @@ if (salida.status) process.exit(salida.status);
 // para eso está el botón— y aquí se instala en el Worker después de subirlo.
 const secreto = process.env.SESSION_SECRET;
 if (secreto) {
-  if (secreto.length < 32) aborta('SESSION_SECRET tiene menos de 32 caracteres.');
+  // Avisar, no abortar: un secreto mal puesto no debe tirar abajo un
+  // despliegue que ya ha subido bien.
+  if (secreto.length < 32) {
+    console.log(`\nAviso: SESSION_SECRET tiene ${secreto.length} caracteres y hacen falta 32. No se instala; entrar dará error.`);
+    process.exit(0);
+  }
   // Con --config: sin él wrangler busca un wrangler.toml en la raíz, que no
   // existe porque la configuración se genera en dist/server/.
   const puesto = spawnSync(
