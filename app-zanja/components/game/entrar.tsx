@@ -12,8 +12,9 @@ import {NAME_MIN,NAME_MAX} from '@/lib/session';
 
 export type Credenciales={name:string;password:string;registrar:boolean};
 
-export function Entrar({ocupado,onEnviar,onSalir}:{ocupado:boolean;onEnviar:(c:Credenciales)=>Promise<string|null>;onSalir:()=>void}){
- const [registrar,setRegistrar]=useState(false);
+export function Entrar({ocupado,onEnviar,onSalir,creando=false}:{ocupado:boolean;onEnviar:(c:Credenciales)=>Promise<string|null>;onSalir:()=>void;creando?:boolean}){
+ // Quien viene de "crear mi cuenta" no tiene que buscar la pestaña.
+ const [registrar,setRegistrar]=useState(creando);
  const [name,setName]=useState(''),[password,setPassword]=useState('');
  const [verClave,setVerClave]=useState(false),[error,setError]=useState('');
 

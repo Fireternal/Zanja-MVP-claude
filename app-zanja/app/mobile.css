@@ -381,3 +381,20 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 .resumen-cifras b{font-family:var(--display);font-weight:400;font-size:21px;color:var(--yellow)}
 .resumen-cifras small{font-size:10px;letter-spacing:1px;font-weight:1000;color:#9b8cb4}
 .hueco-expediente{display:block;min-height:0;overflow:hidden}
+
+/* El perfil de quien todavía no ha entrado. Enseñar su nivel y su racha
+ * cuando no hay cuenta era enseñar el progreso de nadie, y encima uno que
+ * se pierde al cerrar. Aquí se dice y se ofrece la salida. */
+.sin-cuenta{display:flex;flex-direction:column;align-items:center;text-align:center;
+ padding:24px 20px 22px;background:radial-gradient(ellipse at 50% 0%,#5a3a9433,transparent 62%),#241b38}
+.sin-cuenta>img{width:min(48vw,168px);height:auto;margin:-6px 0 6px;
+ filter:drop-shadow(0 10px 18px #0c0818aa)}
+.sin-cuenta .eyebrow{margin-bottom:8px;color:#c9a9ff}
+.sin-cuenta h2{font-family:var(--display);font-weight:400;font-size:clamp(21px,5.8vw,25px);
+ line-height:1.15;text-shadow:0 3px 0 #1d0f36}
+.sin-cuenta p{margin-top:11px;font-size:14px;line-height:1.6;color:#c2b3d6}
+.sin-cuenta>.game-btn{width:100%;margin-top:19px}
+.sin-cuenta>.quiet-btn{margin-top:6px;font-size:13px}
+/* La puerta ocupa el sitio del nivel mientras no haya cuenta. */
+.level-chip.chip-entrar{color:#e3d6f7}
+.level-chip.chip-entrar>svg{color:var(--yellow)}
