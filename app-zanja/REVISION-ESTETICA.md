@@ -13,7 +13,7 @@ cd dist-vitrina && python3 -m http.server 8099 &
 node scripts/capturar-pantallas.mjs capturas
 ```
 
-Salen 29 PNG a 390×844 en doble densidad, más `00-todas-las-pantallas.png`, una
+Salen 26 PNG a 390×844 en doble densidad, más `00-todas-las-pantallas.png`, una
 hoja de contactos con todas juntas. El script va contra la vitrina, así que las
 capturas siempre traen los mismos casos de ejemplo y no enseñan datos de nadie.
 El botón REINICIAR DEV se oculta: no es diseño y despista a quien revisa.
@@ -100,10 +100,9 @@ cosa a tamaño completo.
 | 06–07 | Crear cuenta, vacío y relleno |
 | 08 | El Juzgado: las dos defensas y las cuatro respuestas |
 | 09–10 | El veredicto tras votar, y La Sala debajo |
-| 11–13 | El Pulso del día, su resultado y la zona de debate |
-| 14–15 | Inicio y el expediente del día |
-| 16–19 | Perfil, escalera de niveles, logros y ajustes |
-| 20, 25 | Mis zanjas, vacío y con casos |
-| 21–24 | Abrir un pleito: relato, tu versión, el enlace, la espera |
-| 26–28 | La otra parte al abrir el enlace, sin cuenta |
-| 29 | Perfil de quien entró como invitado |
+| 11–12 | Inicio y el expediente del día |
+| 13–16 | Perfil, escalera de niveles, logros y ajustes |
+| 17, 22 | Mis zanjas, vacío y con casos |
+| 18–21 | Abrir un pleito: relato, tu versión, el enlace, la espera |
+| 23–25 | La otra parte al abrir el enlace, sin cuenta |
+| 26 | Perfil de quien entró como invitado |

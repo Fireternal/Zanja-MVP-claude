@@ -15,8 +15,7 @@ import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} fro
 import {decodeEvidence} from '@/lib/evidence';
 import {cleanName,NAME_MIN,NAME_MAX} from '@/lib/session';
 import {CLAVE_MIN,RONDAS,derivar,handleDe,iguales,limpiaClave,nuevaSal} from '@/lib/passwords';
-import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
-import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
+import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,type Reparto,type Voz} from './jurado';
 import {expedienteDe} from '@/lib/expediente';
 import {xpDe,limiteDiario} from '@/lib/niveles';
 import {avisosDe} from '@/lib/avisos';
@@ -28,10 +27,9 @@ type Voto={case_id:string;user_id:string;choice:string;at:number};
 type Denuncia={case_id:string;user_id:string;reason:string;at:number};
 type Apoyo={comment_id:string;user_id:string;at:number};
 type Cuenta={uid:string;name:string;handle:string;hash:string;salt:string;rounds:number};
-type Latido={day:number;user_id:string;choice:Choice;at:number};
-type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];pulse:Latido[];seen:number;cuentas:Cuenta[]};
+type Guardado={user:{uid:string;name:string}|null;cases:Ficha[];votes:Voto[];reports:Denuncia[];jury:Record<string,Reparto>;comments:Voz[];seconds:Apoyo[];seen:number;cuentas:Cuenta[]};
 
-const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:[...vocesDeEjemplo(),...vocesDelPulso('pulso-'+dayOf())],seconds:[],pulse:[],seen:0,cuentas:[]});
+const vacio=():Guardado=>({user:null,cases:[],votes:[],reports:[],jury:juradoDeEjemplo(seeds.map(c=>c.id)),comments:vocesDeEjemplo(),seconds:[],seen:0,cuentas:[]});
 
 function leer():Guardado{
  try{const bruto=localStorage.getItem(LLAVE);if(!bruto)return vacio();return {...vacio(),...JSON.parse(bruto)};}catch{return vacio();}
@@ -85,11 +83,6 @@ async function auth(metodo:string,cuerpo:any){
 /** Los casos cerrados de ejemplo, una sola vez por persona. */
 function sembrarEjemplos(g:Guardado){
  const uid=g.user?.uid;if(!uid)return;
- const salaHoy='pulso-'+dayOf();
- if(!g.comments.some(v=>v.case_id===salaHoy))g.comments.push(...vocesDelPulso(salaHoy));
- const ayer=dayOf()-1;
- if(!g.pulse.some(l=>l.day===ayer&&l.user_id===uid))
-  g.pulse.push({day:ayer,user_id:uid,choice:'si',at:Date.now()-86400000});
  for(const {reparto,...caso} of casosCerrados(uid,Date.now())){
   if(g.cases.some(c=>c.id===caso.id))continue;
   g.cases.push(caso as Ficha);
@@ -136,14 +129,12 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
  const porDia:Record<string,number>={};
  mios.forEach(v=>{const k=new Date(v.at).toISOString().slice(0,10);porDia[k]=(porDia[k]||0)+1;});
  const hoy=new Date(ahora).toISOString().slice(0,10);
- const latido=pulso(g);
  const expediente=expedienteDe({votos:mios.map(v=>v.at),
-  pulsos:user?g.pulse.filter(l=>l.user_id===user).map(l=>l.day):[],
   comentarios:user?g.comments.filter(v=>v.user_id===user).map(v=>v.at):[]});
- return {cases:data,expediente,avisos:campanaDe(g,user,latido),
-  profile:{votes:mios.length,xp:xpDe({votos:mios.length,aciertos:latido.hits,sellos:expediente.sellos}),today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
+ return {cases:data,expediente,avisos:campanaDe(g,user),
+  profile:{votes:mios.length,xp:xpDe({votos:mios.length,sellos:expediente.sellos}),today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
    dailyAchieved:Object.values(porDia).some(n=>n>=5),created:g.cases.filter(c=>c.owner===user&&c.status!=='removed').length},
-  signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
+  signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(ahora/86400000)%seeds.length].id};
 }
 
 function invitacion(g:Guardado,token:string){
@@ -199,15 +190,6 @@ function guardarPartida(g:Guardado,data:any){
   return json({ok:true,pendingPublication:!!c.workflow});
  }
 
- if(data.action==='pulse'){
-  if(!CHOICES.includes(data.choice))return error('Elige sí o no.');
-  const hoy=dayOf(ahora);
-  if(g.pulse.some(l=>l.day===hoy&&l.user_id===user))return error('Ya has respondido el pulso de hoy.',409);
-  g.pulse.push({day:hoy,user_id:user,choice:data.choice,at:ahora});
-  escribir(g);
-  const counts=latidos(g,hoy);
-  return json({ok:true,choice:data.choice,counts,total:totalOf(counts)});
- }
  if(data.action==='comment'||data.action==='uncomment'){
   const cuarto=String(data.id||'');
   const contexto=contextoSala(g,cuarto);
@@ -285,17 +267,9 @@ function guardarPartida(g:Guardado,data:any){
 
 const abierta=(c:any)=>!!c&&c.status==='open'&&!(c.closes&&c.closes<=Date.now());
 const casoDe=(g:Guardado,id:string):any=>seeds.find(x=>x.id===id)||g.cases.find(x=>x.id===id&&x.status!=='removed');
-/** El día de una sala del Pulso, o null si la sala es de un caso. */
-const diaDelPulso=(id:string)=>/^pulso-\d+$/.test(id)?Number(id.slice(6)):null;
-
-/** Quién puede hablar en una sala, sea de un caso o del Pulso. */
+/** Quién puede hablar en la sala de un caso. */
 function contextoSala(g:Guardado,id:string){
  const user=g.user?.uid||null;
- const dia=diaDelPulso(id);
- if(dia!==null){
-  const voto=user?g.pulse.find(l=>l.day===dia&&l.user_id===user)?.choice||null:null;
-  return {existe:true,abierta:dia===dayOf(),lado:voto as string|null,protagonista:false};
- }
  const c=casoDe(g,id);
  if(!c)return {existe:false,abierta:false,lado:null as string|null,protagonista:false};
  const voto=user?g.votes.find(v=>v.case_id===id&&v.user_id===user)?.choice||null:null;
@@ -325,31 +299,20 @@ function vocesPrincipales(g:Guardado){
  return mejor;
 }
 
-// --- El Pulso ----------------------------------------------------------
-
-function latidos(g:Guardado,dia:number):Tally{
- const base=repartoPulso(dia);
- const t:Tally={si:base.si,no:base.no};
- for(const l of g.pulse)if(l.day===dia)t[l.choice]++;
- return t;
-}
-
 /** La campana, deducida igual que en el servidor. */
-function campanaDe(g:Guardado,user:string|null,latido:ReturnType<typeof pulso>){
+function campanaDe(g:Guardado,user:string|null){
  if(!user)return {items:[],nuevos:0};
- const titulo=(id:string)=>{const m=/^pulso-(\d+)$/.exec(id);
-  return m?questionFor(Number(m[1])):(g.cases.find(c=>c.id===id)?.q||seeds.find(x=>x.id===id)?.q||'');};
+ const titulo=(id:string)=>g.cases.find(c=>c.id===id)?.q||seeds.find(x=>x.id===id)?.q||'';
  const mios=g.cases.filter(c=>c.owner===user&&c.status!=='removed');
  const apoyos=g.seconds.flatMap(a=>{
   const voz=g.comments.find(c=>c.id===a.comment_id);
-  return voz&&voz.user_id===user&&a.user_id!==user
+  return voz&&voz.user_id===user&&a.user_id!==user&&!voz.case_id.startsWith('pulso-')
    ?[{commentId:a.comment_id,caseId:voz.case_id,q:titulo(voz.case_id),at:a.at}]:[];});
  const voces=g.comments.filter(v=>v.user_id!==user&&mios.some(c=>c.id===v.case_id))
   .map(v=>({caseId:v.case_id,q:titulo(v.case_id),at:v.at}));
  return avisosDe({
   mios:mios.map(c=>({id:c.id,q:c.q,status:c.status,closes:c.closes,answered:c.answered||0,respondent:c.respondent})),
-  apoyos,voces,
-  pulso:latido.yesterday?{acierto:!!latido.yesterday.hit,dia:dayOf()-1}:null},g.seen||0);
+  apoyos,voces},g.seen||0);
 }
 
 /** La experiencia de quien mira, con la misma cuenta que hace el servidor. */
@@ -357,27 +320,8 @@ function xpDelJurado(g:Guardado,user:string|null){
  if(!user)return 0;
  const mios=g.votes.filter(v=>v.user_id===user);
  const expediente=expedienteDe({votos:mios.map(v=>v.at),
-  pulsos:g.pulse.filter(l=>l.user_id===user).map(l=>l.day),
   comentarios:g.comments.filter(v=>v.user_id===user).map(v=>v.at)});
- return xpDe({votos:mios.length,aciertos:pulso(g).hits,sellos:expediente.sellos});
-}
-
-function pulso(g:Guardado){
- const user=g.user?.uid||null;
- const hoy=dayOf(),ayer=hoy-1;
- const mio=(d:number)=>user?g.pulse.find(l=>l.day===d&&l.user_id===user)?.choice||null:null;
- const hoyT=latidos(g,hoy),elegido=mio(hoy);
- const ayerT=latidos(g,ayer),elegidoAyer=mio(ayer),ganadorAyer=winnerOf(ayerT);
- const aciertos=user
-  ?g.pulse.filter(l=>l.user_id===user&&l.day<hoy&&winnerOf(latidos(g,l.day))===l.choice).length
-  :0;
- return {day:hoy,question:questionFor(hoy),choice:elegido,
-  counts:elegido?hoyT:null,total:totalOf(hoyT),
-  voices:g.comments.filter(v=>v.case_id==='pulso-'+hoy).length,
-  hits:aciertos,points:aciertos*PULSE_POINTS,
-  yesterday:elegidoAyer?{question:questionFor(ayer),choice:elegidoAyer,winner:ganadorAyer,
-   hit:!!ganadorAyer&&ganadorAyer===elegidoAyer,points:PULSE_POINTS,
-   counts:ayerT,total:totalOf(ayerT)}:null};
+ return xpDe({votos:mios.length,sellos:expediente.sellos});
 }
 
 // --- El interceptor ----------------------------------------------------

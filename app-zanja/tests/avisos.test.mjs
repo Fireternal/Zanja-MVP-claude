@@ -9,7 +9,7 @@ const {avisosDe,TOPE_AVISOS}=await import('data:text/javascript;base64,'+
  Buffer.from(compile(readFileSync(new URL('../lib/avisos.ts',import.meta.url),'utf8'))).toString('base64'));
 
 const AHORA=1_700_000_000_000;
-const vacio={mios:[],apoyos:[],voces:[],pulso:null};
+const vacio={mios:[],apoyos:[],voces:[]};
 const caso=(extra={})=>({id:'c1',q:'¿Una pregunta?',status:'open',closes:0,answered:0,respondent:null,...extra});
 
 test('sin nada que contar no hay avisos',()=>{
@@ -60,13 +60,6 @@ test('las voces en tu caso se agrupan por caso',()=>{
  const uno=items.find(a=>a.caseId==='c1');
  assert.equal(uno.cuantos,2);
  assert.equal(uno.at,AHORA-1000);
-});
-
-test('el pulso sólo avisa si acertaste',()=>{
- const dia=Math.floor(AHORA/86400000)-1;
- assert.equal(avisosDe({...vacio,pulso:{acierto:false,dia}},0,AHORA).items.length,0);
- const {items}=avisosDe({...vacio,pulso:{acierto:true,dia}},0,AHORA);
- assert.equal(items[0].tipo,'pulso');
 });
 
 test('lo nuevo es lo posterior a la última visita',()=>{

@@ -16,18 +16,17 @@ globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Er
 const almacenUrl=moduleUrl(compile(readFileSync(new URL('../lib/almacen.ts',import.meta.url),'utf8')
  .replace("import {db,bucketOpcional} from './server-db';","const db=()=>globalThis.__zanjaTestDb;const bucketOpcional=()=>globalThis.__zanjaTestBucket??null;")));
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
-const pulseUrl=moduleUrl(compile(readFileSync(new URL('../lib/pulse.ts',import.meta.url),'utf8')));
 const expedienteUrl=moduleUrl(compile(readFileSync(new URL('../lib/expediente.ts',import.meta.url),'utf8')));
 const avisosUrl=moduleUrl(compile(readFileSync(new URL('../lib/avisos.ts',import.meta.url),'utf8')));
 const nivelesUrl=moduleUrl(compile(readFileSync(new URL('../lib/niveles.ts',import.meta.url),'utf8')
- .replace("'./pulse'",JSON.stringify(pulseUrl)).replace("'./expediente'",JSON.stringify(expedienteUrl))));
+ .replace("'./expediente'",JSON.stringify(expedienteUrl))));
 const sessionUrl=moduleUrl(compile(readFileSync(new URL('../lib/session.ts',import.meta.url),'utf8')));
 globalThis.__zanjaTestSecret='secreto-de-pruebas-con-longitud-suficiente';
 globalThis.__zanjaTrustHeader=false;
 const {SESSION_COOKIE,signSession}=await import(sessionUrl);
 // Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
 const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/almacen'",JSON.stringify(almacenUrl)).replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl)).replace("'@/lib/avisos'",JSON.stringify(avisosUrl));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/almacen'",JSON.stringify(almacenUrl)).replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl)).replace("'@/lib/avisos'",JSON.stringify(avisosUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
 /**
@@ -362,76 +361,17 @@ test('un caso que no existe no tiene sala',async()=>{
  assert.equal((await sala_('no-existe','mudo')).status,404);
 });
 
-// --- El Pulso --------------------------------------------------------
-const {dayOf,questionFor,PULSE_POINTS}=await import(pulseUrl);
-
-test('el pulso es una pregunta al día y un voto por persona',async()=>{
- const inicial=await state('pulsero');
- assert.equal(inicial.pulse.question,questionFor(dayOf()));
- assert.equal(inicial.pulse.choice,null);
- assert.equal(inicial.pulse.counts,null,'el reparto no se ve antes de responder');
- assert.equal((await request({action:'pulse',choice:'quizá'},'pulsero')).status,400);
- assert.equal((await request({action:'pulse',choice:'si'},null)).status,401);
- const r=await request({action:'pulse',choice:'si'},'pulsero');
- assert.equal(r.status,200);
- assert.deepEqual((await r.json()).counts,{si:1,no:0});
- assert.equal((await request({action:'pulse',choice:'no'},'pulsero')).status,409);
- const despues=await state('pulsero');
- assert.equal(despues.pulse.choice,'si');
- assert.deepEqual(despues.pulse.counts,{si:1,no:0});
-});
-
-test('quien no ha respondido ve cuánta gente va, pero no de qué lado',async()=>{
- const otro=await state('curioso');
- assert.equal(otro.pulse.total,1);
- assert.equal(otro.pulse.counts,null);
-});
-
-test('los puntos del pulso se cobran al día siguiente y sólo al acertar',async()=>{
- const ayer=dayOf()-1;
- // Ayer ganó "no" por dos a uno.
- for(const [quien,voto] of [['pulsero','si'],['curioso','no'],['tercero','no']])
-  __zanjaTestDb.prepare('INSERT OR IGNORE INTO pulse (day,user_id,choice,at) VALUES (?,?,?,?)').bind(ayer,quien,voto,Date.now()).run();
- const falla=(await state('pulsero')).pulse;
- assert.equal(falla.yesterday.winner,'no');
- assert.equal(falla.yesterday.hit,false);
- assert.equal(falla.hits,0);
- assert.equal(falla.points,0);
- const acierta=(await state('curioso')).pulse;
- assert.equal(acierta.yesterday.hit,true);
- assert.equal(acierta.hits,1);
- assert.equal(acierta.points,PULSE_POINTS);
- // El de hoy todavía se mueve, así que no cuenta para los aciertos.
- assert.equal((await state('pulsero')).pulse.choice,'si');
- assert.equal((await state('pulsero')).pulse.hits,0);
-});
-
-test('un empate exacto no lo gana nadie',async()=>{
- const anteayer=dayOf()-2;
- for(const [quien,voto] of [['empate1','si'],['empate2','no']])
-  __zanjaTestDb.prepare('INSERT OR IGNORE INTO pulse (day,user_id,choice,at) VALUES (?,?,?,?)').bind(anteayer,quien,voto,Date.now()).run();
- const p=(await state('empate1')).pulse;
- assert.equal(p.hits,0,'un empate no suma acierto');
-});
-
-test('el Pulso también es una sala, y se habla después de responder',async()=>{
- const sala='pulso-'+dayOf();
- assert.equal((await request({action:'comment',id:sala,body:'La piña es fruta, no ingrediente.'},'callado')).status,403);
- assert.equal((await request({action:'pulse',choice:'no'},'callado')).status,200);
- const r=await request({action:'comment',id:sala,body:'La piña es fruta, no ingrediente.'},'callado');
- assert.equal(r.status,200);
- assert.equal((await r.json()).side,'no','la voz hereda tu respuesta del día');
- const d=(await sala_(sala,'callado')).body;
- assert.equal(d.comments.length,1);
- assert.equal(d.open,true);
- assert.equal(d.protagonist,false,'en el Pulso no hay protagonistas');
-});
-
-test('la sala del Pulso se cierra con el día',async()=>{
- const ayer='pulso-'+(dayOf()-1);
- const d=(await sala_(ayer,'callado')).body;
- assert.equal(d.open,false);
- assert.equal((await request({action:'comment',id:ayer,body:'Llego un día tarde.'},'callado')).status,409);
+// --- El Pulso, retirado ------------------------------------------------
+test('el Pulso ya no existe: ni pregunta, ni voto, ni sala',async()=>{
+ // Se retiró entero. Si algo lo resucita a medias —un campo en el estado,
+ // una acción que aún escribe en la tabla, una sala que se abre— salta aquí.
+ const estado=await state('ex-pulsero');
+ assert.equal('pulse' in estado,false,'el estado ya no trae el Pulso');
+ const r=await request({action:'pulse',choice:'si'},'ex-pulsero');
+ assert.ok(r.status>=400&&r.status<500,'la acción se rechaza');
+ const filas=sql.prepare("SELECT count(*) n FROM pulse WHERE user_id='ex-pulsero'").get();
+ assert.equal(Number(filas.n),0,'y no escribe nada en la tabla que queda');
+ assert.equal((await sala_('pulso-'+Math.floor(Date.now()/86400000),'ex-pulsero')).status,404,'su sala tampoco');
 });
 
 test('una sala que no existe no se abre',async()=>{

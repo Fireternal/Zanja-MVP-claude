@@ -104,15 +104,6 @@ await pagina.mouse.wheel(0, 800);
 await retrata('la-sala');
 await inicio();
 
-// --- El Pulso ------------------------------------------------------------
-await toca(pagina.locator('.daily-feature'), 1500);
-await retrata('pulso');
-await toca(pagina.locator('.pulso-lado-si, .pulso-botones button').first(), 2000);
-await retrata('pulso-resultado');
-await pagina.mouse.wheel(0, 800);
-await retrata('pulso-debate');
-await inicio();
-
 // --- Inicio y perfil ya con recorrido ------------------------------------
 await pestana(0);
 await retrata('inicio');

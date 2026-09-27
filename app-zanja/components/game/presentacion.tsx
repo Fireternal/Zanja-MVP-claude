@@ -61,7 +61,7 @@ const RESPUESTAS=[
 
 const DIARIO=[
  {Icon:ClipboardList,titulo:'El expediente del día',
-  texto:'Tres diligencias: juzga, responde al Pulso y di lo tuyo en La Sala.'},
+  texto:'Dos diligencias: juzga cinco casos y di lo tuyo en La Sala.'},
  {Icon:Zap,titulo:'Experiencia y niveles',
   texto:'Cada veredicto suma y te sube de rango. Crear zanjas está abierto desde el primer día.'},
  {Icon:KeyRound,titulo:'Tus zanjas',

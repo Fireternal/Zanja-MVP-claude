@@ -1,4 +1,4 @@
-// El expediente del día: tres misiones, un sello y una racha deducida.
+// El expediente del día: dos misiones, un sello y una racha deducida.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -10,39 +10,38 @@ const {expedienteDe,diaDe,VOTOS_META,SELLO_XP}=await import('data:text/javascrip
 
 const HOY=20000;
 const enDia=(dia,cuantos=1)=>Array.from({length:cuantos},()=>dia*86400000+3600000);
-/** Un día entero cumplido: cinco votos, el pulso y un comentario. */
-const diaCompleto=dia=>({votos:enDia(dia,VOTOS_META),pulsos:[dia],comentarios:enDia(dia)});
-const juntar=(...dias)=>dias.reduce((a,d)=>({votos:[...a.votos,...d.votos],pulsos:[...a.pulsos,...d.pulsos],comentarios:[...a.comentarios,...d.comentarios]}),{votos:[],pulsos:[],comentarios:[]});
+/** Un día entero cumplido: cinco votos y un comentario. */
+const diaCompleto=dia=>({votos:enDia(dia,VOTOS_META),comentarios:enDia(dia)});
+const juntar=(...dias)=>dias.reduce((a,d)=>({votos:[...a.votos,...d.votos],comentarios:[...a.comentarios,...d.comentarios]}),{votos:[],comentarios:[]});
 
 test('un expediente vacío no tiene nada hecho',()=>{
- const e=expedienteDe({votos:[],pulsos:[],comentarios:[]},HOY);
- assert.equal(e.misiones.length,3);
+ const e=expedienteDe({votos:[],comentarios:[]},HOY);
+ assert.equal(e.misiones.length,2);
  assert.equal(e.completas,0);
  assert.equal(e.sellado,false);
  assert.equal(e.racha,0);
  assert.equal(e.sellos,0);
- assert.deepEqual(e.misiones.map(m=>m.id),['veredictos','pulso','sala']);
+ assert.deepEqual(e.misiones.map(m=>m.id),['veredictos','sala']);
 });
 
 test('cada misión cuenta lo suyo y sólo lo de hoy',()=>{
- const e=expedienteDe({votos:[...enDia(HOY,3),...enDia(HOY-1,9)],pulsos:[HOY-1],comentarios:enDia(HOY-1)},HOY);
+ const e=expedienteDe({votos:[...enDia(HOY,3),...enDia(HOY-1,9)],comentarios:enDia(HOY-1)},HOY);
  assert.equal(e.misiones[0].hechos,3);
  assert.equal(e.misiones[0].hecho,false);
  assert.equal(e.misiones[1].hecho,false);
- assert.equal(e.misiones[2].hecho,false);
  assert.equal(e.completas,0);
 });
 
 test('los votos de más no desbordan la barra',()=>{
- const e=expedienteDe({votos:enDia(HOY,40),pulsos:[],comentarios:[]},HOY);
+ const e=expedienteDe({votos:enDia(HOY,40),comentarios:[]},HOY);
  assert.equal(e.misiones[0].hechos,VOTOS_META);
  assert.equal(e.misiones[0].hecho,true);
  assert.equal(e.completas,1);
 });
 
-test('las tres misiones sellan el día',()=>{
+test('las dos misiones sellan el día',()=>{
  const e=expedienteDe(diaCompleto(HOY),HOY);
- assert.equal(e.completas,3);
+ assert.equal(e.completas,2);
  assert.equal(e.sellado,true);
  assert.equal(e.racha,1);
  assert.equal(e.sellos,1);
@@ -76,14 +75,18 @@ test('la racha se pierde cuando pasa un día entero en blanco',()=>{
 });
 
 test('un día a medias no sella',()=>{
- const casi=juntar({votos:enDia(HOY,VOTOS_META),pulsos:[HOY],comentarios:[]});
- const e=expedienteDe(casi,HOY);
- assert.equal(e.completas,2);
+ // Los cinco veredictos sin decir nada en La Sala: una de dos.
+ const e=expedienteDe({votos:enDia(HOY,VOTOS_META),comentarios:[]},HOY);
+ assert.equal(e.completas,1);
  assert.equal(e.sellado,false);
  assert.equal(e.racha,0);
+ // Y al revés: hablar sin haber juzgado tampoco.
+ const f=expedienteDe({votos:enDia(HOY,VOTOS_META-1),comentarios:enDia(HOY)},HOY);
+ assert.equal(f.completas,1);
+ assert.equal(f.sellado,false);
 });
 
-test('diaDe parte los días igual que el Pulso',()=>{
+test('diaDe parte los días en tramos de veinticuatro horas',()=>{
  assert.equal(diaDe(0),0);
  assert.equal(diaDe(86400000-1),0);
  assert.equal(diaDe(86400000),1);
