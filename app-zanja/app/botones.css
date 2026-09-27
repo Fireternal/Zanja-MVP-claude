@@ -1,0 +1,149 @@
+/* ==========================================================================
+ * EL SISTEMA DE BOTONES DE ZANJA
+ *
+ * Antes cada pantalla se había inventado el suyo: cuatro amarillos distintos
+ * (#ffdf5b, #ffe264, #ffe574...), seis morados, cuatro bordes casi iguales y
+ * sombras de 2, 3, 4 y 5 px. Todo eso vive aquí ahora, en un solo sitio.
+ *
+ * Un botón de ZANJA es siempre una pieza con bisel: mismo radio, mismo borde
+ * oscuro, la misma luz arriba y la misma sombra dura debajo. Lo único que
+ * cambia es el color, y el color dice para qué sirve:
+ *
+ *   ORO   la acción principal. Una sola por pantalla.
+ *   UVA   lo secundario y los botones de icono.
+ *   LLANO la salida: texto, sin peso (cancelar, saltar, cerrar sesión).
+ *
+ * Y sólo hay dos profundidades: ALTA (5 px) para la acción principal, BAJA
+ * (3 px) para todo lo demás. Al pulsar, el botón baja hasta su sombra.
+ * ========================================================================== */
+
+:root{
+ --b-radio:12px;
+ --b-radio-chico:10px;
+ --b-borde:#261539;
+ /* Oro */
+ --oro-alto:#ffe264;--oro-bajo:#ffc82e;--oro-tinta:#37203b;
+ --oro-luz:#fff6bd;--oro-hundido:#12091e;
+ /* Uva */
+ --uva-alto:#5d3c7a;--uva-bajo:#3b2650;--uva-borde:#a37ec6;
+ --uva-tinta:#f3e8ff;--uva-luz:#ffffff30;--uva-hundido:#100a1d;
+ /* Uva apagada: lo mismo, sin vida (pestaña no elegida, botón en reposo) */
+ --uva-mudo-alto:#3a2f52;--uva-mudo-bajo:#2b2340;--uva-mudo-borde:#5b4a77;
+ --uva-mudo-tinta:#b5aac9;
+}
+
+/* --- La forma, común a todos ------------------------------------------- */
+.boton,.game-btn,.creator-secondary,.icon-btn,.secundar,.sala-enviar,
+.evidence-access,.defensas-pestana,.category-scroll>button,.level-chip{
+ border:2px solid var(--b-borde);
+ border-radius:var(--b-radio);
+ position:relative;
+ transition:transform .13s cubic-bezier(.2,.7,.3,1),box-shadow .13s,
+  background .16s,border-color .16s,color .16s;
+}
+
+/* --- ORO: la acción principal ------------------------------------------ */
+.game-btn.yellow,.boton.oro,.secundar.is-on,.sala-enviar:not(:disabled),
+.category-scroll>button.selected{
+ background:linear-gradient(var(--oro-alto),var(--oro-bajo));
+ border-color:var(--b-borde);
+ color:var(--oro-tinta);
+ box-shadow:0 5px 0 var(--oro-hundido),inset 0 2px 0 var(--oro-luz);
+}
+
+/* --- UVA: lo secundario ------------------------------------------------- */
+.game-btn.uva,.boton.uva,.creator-secondary,.icon-btn,.evidence-access,
+.defensas-pestana.is-on{
+ background:linear-gradient(var(--uva-alto),var(--uva-bajo));
+ border-color:var(--uva-borde);
+ color:var(--uva-tinta);
+ box-shadow:0 3px 0 var(--uva-hundido),inset 0 2px 0 var(--uva-luz);
+}
+
+/* --- UVA APAGADA: presente pero en reposo ------------------------------- */
+.secundar,.sala-enviar,.defensas-pestana,.category-scroll>button,.level-chip{
+ background:linear-gradient(var(--uva-mudo-alto),var(--uva-mudo-bajo));
+ border-color:var(--uva-mudo-borde);
+ color:var(--uva-mudo-tinta);
+ box-shadow:0 3px 0 var(--uva-hundido),inset 0 1px 0 #ffffff1c;
+}
+.level-chip{color:var(--yellow)}
+
+/* --- Profundidad y pulsación -------------------------------------------- */
+/* Alta: sólo la acción principal, que es la que pesa. */
+.game-btn:not(:disabled):hover{transform:translateY(-2px)}
+.game-btn.yellow:not(:disabled):hover{
+ box-shadow:0 7px 0 var(--oro-hundido),inset 0 2px 0 var(--oro-luz)}
+.game-btn.yellow:not(:disabled):active{
+ transform:translateY(4px);
+ box-shadow:0 1px 0 var(--oro-hundido),inset 0 2px 0 #ffffff40}
+/* Baja: todo lo demás baja 2 px y deja 1 px de sombra. */
+.game-btn.uva:not(:disabled):active,.boton.uva:not(:disabled):active,
+.creator-secondary:not(:disabled):active,.icon-btn:not(:disabled):active,
+.secundar:not(:disabled):active,.sala-enviar:not(:disabled):active,
+.evidence-access:not(:disabled):active,.defensas-pestana:not(:disabled):active,
+.category-scroll>button:active,.level-chip:active{
+ transform:translateY(2px);box-shadow:0 1px 0 var(--uva-hundido)}
+.sala-enviar:not(:disabled):active,.secundar.is-on:not(:disabled):active,
+.category-scroll>button.selected:active{box-shadow:0 1px 0 var(--oro-hundido)}
+/* Un botón apagado no se hunde ni se ilumina: no hay nada que pulsar. */
+.game-btn:disabled,.creator-secondary:disabled,.icon-btn:disabled,
+.secundar:disabled,.sala-enviar:disabled,.evidence-access:disabled{
+ opacity:.45;box-shadow:0 2px 0 #0000003d}
+
+/* --- Los botones de icono son cuadrados --------------------------------- */
+.icon-btn{
+ display:inline-grid;place-items:center;
+ width:42px;height:42px;min-width:42px;padding:0;
+}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn:hover{border-color:#d3aefa}
+/* El único que va desnudo es el que se apoya en otra cosa: la campana de la
+ * cabecera y la equis de un diálogo ya tienen marco alrededor. */
+.icon-btn.desnudo{
+ background:none;border-color:transparent;box-shadow:none;color:#c3b6da}
+.icon-btn.desnudo:hover{background:#ffffff12;border-color:#ffffff1f;color:#fff}
+
+/* --- LLANO: la salida, sin peso ----------------------------------------- */
+.quiet-btn{
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ background:none;border:0;box-shadow:none;
+ font-weight:800;font-size:14px;color:#c6b5df;padding:10px 6px;
+ min-height:44px;border-radius:var(--b-radio-chico);
+}
+.quiet-btn:hover{color:#fff;background:#ffffff0d}
+.quiet-btn:active{transform:none;background:#ffffff14}
+
+/* --- Los chips y las pestañas usan la misma pieza, más baja ------------- */
+.category-scroll>button,.defensas-pestana,.level-chip,.evidence-access{
+ border-radius:var(--b-radio-chico)}
+.category-scroll>button{padding:9px 16px;font-size:13px;font-weight:900}
+
+/* --- Apagado: no es un botón translúcido, es una pieza sin vida ---------
+ * Bajarle la opacidad al oro lo dejaba marrón. Un botón que todavía no se
+ * puede pulsar se apaga de color, no de luz. */
+.game-btn:disabled,.creator-secondary:disabled,.secundar:disabled,
+.evidence-access:disabled{
+ opacity:1;
+ background:linear-gradient(#3a3350,#2b2540);
+ border-color:#4a4165;color:#8d84a4;
+ box-shadow:0 2px 0 #14101f;transform:none}
+.icon-btn:disabled,.sala-enviar:disabled{
+ opacity:1;
+ background:linear-gradient(#332c49,#272139);
+ border-color:#443b5d;color:#7d7492;
+ box-shadow:0 2px 0 #14101f;transform:none}
+
+/* --- Los conmutadores de dos posiciones --------------------------------
+ * "Entrar / Crear cuenta" y las pestañas de Mis zanjas son el mismo mueble:
+ * un carril hundido con una pieza de uva encima. */
+.entrar-modos,.mine-tabs{
+ background:#1d1729;border:2px solid #392c4e;border-radius:var(--b-radio);
+ box-shadow:inset 0 2px 5px #0006}
+.entrar-modos>button,.mine-tabs button{
+ border-radius:var(--b-radio-chico);border:2px solid transparent;
+ color:#ab9dc2;font-weight:900}
+.entrar-modos>button.elegido,.mine-tabs button[data-state=active]{
+ background:linear-gradient(var(--uva-alto),var(--uva-bajo));
+ border-color:var(--uva-borde);color:var(--uva-tinta);
+ box-shadow:0 2px 0 var(--uva-hundido),inset 0 1px 0 var(--uva-luz)}

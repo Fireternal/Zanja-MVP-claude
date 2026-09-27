@@ -29,7 +29,7 @@ export function Court({onCambio,current:c,cases,filter,loading,busy,celebrate,on
    <div className="court-desplazable"><div className="verdict-banner"><span className="verdict-confirmation"><Check size={18}/>{c.choice?'VOTO REGISTRADO':'ASÍ OPINA EL JURADO'}</span>{c.choice&&<span className="verdict-reward"><Zap size={16} fill="currentColor"/>+5 XP</span>}<h2 className="verdict-question">{c.q}</h2></div>
    <div className="verdict-context"><p className="verdict-status">{c.status==='closed'?'Resultado final':'Votación abierta'} · {c.total||0} {(c.total||0)===1?'voto':'votos'}</p>{c.evidenceUrl&&<EvidenceAccess src={c.evidenceUrl}/>}</div>
    <Marcador c={c} onLado={setDefensas}/>
-   <div className="verdict-actions"><button className="quiet-btn" onClick={()=>setDefensas('a')}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="quiet-btn" onClick={()=>{setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="quiet-btn" onClick={()=>{onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>
+   <div className="verdict-actions"><button className="game-btn uva small" onClick={()=>setDefensas('a')}><BookOpen size={18}/>Ver defensas</button>{c.status==='closed'?<button className="game-btn uva small" onClick={()=>{setSentencia(true);}}><Stamp size={18}/>Ver sentencia</button>:<button className="game-btn uva small" onClick={()=>{onShare(c);}}><Share2 size={18}/>Compartir</button>}</div>
    <Sala key={'sala-'+c.id} sala={c.id} onCambio={onCambio}/>
    </div>
    <div className="court-salida"><button className="game-btn yellow court-next" onClick={onNext}>SIGUIENTE ZANJA<ArrowRight size={20}/></button></div>

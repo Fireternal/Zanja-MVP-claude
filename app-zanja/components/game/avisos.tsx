@@ -26,7 +26,7 @@ function texto(a:Aviso):{titulo:string;pie:string}{
 
 export function Campana({campana,onOpen}:{campana:Campanario|null;onOpen:()=>void}){
  const nuevos=campana?.nuevos||0;
- return <button className={'campana icon-btn'+(nuevos?' con-avisos':'')} onClick={onOpen}
+ return <button className={'campana icon-btn desnudo'+(nuevos?' con-avisos':'')} onClick={onOpen}
   aria-label={nuevos?`Avisos, ${nuevos} sin leer`:'Avisos'}>
   <Bell size={20}/>
   {nuevos>0&&<span className="campana-marca">{nuevos>9?'9+':nuevos}</span>}

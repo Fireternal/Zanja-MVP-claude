@@ -51,7 +51,7 @@ export function Entrar({ocupado,onEnviar,onSalir}:{ocupado:boolean;onEnviar:(c:C
     <input id="entrar-clave" type={verClave?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)}
      maxLength={200} autoComplete={registrar?'new-password':'current-password'}
      placeholder={registrar?`Mínimo ${CLAVE_MIN} caracteres`:'Tu contraseña'} disabled={ocupado}/>
-    <button type="button" className="icon-btn" onClick={()=>setVerClave(v=>!v)}
+    <button type="button" className="icon-btn desnudo" onClick={()=>setVerClave(v=>!v)}
      aria-label={verClave?'Ocultar la contraseña':'Ver la contraseña'}>{verClave?<EyeOff size={19}/>:<Eye size={19}/>}</button>
    </div>
 
