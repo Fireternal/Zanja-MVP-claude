@@ -4,7 +4,42 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 /* El halo del marco sólo se ve cuando el teléfono cabe dentro de una pantalla
  * más ancha. En un móvil de verdad no se ve y sí se vuelve a pintar. */
 @media(min-width:520px){.mobile-app{box-shadow:0 0 90px #09061080}}.mobile-app .topbar{min-height:62px;height:auto;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;flex-shrink:0;gap:8px;background:#1c142c;border-bottom:1px solid #73519344}.mobile-app .brand{font-size:28px;gap:5px}.mobile-app .brand-bolt svg{width:24px;height:28px}.mobile-app .beta-tag{font-size:10px}.mobile-app .header-right{gap:5px}.mobile-app .avatar{display:none}.mobile-app .level-chip{font-size:12px;padding:8px 10px;min-height:39px}.mobile-app .main-wrap{max-width:none;width:100%;margin:0;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:17px 16px 24px;scrollbar-width:thin;scrollbar-color:#68478c transparent;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}.mobile-app button{touch-action:manipulation}.mobile-app button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.mobile-app .game-btn{font-family:var(--display);font-size:15px;min-height:54px;letter-spacing:.1px}
-.mobile-app .mobile-nav{display:flex;position:relative;left:auto;right:auto;bottom:auto;transform:none;width:100%;min-height:var(--nav-height);flex-shrink:0;z-index:30;align-items:center;justify-content:space-around;padding:7px 8px max(7px,env(safe-area-inset-bottom));border-top:1px solid #76508c70;background:#21162f;box-shadow:0 -8px 24px #160e2430;backdrop-filter:none}.mobile-app .mobile-nav>button{width:20%;min-height:49px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:3px;position:relative;color:#b59bcc}.mobile-app .mobile-nav>button>span{font-size:12px;font-weight:900}.mobile-app .mobile-nav>button.active{color:var(--gold)}.mobile-app .mobile-nav>button.active:before{content:'';position:absolute;top:-7px;left:calc(50% - 12px);height:3px;width:24px;background:var(--gold);border-radius:5px}
+/* --- El banco del Juzgado -----------------------------------------------
+ * La barra de abajo era una franja plana con tres iconos de librería: lo
+ * único de la app que seguía pareciendo una plantilla. Ahora es un banco con
+ * su canto de luz, y la pestaña abierta es una pieza de oro levantada, la
+ * misma pieza que los botones. */
+.mobile-app .mobile-nav{display:flex;position:relative;left:auto;right:auto;bottom:auto;transform:none;
+ width:100%;min-height:var(--nav-height);flex-shrink:0;z-index:30;
+ align-items:stretch;justify-content:space-around;gap:6px;
+ padding:9px 10px max(9px,env(safe-area-inset-bottom));
+ border-top:0;background:linear-gradient(#2c2044,#1b1430);
+ box-shadow:0 -2px 0 #6f4d93,inset 0 2px 0 #ffffff12,0 -9px 24px #150d2455;
+ backdrop-filter:none}
+.mobile-app .mobile-nav>button{flex:1;min-width:0;width:auto;padding:0;min-height:52px;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+ color:#b4a4cd}
+/* Los iconos llevan la sombra dura de la casa: sin ella, un trazo fino al
+ * lado de una pieza con bisel parece de otra app. */
+.nav-pieza>svg{filter:drop-shadow(0 2px 0 #0e0819)}
+.mobile-nav>button.active>.nav-pieza>svg{filter:drop-shadow(0 1.5px 0 #ffffff70)}
+/* La raya amarilla de antes la sustituye la propia pieza. */
+.mobile-app .mobile-nav>button.active:before{display:none}
+.nav-pieza{display:grid;place-items:center;width:56px;height:33px;
+ border:2px solid transparent;border-radius:11px;
+ transition:transform .2s var(--salto),background .2s,border-color .2s,box-shadow .2s}
+.mobile-nav>button.active>.nav-pieza{
+ transform:translateY(-3px);
+ background:linear-gradient(var(--oro-alto),var(--oro-bajo));
+ border-color:var(--b-borde);color:var(--oro-tinta);
+ box-shadow:0 4px 0 var(--oro-hundido),inset 0 2px 0 var(--oro-luz)}
+.mobile-nav>button:not(.active):active>.nav-pieza{
+ background:#ffffff12;border-color:#ffffff1a;transform:translateY(1px)}
+.mobile-nav>button.active:active>.nav-pieza{
+ transform:translateY(-1px);box-shadow:0 2px 0 var(--oro-hundido)}
+/* El nombre en Nunito, no en la de titulares: a 12 px la display se empasta. */
+.nav-nombre{font-size:11.5px;font-weight:1000;letter-spacing:.4px;line-height:1}
+.mobile-app .mobile-nav>button.active{color:var(--yellow)}.mobile-app .mobile-nav>button{width:20%;min-height:49px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:3px;position:relative;color:#b59bcc}.mobile-app .mobile-nav>button>span{font-size:12px;font-weight:900}.mobile-app .mobile-nav>button.active{color:var(--gold)}.mobile-app .mobile-nav>button.active:before{content:'';position:absolute;top:-7px;left:calc(50% - 12px);height:3px;width:24px;background:var(--gold);border-radius:5px}
 /* Home fills the available height. Small screens and enlarged text retain scrolling. */
 .home-screen .main-wrap{display:flex;flex-direction:column;padding:12px 15px 16px;gap:9px;overflow-y:auto;-webkit-overflow-scrolling:touch}.phone-home{display:grid;grid-template-rows:48px minmax(172px,1.7fr) minmax(min-content,1fr) minmax(126px,1.15fr);gap:12px;flex:1;min-height:498px}.phone-home.sin-expediente{grid-template-rows:0px minmax(172px,1.7fr) minmax(min-content,1fr) minmax(126px,1.15fr)}.phone-home .mission-tile{width:100%;min-width:0;display:flex;align-items:center;gap:10px;padding:8px 12px;margin:0;border:1px solid #76548e;border-radius:13px;background:linear-gradient(125deg,#382548,#281c3d);box-shadow:inset 0 2px 0 #d4a8ed16,0 3px 0 #110a21;text-align:left}.mission-icon{display:grid;place-items:center;width:31px;height:32px;flex-shrink:0;color:var(--gold);background:linear-gradient(145deg,#624273,#402948);border:1px solid #b48ac259;box-shadow:0 2px 0 #190d24;border-radius:9px;transform:rotate(-5deg)}.mission-icon svg{width:20px}.mission-tile>div{flex:1;min-width:0}.mission-title{display:flex;align-items:center;justify-content:space-between;gap:9px}.mission-title strong{font-size:13px;font-weight:1000;line-height:1.2}.mission-title>span{font-size:12px;color:#cbb3de;white-space:nowrap}.mission-segments{display:flex;gap:5px;margin-top:7px}.mission-segments>i{flex:1;height:5px;background:#171020;border:1px solid #56406b;border-radius:4px}.mission-segments>i.done{background:var(--gold);border-color:#ffe187;box-shadow:0 0 8px #ffd03335}.mission-tile>svg{width:17px;color:#ae91cb}
 .mobile-lobby-hero{display:flex;flex-direction:column;min-height:0;border:2px solid var(--game-frame);border-radius:19px;overflow:hidden;box-shadow:var(--game-bevel);background:#4a2191;isolation:isolate}.lobby-scene{position:relative;flex:1;min-height:94px;overflow:hidden}.lobby-scene>img{width:100%;height:100%;object-fit:cover;object-position:center 52%;animation:lobby-breathe 9s ease-in-out infinite}.scene-tint{position:absolute;inset:0;background:linear-gradient(90deg,#2e0f7890,transparent 75%),linear-gradient(0deg,#4a2191,transparent 28%)}.lobby-scene>.ribbon{position:absolute;top:11px;left:14px;font-family:var(--display);font-size:11px;letter-spacing:.7px;padding:4px 8px;border:1px solid #bd8ffc88;background:#271346bd;transform:skew(-5deg)}

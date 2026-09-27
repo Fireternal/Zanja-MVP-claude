@@ -41,7 +41,7 @@
 @keyframes screen-in{from{opacity:0;transform:translateY(16px) scale(.99)}to{opacity:1;transform:none}}
 
 /* --- La pestaña del menú de abajo --------------------------------------- */
-.mobile-nav button.active>svg{animation:nav-bote .5s var(--salto)}
+.mobile-nav button.active .nav-pieza>svg{animation:nav-bote .5s var(--salto)}
 @keyframes nav-bote{0%{transform:scale(1)}35%{transform:scale(1.28) translateY(-3px)}100%{transform:scale(1)}}
 
 /* --- Contadores y barras ------------------------------------------------- */
@@ -213,7 +213,7 @@
 
 /* --- Todo lo de arriba se apaga aquí ------------------------------------- */
 @media(prefers-reduced-motion:reduce){
- .entra-lista>*,.screen-in,.mobile-nav button.active>svg,.campana-marca,.brillo:after,
+ .entra-lista>*,.screen-in,.mobile-nav button.active .nav-pieza>svg,.campana-marca,.brillo:after,
  .fiesta,.fiesta-rayos,.fiesta-aro,.fiesta-emblema,.fiesta.sello .fiesta-emblema,.fiesta.sello .fiesta-cuerpo,
  .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned,
  .vote-pending .vote-team.selected,.vote-pending .vote-both.selected,
@@ -332,4 +332,3 @@
  * desenfocarla: backdrop-filter obliga al navegador a releer todo lo que hay
  * debajo cada vez que algo cambia encima, y era la otra mitad del parpadeo. */
 .mobile-app>.topbar{background:#1c142ce8}
-.mobile-app>.mobile-nav{background:#21162fec}
