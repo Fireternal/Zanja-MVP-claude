@@ -246,8 +246,14 @@
 .fiesta-emblema.con-mascota>b{bottom:6px}
 .court-empty .mascota{width:170px}
 
-/* El mazazo remata el fallo, sólo cuando el caso ya está cerrado. */
-.mascota-fallo{width:112px;margin:4px auto -4px;animation:mazazo .7s var(--golpe) both}
+/* El mazazo remata el fallo, sólo cuando el caso ya está cerrado. Va al
+ * lado de la frase, no encima: el golpe apunta hacia el texto y los dos se
+ * leen como una sola cosa. Solo, en mitad del hueco, parecía un adorno. */
+.marcador-fallo{display:flex;align-items:center;gap:4px;margin-top:2px}
+.marcador-fallo>.marcador-titular{flex:1;min-width:0}
+.mascota-fallo{flex:0 0 124px;width:124px;margin:-18px 0 -18px 0;
+ animation:mazazo .7s var(--golpe) both}
+@media(max-width:360px){.mascota-fallo{flex-basis:104px;width:104px}}
 @keyframes mazazo{0%{opacity:0;transform:translateY(-52px) rotate(-26deg) scale(1.25)}
  58%{opacity:1;transform:translateY(0) rotate(0) scale(.94)}78%{transform:translateY(-6px) scale(1.02)}100%{transform:none}}
 

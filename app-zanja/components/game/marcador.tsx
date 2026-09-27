@@ -52,11 +52,21 @@ export function Marcador({c,onLado}:{c:Case;onLado:(l:'a'|'b')=>void}){
     </div>
    :<p className="marcador-desierto">Nadie ha votado todavía.</p>}
 
-  {cerrado&&(fallo.kind==='ruling'||fallo.kind==='tie')&&<img className="mascota mascota-fallo" width={240} height={240} src={fallo.kind==='tie'?'/mazo-duda.webp':'/mazo-golpe.webp'} alt="" aria-hidden="true"/>}
-  <p className={'marcador-titular titular-'+fallo.kind+(fallo.kind==='ruling'?' titular-'+fallo.side:'')}>
-   {cerrado?verdictHeadline(fallo):verdictLead(fallo)}
-   <small>{verdictSubhead(fallo)}</small>
-  </p>
+  {/* El mazo va pegado al titular, no flotando encima: suelto en mitad de
+      la pantalla parecía un adorno puesto ahí pequeño, y así remata la
+      frase del fallo, que es lo que hace. */}
+  {(()=>{
+   const titular=<p className={'marcador-titular titular-'+fallo.kind+(fallo.kind==='ruling'?' titular-'+fallo.side:'')}>
+    {cerrado?verdictHeadline(fallo):verdictLead(fallo)}
+    <small>{verdictSubhead(fallo)}</small>
+   </p>;
+   if(!cerrado||(fallo.kind!=='ruling'&&fallo.kind!=='tie'))return titular;
+   return <div className="marcador-fallo">
+    {titular}
+    <img className="mascota mascota-fallo" width={240} height={240}
+     src={fallo.kind==='tie'?'/mazo-duda.webp':'/mazo-golpe.webp'} alt="" aria-hidden="true"/>
+   </div>;
+  })()}
 
   <div className="marcador-fichas">
    {orden.map(side=>{
