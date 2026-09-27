@@ -147,3 +147,9 @@
  background:linear-gradient(var(--uva-alto),var(--uva-bajo));
  border-color:var(--uva-borde);color:var(--uva-tinta);
  box-shadow:0 2px 0 var(--uva-hundido),inset 0 1px 0 var(--uva-luz)}
+
+/* --- La flecha de volver de una pantalla con titular -------------------
+ * Inicio es la raíz: desde Mis zanjas y desde Tú se vuelve ahí. Va en su
+ * propia línea, encima del titular: metida en la misma fila robaba el
+ * ancho al antetítulo y dejaba el botón de la derecha fuera de pantalla. */
+.vuelta{display:flex;margin-bottom:10px}

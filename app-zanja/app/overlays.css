@@ -27,3 +27,11 @@ html[data-motion=off] .modal-viewport>[data-slot]{animation:none!important}
 .campo-clave>button:hover{color:#fff}
 .entrar-error{width:100%;margin:2px 0 0;padding:11px 13px;border:1px solid #a4485c;border-radius:10px;background:#3a1f2b;color:#ffc3cf;font-size:13px;line-height:1.45}
 .signin-form>.game-btn{margin-top:4px}
+
+/* La mascota como emblema: sin marco, que ya es ella el dibujo. El mismo
+ * criterio que en la escalera de niveles y en las celebraciones. */
+.success-emblem.emblema-mascota{
+ width:118px;height:118px;border:0;border-radius:0;background:none;
+ transform:none;margin:2px auto 8px;
+ filter:drop-shadow(0 8px 14px #0c0818b3)}
+.success-emblem.emblema-mascota>img{width:100%;height:auto;display:block}

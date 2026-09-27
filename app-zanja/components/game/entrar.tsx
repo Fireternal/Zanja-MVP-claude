@@ -5,7 +5,7 @@
 // como tú, votaba por ti y borraba tus casos. Con una contraseña el nombre
 // identifica y la contraseña demuestra. Ver app/api/auth/LEEME.md.
 import {useState} from 'react';
-import {ArrowRight,Eye,EyeOff,LoaderCircle,UserRound} from 'lucide-react';
+import {ArrowRight,Eye,EyeOff,LoaderCircle} from 'lucide-react';
 import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {CLAVE_MIN} from '@/lib/passwords';
 import {NAME_MIN,NAME_MAX} from '@/lib/session';
@@ -30,7 +30,9 @@ export function Entrar({ocupado,onEnviar,onSalir}:{ocupado:boolean;onEnviar:(c:C
  }
 
  return <>
-  <span className="success-emblem"><UserRound size={44}/></span>
+  <span className="success-emblem emblema-mascota">
+   <img width={200} height={200} src={registrar?'/mazo-reposo.webp':'/mazo-senala.webp'} alt="" aria-hidden="true"/>
+  </span>
   <DialogTitle>{registrar?'Crea tu cuenta.':'Tu voto merece contar.'}</DialogTitle>
   <DialogDescription>{registrar
    ?'El nombre es con el que te verán en La Sala. La contraseña es para que nadie más pueda ser tú.'
