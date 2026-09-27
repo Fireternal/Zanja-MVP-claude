@@ -162,6 +162,9 @@ export default function ZanjaApp(){
  const canStep=!evidenceBusy&&(step===1?draft.q.trim().length>=12:step===2?defensesReady:draft.consent&&defensesReady);
  function revise(c:Case){setDraft({...blank,q:c.q,tag:c.tag,at:c.at,a:draftDefenses(c.a),bt:c.bt,b:draftDefenses(c.b),mode:c.status==='waiting'?'invite':'solo'});setStep(2);setModal('create');}
  return <div className={'game-shell mobile-app '+(view==='arena'||view==='pulso'?'arena-playing':view==='home'?'home-screen':'')}>
+  {/* El fondo vive dentro del marco del teléfono: fuera quedaba tapado por
+      el propio marco y el movimiento no llegaba a los bordes. */}
+  <div className="fondo" aria-hidden="true"><b/><u/><s/><i/></div>
   <Toaster theme="dark" position="top-center" richColors/>
   <header className="topbar"><button className="brand" onClick={()=>go('home')} aria-label="ZANJA, inicio"><span className="brand-bolt"><Zap fill="currentColor"/></span><span>ZANJA<span className="brand-dot">.</span></span><span className="beta-tag">BETA</span></button>{view==='home'&&<button className="dev-reset" onClick={resetRound} disabled={busy} aria-label="Reiniciar mi ronda de pruebas" title="Desarrollo: borra mis votos de prueba y recupera los casos saltados">{busy?<LoaderCircle size={15} className="spin"/>:<RotateCcw size={15}/>}<span>REINICIAR<small>DEV</small></span></button>}
    <div className="header-right"><Campana campana={campana} onOpen={abrirAvisos}/><button className="level-chip" onClick={()=>go('profile')} aria-label={`Tu perfil, nivel ${level}`}><Star fill="currentColor" size={18}/><span>NIV. {level}</span></button><button className="avatar" onClick={()=>go('profile')} aria-label="Mi perfil"><UserRound size={21}/></button></div>

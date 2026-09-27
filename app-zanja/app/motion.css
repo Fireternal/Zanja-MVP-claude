@@ -178,3 +178,73 @@
 .mascota-fallo{width:112px;margin:4px auto -4px;animation:mazazo .7s var(--golpe) both}
 @keyframes mazazo{0%{opacity:0;transform:translateY(-52px) rotate(-26deg) scale(1.25)}
  58%{opacity:1;transform:translateY(0) rotate(0) scale(.94)}78%{transform:translateY(-6px) scale(1.02)}100%{transform:none}}
+
+/* --- El fondo de la casa -------------------------------------------------
+ * ZANJA pasa en un escenario: un estrado con focos y público. El fondo lo
+ * cuenta con luz, no con textura. Cuatro capas, de atrás hacia delante:
+ * <b> el aura de color, <u> dos focos que barren, <s> las motas que flotan
+ * en su luz y <i> el rayo de la marca como grano. Todo vive dentro de
+ * .mobile-app: fuera quedaba tapado por el propio marco del teléfono y el
+ * movimiento no llegaba ni a la cabecera ni al menú.
+ */
+.fondo{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+ background:radial-gradient(120% 70% at 50% -10%,#32205ccc,transparent 70%),
+  radial-gradient(150% 45% at 50% 108%,#2a1a4aaa,transparent 72%)}
+
+/* El aura: tres manchas de color que respiran muy despacio. */
+.fondo>b{position:absolute;inset:-25%;display:block;
+ background:radial-gradient(circle at 16% 10%,#7456ff42,transparent 44%),
+  radial-gradient(circle at 92% 26%,#27c9e826,transparent 38%),
+  radial-gradient(circle at 26% 94%,#ff625d22,transparent 42%);
+ animation:fondo-aura 26s ease-in-out infinite}
+@keyframes fondo-aura{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-3%,2%) scale(1.07)}}
+
+/* Los focos: dos haces que cuelgan del techo y barren la sala. Es el
+ * movimiento que de verdad se percibe, porque cruza toda la pantalla. */
+.fondo>u{position:absolute;left:0;right:0;top:0;height:118%;display:block;
+ text-decoration:none;mix-blend-mode:screen}
+/* Cada haz es un cono recortado que cuelga de una esquina de arriba; se
+ * cruzan en mitad de la pantalla, como en un escenario. */
+.fondo>u:before,.fondo>u:after{content:'';position:absolute;top:0;bottom:0;
+ width:58%;transform-origin:50% 0;filter:blur(22px);
+ clip-path:polygon(43% 0,57% 0,106% 100%,-6% 100%)}
+.fondo>u:before{left:-9%;
+ background:linear-gradient(#b193ff28,#7b5ce00e 56%,transparent 86%);
+ animation:foco-izq 17s ease-in-out infinite}
+.fondo>u:after{right:-9%;
+ background:linear-gradient(#ffd13e1a,#e8a94a09 56%,transparent 86%);
+ animation:foco-der 21s ease-in-out infinite}
+@keyframes foco-izq{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
+@keyframes foco-der{0%,100%{transform:rotate(7deg)}50%{transform:rotate(-8deg)}}
+
+/* Las motas: polvo suspendido en la luz, subiendo. Dos planos a distinta
+ * velocidad para que el fondo tenga profundidad. */
+.fondo>s{position:absolute;inset:-30% 0;display:block;text-decoration:none}
+.fondo>s:before,.fondo>s:after{content:'';position:absolute;inset:0;
+ background-repeat:repeat}
+.fondo>s:before{
+ background-image:radial-gradient(1.7px 1.7px at 18% 12%,#ffffffb0,transparent 62%),
+  radial-gradient(1.4px 1.4px at 63% 31%,#ffe9a8a0,transparent 62%),
+  radial-gradient(1.9px 1.9px at 41% 58%,#d9c6ff9c,transparent 62%),
+  radial-gradient(1.3px 1.3px at 86% 77%,#ffffff8c,transparent 62%),
+  radial-gradient(1.6px 1.6px at 9% 88%,#ffd13e8c,transparent 62%);
+ background-size:230px 230px;animation:motas-cerca 24s linear infinite}
+.fondo>s:after{
+ background-image:radial-gradient(1.1px 1.1px at 74% 17%,#ffffff70,transparent 62%),
+  radial-gradient(1px 1px at 29% 44%,#cdb6ff66,transparent 62%),
+  radial-gradient(1.2px 1.2px at 55% 83%,#ffe9a866,transparent 62%);
+ background-size:150px 150px;animation:motas-lejos 40s linear infinite}
+@keyframes motas-cerca{from{transform:translateY(0)}to{transform:translateY(-230px)}}
+@keyframes motas-lejos{from{transform:translateY(0)}to{transform:translateY(-150px)}}
+
+/* El grano de marca: el rayo del logotipo, derivando apenas. */
+.fondo>i{position:absolute;inset:-300px;display:block;
+ background:url('/patron.webp') 0 0/240px 240px repeat;opacity:.5;
+ animation:fondo-deriva 26s linear infinite}
+@keyframes fondo-deriva{from{transform:translate(0,0)}to{transform:translate(240px,-240px)}}
+
+/* El contenido va por encima del fondo. */
+.mobile-app>.topbar,.mobile-app>.main-wrap,.mobile-app>.mobile-nav{position:relative;z-index:1}
+/* Y la cabecera y el menú dejan ver la luz por detrás. */
+.mobile-app>.topbar{background:#1c142cd4;backdrop-filter:blur(7px)}
+.mobile-app>.mobile-nav{background:#21162fd8;backdrop-filter:blur(9px)}
