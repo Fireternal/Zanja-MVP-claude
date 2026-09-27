@@ -37,10 +37,13 @@
 .evidence-access,.defensas-pestana,.category-scroll>button,.level-chip{
  border:2px solid var(--b-borde);
  border-radius:var(--b-radio);
- position:relative;
  transition:transform .13s cubic-bezier(.2,.7,.3,1),box-shadow .13s,
   background .16s,border-color .16s,color .16s;
 }
+/* El position va sólo donde hace falta —el brillo del botón principal se
+ * apoya en él—. Puesto en toda la familia le pisaba el absolute a la equis
+ * de los diálogos, y la equis se caía a la esquina de la izquierda. */
+.game-btn{position:relative}
 
 /* --- ORO: la acción principal ------------------------------------------ */
 .game-btn.yellow,.boton.oro,.secundar.is-on,.sala-enviar:not(:disabled),

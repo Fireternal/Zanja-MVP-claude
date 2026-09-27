@@ -60,6 +60,22 @@
 .mission-tile.tile-sellada{animation:sello-tile .55s var(--salto) both}
 @keyframes sello-tile{0%{transform:scale(.96)}55%{transform:scale(1.035)}100%{transform:scale(1)}}
 
+/* Y acto seguido se despide: se pone de oro, da el golpe del sello y se va
+ * hacia arriba. Una barra al 3/3 que ya no se puede tocar no pinta nada en
+ * la pantalla de inicio; lo de hoy se consulta desde el perfil. */
+.mission-tile.tile-sale{animation:tile-sale 1.15s var(--golpe) both;pointer-events:none}
+@keyframes tile-sale{
+ 0%{transform:none}
+ 16%{transform:scale(1.035);border-color:#ffd964;
+  background:linear-gradient(125deg,#6d4c20,#4b3418);
+  box-shadow:0 0 26px #ffd0336b,0 3px 0 #110a21}
+ 34%{transform:scale(.99)}
+ 62%{opacity:1;transform:scale(1);border-color:#ffd964;
+  background:linear-gradient(125deg,#6d4c20,#4b3418)}
+ 100%{opacity:0;transform:scale(.96) translateY(-14px)}}
+/* La fila que deja libre se cierra sola. */
+.phone-home{transition:grid-template-rows .45s var(--suave)}
+
 /* --- La marca de la campana --------------------------------------------- */
 .campana-marca{animation:marca-pop .45s var(--salto) both}
 @keyframes marca-pop{0%{transform:scale(0)}60%{transform:scale(1.25)}100%{transform:scale(1)}}

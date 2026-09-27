@@ -21,7 +21,10 @@ export const expedienteVacio:Expediente={
   {id:'sala',titulo:'Habla en La Sala',pista:'Deja un argumento',hechos:0,meta:1,hecho:false}],
  completas:0,sellado:false,racha:0,mejorRacha:0,sellos:0};
 
-export function ExpedienteTarjeta({expediente,onOpen}:{expediente:Expediente|null;onOpen:()=>void}){
+/** La tarjeta del menú. Cuando el día queda sellado se despide y deja el
+ *  sitio: una barra al 3/3 que ya no se puede tocar es ruido. Quién decide
+ *  cuándo se va es el menú, porque también tiene que recolocar su rejilla. */
+export function ExpedienteTarjeta({expediente,saliendo,onOpen}:{expediente:Expediente|null;saliendo?:boolean;onOpen:()=>void}){
  const e=expediente||expedienteVacio;
  // El tramo que se acaba de completar se enciende, pero sólo esa vez: si la
  // animación fuera sólo de CSS se repetiría cada vez que vuelves al inicio.
@@ -36,7 +39,7 @@ export function ExpedienteTarjeta({expediente,onOpen}:{expediente:Expediente|nul
   const reloj=setTimeout(()=>setRecien(false),900);
   return()=>clearTimeout(reloj);
  },[e.misiones]);
- return <button className={'mission-tile'+(e.sellado?' tile-sellada':'')} onClick={onOpen} aria-label={`Expediente del día, ${e.completas} de 3 diligencias`}>
+ return <button className={'mission-tile'+(saliendo?' tile-sale':e.sellado?' tile-sellada':'')} onClick={onOpen} aria-label={`Expediente del día, ${e.completas} de 3 diligencias`}>
   <span className="mission-icon">{e.sellado?<Stamp size={21}/>:<ClipboardList size={21}/>}</span>
   <div>
    <div className="mission-title">
@@ -92,4 +95,28 @@ export function ExpedienteHoja({expediente,onIr}:{expediente:Expediente|null;onI
     :<><Stamp size={22}/><span>EL SELLO DE HOY<b>+{SELLO_XP} XP al completarlo</b></span></>}
   </div>
  </>;
+}
+
+/** Y en el perfil queda el registro: la racha viva, el récord y los días
+ *  sellados en total. Es el único sitio donde el expediente sigue estando
+ *  después de cerrarse, y desde aquí se vuelve a abrir la hoja. */
+export function ExpedienteResumen({expediente,onOpen}:{expediente:Expediente|null;onOpen:()=>void}){
+ const e=expediente||expedienteVacio;
+ return <button className="resumen-expediente panel" onClick={onOpen}>
+  <div className="resumen-cabecera">
+   <span className={'resumen-llama'+(e.racha>0||e.sellado?' viva':'')}>
+    {e.sellado?<Stamp size={21}/>:<Flame size={21} fill={e.racha>0?'currentColor':'none'}/>}
+   </span>
+   <div>
+    <strong>El expediente del día</strong>
+    <small>{e.sellado?'Sellado hoy. Vuelve mañana.':`${e.completas} de 3 diligencias hoy`}</small>
+   </div>
+   <ChevronRight size={18}/>
+  </div>
+  <div className="resumen-cifras">
+   <span><b>{e.racha}</b><small>RACHA</small></span>
+   <span><b>{e.mejorRacha}</b><small>RÉCORD</small></span>
+   <span><b>{e.sellos}</b><small>SELLADOS</small></span>
+  </div>
+ </button>;
 }

@@ -14,7 +14,7 @@ import {CreateZanja,type ZanjaDraft} from '@/components/game/create-zanja';
 import {InviteResponse} from '@/components/game/invite-response';
 import {Court} from '@/components/game/court';
 import {PulsoTarjeta,PulsoPantalla,type PulseState} from '@/components/game/pulso';
-import {ExpedienteTarjeta,ExpedienteHoja} from '@/components/game/expediente';
+import {ExpedienteTarjeta,ExpedienteHoja,ExpedienteResumen} from '@/components/game/expediente';
 import {FichaCaso} from '@/components/game/ficha';
 import {Campana,AvisosHoja,type Campanario} from '@/components/game/avisos';
 import {Celebracion,type Fiesta} from '@/components/game/celebracion';
@@ -43,6 +43,11 @@ export default function ZanjaApp(){
  const [presentacion,setPresentacion]=useState(false);
  // El chip de la cabecera acusa cada experiencia que entra: es el único sitio
  // donde se ve el progreso sin ir al perfil, y sin moverse no se nota.
+ // El expediente sellado se despide y deja el sitio. El menú lleva la cuenta
+ // porque su rejilla tiene una fila reservada para la tarjeta y hay que
+ // cerrarla con él.
+ const [expSaliendo,setExpSaliendo]=useState(false),[expFuera,setExpFuera]=useState(false);
+ const expSellado=useRef<boolean|null>(null);
  const [xpLlega,setXpLlega]=useState(false);
  const xpAnterior=useRef<number|null>(null);
  const [displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false);
@@ -120,6 +125,25 @@ export default function ZanjaApp(){
  // El catálogo es relleno: la cola la abren las zanjas de la gente. Ver lib/cola.ts.
  const available=ordenarCola(cases.filter(c=>c.status==='open'&&!c.choice&&!c.mine&&!c.participant&&!c.reported&&!skipped.includes(c.id)&&(filter==='Todas'||c.tag===filter)),{votos:profile.votes});
  const current=active?cases.find(c=>c.id===active):available[0];
+ useEffect(()=>{
+  // Mientras no haya cargado no se sabe nada: el expediente en blanco dice
+  // "sin sellar" y eso parecería un cambio de estado cuando llega el real.
+  if(!expediente)return;
+  if(expSellado.current===null){
+   expSellado.current=expediente.sellado;
+   if(expediente.sellado)setExpFuera(true);
+   return;
+  }
+  if(expediente.sellado&&!expSellado.current){
+   expSellado.current=true;
+   setExpSaliendo(true);
+   const reloj=setTimeout(()=>setExpFuera(true),1150);
+   return()=>clearTimeout(reloj);
+  }
+  expSellado.current=expediente.sellado;
+  // Y a medianoche vuelve, con el expediente de mañana en blanco.
+  if(!expediente.sellado){setExpSaliendo(false);setExpFuera(false);}
+ },[expediente]);
  useEffect(()=>{
   if(xpAnterior.current===null){xpAnterior.current=profile.xp;return;}
   if(profile.xp<=xpAnterior.current){xpAnterior.current=profile.xp;return;}
@@ -201,8 +225,13 @@ export default function ZanjaApp(){
   </header>
   <main className="main-wrap" ref={mainRef}>
    {failed&&<div className="connection-banner" role="alert">No podemos conectar. Puedes explorar los casos; tus acciones necesitan conexión.<button onClick={()=>{setLoading(true);refresh();}}>Reintentar</button></div>}
-   {view==='home'&&<div key="home" className="screen-in phone-home sketch-menu entra-lista"><h1 className="sr-only">Inicio de ZANJA</h1>
-    <ExpedienteTarjeta expediente={expediente} onOpen={()=>setModal('expediente')}/>
+   {view==='home'&&<div key="home" className={'screen-in phone-home sketch-menu entra-lista'+(expFuera?' sin-expediente':'')}><h1 className="sr-only">Inicio de ZANJA</h1>
+    {expFuera
+     /* La rejilla del menú tiene una fila por hijo: si la tarjeta se va del
+        todo, el Juzgado se cae a la fila que acaba de cerrarse. Queda un
+        hueco vacío ocupando su sitio. */
+     ?<i className="hueco-expediente" aria-hidden="true"/>
+     :<ExpedienteTarjeta expediente={expediente} saliendo={expSaliendo} onOpen={()=>setModal('expediente')}/>}
     <section className="mobile-lobby-hero"><div className="lobby-scene"><img width={768} height={512} fetchPriority="high" decoding="async" src="/arena-menu.webp" alt="Mazo dorado del Juzgado entre los bandos azul y coral"/><div className="scene-tint"/><span className="ribbon">JUZGADO</span><div className="scene-title">DOS BANDOS.<br/><span>TÚ DECIDES.</span></div><span className="scene-vs" aria-hidden="true">A <b>VS</b> B</span></div><div className="play-zone"><button className="game-btn yellow" onClick={()=>{setFilter('Todas');play();}}>¡A ZANJAR!</button></div></section>
     <PulsoTarjeta pulse={pulse} onOpen={()=>go('pulso')}/>
     <div className="home-shortcuts"><button className="home-shortcut shortcut-mine" onClick={()=>{setMineTab('created');go('mine');}}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/my-cases-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>MIS<br/>ZANJAS</h2><ArrowRight className="shortcut-arrow" size={21}/></button><button className={'home-shortcut shortcut-create'+(puedeCrear?'':' bajo-llave')} onClick={openCreate}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/create-case-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>CREAR<br/>ZANJA</h2>{puedeCrear?<ArrowRight className="shortcut-arrow" size={21}/>:<span className="shortcut-llave"><LockKeyhole size={12}/>NIVEL 2</span>}</button></div>
@@ -211,7 +240,7 @@ export default function ZanjaApp(){
    {view==='pulso'&&<PulsoPantalla pulse={pulse} busy={busy} onAnswer={answerPulse} onBack={volver} onCambio={refresh}/>}
    {view==='arena'&&<Court current={current} cases={cases} filter={filter} loading={loading} busy={busy} celebrate={celebrate} onBack={volver} onCambio={refresh} onVote={vote} onNext={next} onCreate={openCreate} onFilter={cat=>{setFilter(cat);setActive(null);setSkipped([]);scrollTop();}} onReport={()=>{setReport('');setModal('report');}} onShare={share} onRevise={revise}/>}
    {view==='mine'&&<div key="mine" className="screen-in"><div className="vuelta"><button className="icon-btn" aria-label="Volver al inicio" onClick={()=>go('home')}><ArrowLeft size={21}/></button></div><div className="page-heading"><div><span className="eyebrow">CADA DISCUSIÓN TIENE SU HISTORIA</span><h1>Mis zanjas</h1><p>Tus casos, tus votos y lo que pasó después.</p></div><button className="game-btn yellow small" onClick={openCreate}><Plus size={19}/>Crear zanja</button></div><Tabs value={mineTab} onValueChange={setMineTab}><TabsList className="mine-tabs"><TabsTrigger value="created">Mis casos <span>{own.length}</span></TabsTrigger><TabsTrigger value="voted">He votado <span>{recent.length}</span></TabsTrigger></TabsList></Tabs>{displayed.length?<div className="case-grid entra-lista" key={mineTab}>{displayed.map((c,i)=><FichaCaso key={c.id} indice={i} c={c} onOpen={()=>play(c.id)} onShare={()=>share(c,true)} onRemove={()=>setRemove(c.id)}/>)}</div>:<section className="empty-state"><img className="mascota" width={300} height={300} src={mineTab==='created'?'/mazo-reposo.webp':'/mazo-senala.webp'} alt="" aria-hidden="true"/><h2>{mineTab==='created'?'Tu primera zanja empieza aquí.':'Todavía no has tomado partido.'}</h2><p>{mineTab==='created'?'¿Una discusión que siempre vuelve a la mesa? Dale dos versiones y un jurado.':'Entra en el Juzgado, lee las dos versiones y deja tu voto. Aquí podrás volver al resultado.'}</p><button className="game-btn yellow" onClick={mineTab==='created'?openCreate:()=>play()}>{mineTab==='created'?'CREAR MI PRIMERA ZANJA':'ENTRAR AL JUZGADO'}<ArrowRight size={20}/></button></section>}</div>}
-   {view==='profile'&&<div key="profile" className="screen-in profile-view entra-lista"><div className="vuelta"><button className="icon-btn" aria-label="Volver al inicio" onClick={()=>go('home')}><ArrowLeft size={21}/></button></div><div className="page-heading"><div><span className="eyebrow">EL CRITERIO SE ENTRENA</span><h1>Tú</h1><p>Tu nivel, tu escalera y lo que llevas conseguido.</p></div><button className="quiet-btn" onClick={()=>setModal('settings')}><Settings2 size={18}/>Ajustes</button></div><section className="profile-hero panel"><div className="large-medal"><img width={120} height={120} src={MEDALLAS[level-1]||MEDALLAS[MEDALLAS.length-1]} alt="" aria-hidden="true"/><span>{level}</span></div><div><span className="tag amber">NIVEL {level}</span><h2>{rango.titulo}</h2><p>{rango.falta} XP para {rango.siguiente?rango.siguiente.titulo:'el siguiente nivel'}</p><Progress className="xp-track" value={rango.hecho/(rango.hasta-rango.desde)*100} aria-label="Experiencia"/></div></section><div className="stat-grid"><div className="panel"><Gavel/><strong>{votosVistos}</strong><span>Decisiones tomadas</span></div><div className="panel"><Zap/><strong>{xpVisto}</strong><span>Experiencia total</span></div><div className="panel"><Layers/><strong>{creadasVistas}</strong><span>Zanjas creadas</span></div></div><div className="section-label"><h2>Lo que abre cada nivel</h2><span>TU ESCALERA</span></div><EscaleraNiveles xp={profile.xp}/><div className="section-label"><h2>Pequeñas grandes victorias</h2><span>TUS LOGROS</span></div><div className="achievement-grid">{[{name:'Primer veredicto',desc:'Emite tu primer voto',ok:profile.votes>=1,arte:'/logro-veredicto.webp'},{name:'A pleno criterio',desc:'Juzga 50 dilemas',ok:profile.votes>=50,arte:'/logro-cincuenta.webp'},{name:'Abre el debate',desc:'Crea tu primera zanja',ok:profile.created>=1,arte:'/logro-debate.webp'},{name:'Expediente sellado',desc:'Completa las tres diligencias de un día',ok:(expediente?.sellos||0)>=1,arte:'/logro-sello.webp'},{name:'Siete días seguidos',desc:'Encadena una racha de una semana',ok:(expediente?.mejorRacha||0)>=7,arte:'/logro-racha.webp'}].map(({name,desc,ok,arte})=><div className={'achievement panel '+(ok?'unlocked':'')} key={name}><span><img width={110} height={110} src={arte} alt="" aria-hidden="true"/></span><h3>{name}</h3><p>{desc}</p><small>{ok?'CONSEGUIDO':<><LockKeyhole size={12}/>POR DESCUBRIR</>}</small></div>)}</div></div>}
+   {view==='profile'&&<div key="profile" className="screen-in profile-view entra-lista"><div className="vuelta"><button className="icon-btn" aria-label="Volver al inicio" onClick={()=>go('home')}><ArrowLeft size={21}/></button></div><div className="page-heading"><div><span className="eyebrow">EL CRITERIO SE ENTRENA</span><h1>Tú</h1><p>Tu nivel, tu escalera y lo que llevas conseguido.</p></div><button className="quiet-btn" onClick={()=>setModal('settings')}><Settings2 size={18}/>Ajustes</button></div><section className="profile-hero panel"><div className="large-medal"><img width={120} height={120} src={MEDALLAS[level-1]||MEDALLAS[MEDALLAS.length-1]} alt="" aria-hidden="true"/><span>{level}</span></div><div><span className="tag amber">NIVEL {level}</span><h2>{rango.titulo}</h2><p>{rango.falta} XP para {rango.siguiente?rango.siguiente.titulo:'el siguiente nivel'}</p><Progress className="xp-track" value={rango.hecho/(rango.hasta-rango.desde)*100} aria-label="Experiencia"/></div></section><div className="stat-grid"><div className="panel"><Gavel/><strong>{votosVistos}</strong><span>Decisiones tomadas</span></div><div className="panel"><Zap/><strong>{xpVisto}</strong><span>Experiencia total</span></div><div className="panel"><Layers/><strong>{creadasVistas}</strong><span>Zanjas creadas</span></div></div><div className="section-label"><h2>Tu constancia</h2><span>EL EXPEDIENTE</span></div><ExpedienteResumen expediente={expediente} onOpen={()=>setModal('expediente')}/><div className="section-label"><h2>Lo que abre cada nivel</h2><span>TU ESCALERA</span></div><EscaleraNiveles xp={profile.xp}/><div className="section-label"><h2>Pequeñas grandes victorias</h2><span>TUS LOGROS</span></div><div className="achievement-grid">{[{name:'Primer veredicto',desc:'Emite tu primer voto',ok:profile.votes>=1,arte:'/logro-veredicto.webp'},{name:'A pleno criterio',desc:'Juzga 50 dilemas',ok:profile.votes>=50,arte:'/logro-cincuenta.webp'},{name:'Abre el debate',desc:'Crea tu primera zanja',ok:profile.created>=1,arte:'/logro-debate.webp'},{name:'Expediente sellado',desc:'Completa las tres diligencias de un día',ok:(expediente?.sellos||0)>=1,arte:'/logro-sello.webp'},{name:'Siete días seguidos',desc:'Encadena una racha de una semana',ok:(expediente?.mejorRacha||0)>=7,arte:'/logro-racha.webp'}].map(({name,desc,ok,arte})=><div className={'achievement panel '+(ok?'unlocked':'')} key={name}><span><img width={110} height={110} src={arte} alt="" aria-hidden="true"/></span><h3>{name}</h3><p>{desc}</p><small>{ok?'CONSEGUIDO':<><LockKeyhole size={12}/>POR DESCUBRIR</>}</small></div>)}</div></div>}
   </main>
   <nav className="mobile-nav" aria-label="Navegación móvil">{navs.map(({id,label,Icon})=><button key={id} aria-current={view===id?'page':undefined} className={view===id?'active':''} onClick={()=>go(id)}><Icon size={22}/><span>{label}</span></button>)}</nav>
   <Dialog open={!!modal} onOpenChange={open=>{if(!open&&!busy)setModal(null);}}><DialogContent className={'zanja-dialog '+(['create','invite'].includes(modal||'')?'create-screen creator-shell':'bottom-sheet')} showCloseButton={false}>{!['create','invite'].includes(modal||'')&&<button className="dialog-x icon-btn desnudo" aria-label="Cerrar" disabled={busy} onClick={()=>setModal(null)}><X size={21}/></button>}
