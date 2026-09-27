@@ -3,9 +3,13 @@
 // una llave que aún no tienes y la hoja que lo explica cuando tocas algo
 // cerrado. El candado siempre dice qué falta y cómo conseguirlo; un "no
 // puedes" a secas sería lo peor que podría hacer una app que pide volver.
-import {LockKeyhole,Check,ArrowRight,KeyRound} from 'lucide-react';
+import {LockKeyhole,ArrowRight,KeyRound} from 'lucide-react';
 import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {rangos,NIVEL_LLAVE,tituloDe,nivelDe,progresoDe,xpDelNivel,type Llave} from '@/lib/niveles';
+
+/** Una medalla por rango. Literales a propósito: la vitrina empotra los
+ *  archivos buscando estas rutas en el código, y no ve las que se arman al vuelo. */
+const MEDALLAS=['/rango-1.webp','/rango-2.webp','/rango-3.webp','/rango-4.webp','/rango-5.webp','/rango-6.webp'];
 
 export function LlaveBloqueada({llave,xp}:{llave:Llave;xp:number}){
  const nivel=NIVEL_LLAVE[llave];
@@ -21,7 +25,7 @@ export function EscaleraNiveles({xp}:{xp:number}){
  return <ol className="escalera entra-lista">{rangos.map((r,i)=>{
   const abierto=nivel>=r.nivel;
   return <li key={r.nivel} className={abierto?'abierto':''} style={{'--i':i} as React.CSSProperties}>
-   <span className="escalera-marca">{abierto?<Check size={15}/>:<LockKeyhole size={13}/>}<b>{r.nivel}</b></span>
+   <span className="escalera-marca"><img width={96} height={96} src={MEDALLAS[r.nivel-1]||MEDALLAS[MEDALLAS.length-1]} alt="" aria-hidden="true"/><b>{r.nivel}</b></span>
    <div className="escalera-texto"><strong>{r.titulo}</strong><small>{r.desbloqueo}</small></div>
    <span className="escalera-xp">{r.xp?<>{r.xp}<i>XP</i></>:<i>DE SALIDA</i>}</span>
   </li>;})}

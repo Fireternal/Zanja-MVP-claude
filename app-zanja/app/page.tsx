@@ -54,7 +54,7 @@ export async function generateMetadata({searchParams}:{searchParams:Promise<Reco
   title:titulo,
   description:descripcion,
   manifest:'/manifest.webmanifest',
-  icons:{icon:'/favicon.svg',shortcut:'/favicon.svg'},
+  icons:{icon:'/favicon.svg',shortcut:'/favicon.svg',apple:'/apple-touch-icon.png'},
   openGraph:{type:'website',siteName:'ZANJA',locale:'es_ES',title:titulo,description:descripcion,
    url:id?`${base}/?case=${encodeURIComponent(id)}`:base,
    images:[{url:imagen,width:1200,height:630,alt:'ZANJA · Dos bandos. Un jurado. Un veredicto.'}]},
