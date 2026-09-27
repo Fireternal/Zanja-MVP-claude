@@ -15,10 +15,14 @@ export type Credenciales={name:string;password:string;registrar:boolean};
 export function Entrar({ocupado,onEnviar,onSalir,creando=false}:{ocupado:boolean;onEnviar:(c:Credenciales)=>Promise<string|null>;onSalir:()=>void;creando?:boolean}){
  // Quien viene de "crear mi cuenta" no tiene que buscar la pestaña.
  const [registrar,setRegistrar]=useState(creando);
- const [name,setName]=useState(''),[password,setPassword]=useState('');
+ const [name,setName]=useState(''),[password,setPassword]=useState(''),[repetida,setRepetida]=useState('');
  const [verClave,setVerClave]=useState(false),[error,setError]=useState('');
 
- const listo=name.trim().length>=NAME_MIN&&password.length>=CLAVE_MIN&&!ocupado;
+ // Una contraseña mal tecleada al crear la cuenta es una cuenta perdida:
+ // no hay correo con el que recuperarla. Por eso se pide dos veces, y sólo
+ // al crearla —al entrar, si te equivocas, lo dice el propio intento.
+ const coinciden=!registrar||repetida===password;
+ const listo=name.trim().length>=NAME_MIN&&password.length>=CLAVE_MIN&&coinciden&&!ocupado;
  async function enviar(e:React.FormEvent){
   e.preventDefault();
   if(!listo)return;
@@ -27,7 +31,7 @@ export function Entrar({ocupado,onEnviar,onSalir,creando=false}:{ocupado:boolean
   if(fallo)setError(fallo);
  }
  function cambiar(aRegistrar:boolean){
-  setRegistrar(aRegistrar);setError('');
+  setRegistrar(aRegistrar);setError('');setRepetida('');
  }
 
  return <>
@@ -57,6 +61,18 @@ export function Entrar({ocupado,onEnviar,onSalir,creando=false}:{ocupado:boolean
     <button type="button" className="icon-btn desnudo" onClick={()=>setVerClave(v=>!v)}
      aria-label={verClave?'Ocultar la contraseña':'Ver la contraseña'}>{verClave?<EyeOff size={19}/>:<Eye size={19}/>}</button>
    </div>
+
+   {registrar&&<>
+    <label className="creator-label" htmlFor="entrar-repetir">REPITE LA CONTRASEÑA</label>
+    <div className="campo-clave">
+     <input id="entrar-repetir" type={verClave?'text':'password'} value={repetida} onChange={e=>setRepetida(e.target.value)}
+      maxLength={200} autoComplete="new-password" placeholder="La misma otra vez" disabled={ocupado}
+      aria-invalid={repetida.length>0&&repetida!==password}/>
+    </div>
+    {/* Sólo se avisa cuando ya hay algo escrito: regañar en cuanto tecleas
+        la primera letra es ruido, porque todavía no puede coincidir. */}
+    {repetida.length>0&&repetida!==password&&<p className="entrar-aviso">Las dos contraseñas no coinciden.</p>}
+   </>}
 
    {error&&<p className="entrar-error" role="alert">{error}</p>}
 

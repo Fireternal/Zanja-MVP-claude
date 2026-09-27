@@ -35,3 +35,8 @@ html[data-motion=off] .modal-viewport>[data-slot]{animation:none!important}
  transform:none;margin:2px auto 8px;
  filter:drop-shadow(0 8px 14px #0c0818b3)}
 .success-emblem.emblema-mascota>img{width:100%;height:auto;display:block}
+
+/* El aviso de que las dos contraseñas no coinciden. Más suave que un error
+ * de verdad: todavía la estás escribiendo, no has fallado en nada. */
+.entrar-aviso{width:100%;margin:-4px 0 0;font-size:12.5px;line-height:1.5;color:#ffc98a}
+.campo-clave input[aria-invalid=true]{border-color:#c98a3f}
