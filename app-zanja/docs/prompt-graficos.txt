@@ -1,0 +1,97 @@
+NECESIDADES GRÁFICAS DE ZANJA
+Para pegar en la misma conversación de ChatGPT donde salió la mascota, uno por
+mensaje. Guarda cada imagen con el nombre exacto que pone al final.
+
+════════════════════════════════════════════════════════════════════════════
+A · EL ICONO DE LA APLICACIÓN        ->  icono-app.png
+════════════════════════════════════════════════════════════════════════════
+Ahora quiero el icono de la app para la pantalla de inicio del móvil, hecho
+con la misma mascota.
+
+Sólo la CABEZA del mazo, de frente, con su cara: los mismos ojos morados, las
+mismas cejas, el mismo oro con los aros morados y el mismo reborde de luz rosa.
+Sin manos, sin mango o apenas un asomo por debajo. Expresión segura y amable,
+la de reposo.
+
+Diferencias con las imágenes anteriores:
+- Aquí el fondo NO es transparente: va relleno, con un degradado morado de
+  #6f3295 en el centro a #2a1145 en las esquinas, y un resplandor dorado suave
+  detrás de la cabeza.
+- La cabeza tiene que quedar CENTRADA y ocupar como mucho el 70% del ancho,
+  dejando bastante aire alrededor. El sistema del móvil recorta los iconos en
+  círculo, y lo que se salga de ese centro se pierde.
+- Nada de texto, ni letras, ni marcos, ni bordes redondeados dibujados: el
+  cuadrado va lleno de lado a lado.
+
+PNG cuadrado de 1024×1024.
+
+════════════════════════════════════════════════════════════════════════════
+B · LAS SEIS MEDALLAS DE NIVEL       ->  medallas.png
+════════════════════════════════════════════════════════════════════════════
+Ahora necesito seis insignias de rango para la pantalla de perfil. NO llevan
+mascota: son objetos, con el mismo acabado 3D brillante, la misma luz de foco
+y la misma paleta (oro, morado #6f3295, reborde de luz rosa) que todo lo
+anterior.
+
+Dámelas en UNA sola imagen de 1536×1024, en una rejilla de 3 columnas por 2
+filas, cada insignia centrada en su casilla, todas del mismo tamaño y sin
+tocarse ni solaparse. Fondo completamente transparente, sin texto, sin números
+y sin sombra en el suelo.
+
+Todas comparten la misma forma —una placa redondeada tipo escudo— y van
+subiendo de categoría de la primera a la sexta:
+
+1. Bronce mate, sencilla, con un mazo pequeño grabado.
+2. Bronce pulido con filo dorado y una estrella sobre el mazo.
+3. Plata, con una lupa cruzada sobre una carpeta de expediente.
+4. Plata y oro, con una balanza de la justicia.
+5. Oro, con dos mazos cruzados y una rama de laurel.
+6. Oro con incrustaciones moradas, laurel completo y una corona encima.
+
+Orden de lectura: la 1 arriba a la izquierda y la 6 abajo a la derecha.
+
+════════════════════════════════════════════════════════════════════════════
+C · LOS CINCO LOGROS                 ->  logros.png
+════════════════════════════════════════════════════════════════════════════
+Ahora cinco emblemas de logro, con el mismo acabado que las medallas pero de
+forma distinta para que no se confundan con ellas: aquí en vez de escudo, un
+medallón CIRCULAR con un aro morado alrededor.
+
+Una sola imagen de 1536×1024, rejilla de 3 columnas por 2 filas, los cinco
+emblemas en las cinco primeras casillas y la SEXTA CASILLA VACÍA. Todos del
+mismo tamaño, centrados, sin tocarse. Fondo transparente, sin texto, sin
+sombra en el suelo.
+
+1. Un mazo dorado dando un golpe, con una chispa. (el primer veredicto)
+2. Una torre de expedientes con una marca de verificación dorada. (juzgar
+   cincuenta casos)
+3. Dos bocadillos de diálogo enfrentados, uno azul #76d9fa y otro coral
+   #ffa5b5. (abrir el primer debate)
+4. Un sello de tinta morado recién estampado sobre un papel. (sellar el
+   expediente del día)
+5. Una llama naranja sobre una hoja de calendario. (siete días seguidos)
+
+════════════════════════════════════════════════════════════════════════════
+D · LA POSE QUE FALTA DE LA MASCOTA  ->  mazo-duda.png
+════════════════════════════════════════════════════════════════════════════
+Misma mascota exactamente igual que la imagen aprobada: mismo personaje, mismo
+estilo, mismos colores, mismas cejas, mismo reborde de luz rosa en los cantos,
+misma cámara frontal y mismo tamaño dentro del cuadro. PNG 1024×1024, fondo
+transparente, sin sombra en el suelo, sin texto. Cambia sólo la pose y la
+expresión:
+
+Dudando, muy exagerado. La cabeza claramente ladeada hacia un lado, una mano
+apoyada en la parte de arriba de la cabeza y la otra con la palma hacia arriba.
+Un ojo bien abierto y el otro entornado, una ceja mucho más alta que la otra.
+Tiene que verse a la primera que no se aclara, y distinguirse sin dudar de la
+pose de reposo, que también tenía las manos abiertas.
+
+════════════════════════════════════════════════════════════════════════════
+SI ALGO SALE MAL
+════════════════════════════════════════════════════════════════════════════
+- Si en las láminas B o C las piezas salen pegadas o de tamaños distintos:
+  "sepáralas más y hazlas todas del mismo tamaño, centrada cada una en su
+  casilla de la rejilla".
+- Si el fondo de B o C no sale transparente: mándamelas igual, que se lo quito.
+- Si el icono A sale con la cabeza demasiado grande: "reduce la cabeza, tiene
+  que ocupar como mucho el 70% del ancho y quedar centrada".
