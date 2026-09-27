@@ -9,7 +9,7 @@ import {rangos,NIVEL_LLAVE,tituloDe,nivelDe,progresoDe,xpDelNivel,type Llave} fr
 
 /** Una medalla por rango. Literales a propósito: la vitrina empotra los
  *  archivos buscando estas rutas en el código, y no ve las que se arman al vuelo. */
-const MEDALLAS=['/rango-1.webp','/rango-2.webp','/rango-3.webp','/rango-4.webp','/rango-5.webp','/rango-6.webp'];
+export const MEDALLAS=['/rango-1.webp','/rango-2.webp','/rango-3.webp','/rango-4.webp','/rango-5.webp','/rango-6.webp'];
 
 export function LlaveBloqueada({llave,xp}:{llave:Llave;xp:number}){
  const nivel=NIVEL_LLAVE[llave];

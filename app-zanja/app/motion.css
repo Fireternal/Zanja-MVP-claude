@@ -244,6 +244,11 @@
  * movimiento no llegaba ni a la cabecera ni al menú.
  */
 .fondo{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+ /* Aislado a propósito. Sin esto, cada vez que aparece una capa nueva por
+  * encima —un diálogo, una hoja— el navegador tiene que recomponer el fondo
+  * contra ella, y en el móvil eso es un fotograma en blanco: la pantalla
+  * parpadea al abrir los filtros o la denuncia. */
+ isolation:isolate;contain:paint;transform:translateZ(0);
  background:radial-gradient(120% 70% at 50% -10%,#32205ccc,transparent 70%),
   radial-gradient(150% 45% at 50% 108%,#2a1a4aaa,transparent 72%)}
 
@@ -258,17 +263,17 @@
 /* Los focos: dos haces que cuelgan del techo y barren la sala. Es el
  * movimiento que de verdad se percibe, porque cruza toda la pantalla. */
 .fondo>u{position:absolute;left:0;right:0;top:0;height:118%;display:block;
- text-decoration:none;mix-blend-mode:screen}
+ text-decoration:none}
 /* Cada haz es un cono recortado que cuelga de una esquina de arriba; se
  * cruzan en mitad de la pantalla, como en un escenario. */
 .fondo>u:before,.fondo>u:after{content:'';position:absolute;top:0;bottom:0;
  width:58%;transform-origin:50% 0;filter:blur(22px);
  clip-path:polygon(43% 0,57% 0,106% 100%,-6% 100%)}
 .fondo>u:before{left:-9%;
- background:linear-gradient(#b193ff28,#7b5ce00e 56%,transparent 86%);
+ background:linear-gradient(#b193ff34,#7b5ce014 56%,transparent 86%);
  animation:foco-izq 17s ease-in-out infinite}
 .fondo>u:after{right:-9%;
- background:linear-gradient(#ffd13e1a,#e8a94a09 56%,transparent 86%);
+ background:linear-gradient(#ffd13e24,#e8a94a0e 56%,transparent 86%);
  animation:foco-der 21s ease-in-out infinite}
 @keyframes foco-izq{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(9deg)}}
 @keyframes foco-der{0%,100%{transform:rotate(7deg)}50%{transform:rotate(-8deg)}}
@@ -301,6 +306,8 @@
 
 /* El contenido va por encima del fondo. */
 .mobile-app>.topbar,.mobile-app>.main-wrap,.mobile-app>.mobile-nav{position:relative;z-index:1}
-/* Y la cabecera y el menú dejan ver la luz por detrás. */
-.mobile-app>.topbar{background:#1c142cd4;backdrop-filter:blur(7px)}
-.mobile-app>.mobile-nav{background:#21162fd8;backdrop-filter:blur(9px)}
+/* La cabecera y el menú siguen dejando ver la luz por detrás, pero sin
+ * desenfocarla: backdrop-filter obliga al navegador a releer todo lo que hay
+ * debajo cada vez que algo cambia encima, y era la otra mitad del parpadeo. */
+.mobile-app>.topbar{background:#1c142ce8}
+.mobile-app>.mobile-nav{background:#21162fec}
