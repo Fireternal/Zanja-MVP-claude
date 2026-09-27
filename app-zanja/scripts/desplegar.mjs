@@ -25,6 +25,11 @@ const {worker, d1, r2} = ajustes();
 const config = JSON.parse(readFileSync(generado, 'utf8'));
 config.name = worker;
 config.topLevelName = worker;
+// Sin esto, cada despliegue borra las variables y los secretos puestos a
+// mano en el panel: wrangler considera que su configuración manda y elimina
+// lo que no aparece en ella. El SESSION_SECRET se ponía desde el panel y se
+// perdía en el siguiente build, así que la app volvía a dar 503.
+config.keep_vars = true;
 config.d1_databases = [{binding: 'DB', database_name: d1.nombre, database_id: d1.id}];
 // Sin almacén no se declara la atadura: wrangler falla si se le nombra un
 // bucket que no existe en la cuenta.
