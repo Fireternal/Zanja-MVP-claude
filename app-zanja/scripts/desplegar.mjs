@@ -53,13 +53,17 @@ if (salida.status) process.exit(salida.status);
 const secreto = process.env.SESSION_SECRET;
 if (secreto) {
   if (secreto.length < 32) aborta('SESSION_SECRET tiene menos de 32 caracteres.');
+  // Con --config: sin él wrangler busca un wrangler.toml en la raíz, que no
+  // existe porque la configuración se genera en dist/server/.
   const puesto = spawnSync(
     process.execPath,
-    [wrangler, 'secret', 'put', 'SESSION_SECRET', '--name', worker],
+    [wrangler, 'secret', 'put', 'SESSION_SECRET', '--config', destino],
     {cwd: raiz, input: secreto, stdio: ['pipe', 'inherit', 'inherit']},
   );
-  if (puesto.status) process.exit(puesto.status);
-  console.log('\nSESSION_SECRET instalado en el Worker.');
+  // Y si falla, no se tumba el despliegue: la app ya está subida y funciona
+  // salvo para entrar. Es mejor dejarla en pie y avisar que perderla entera.
+  if (puesto.status) console.log('\nAviso: no se ha podido instalar el SESSION_SECRET. La app está desplegada, pero entrar dará error.');
+  else console.log('\nSESSION_SECRET instalado en el Worker.');
 } else {
   console.log('\nAviso: sin SESSION_SECRET en las variables de compilación, entrar dará error.');
 }
