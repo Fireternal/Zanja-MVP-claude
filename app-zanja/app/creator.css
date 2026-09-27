@@ -36,7 +36,7 @@
 .creator-audience{display:grid;grid-template-columns:1fr 1fr;gap:10px}.creator-audience>label{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:13px;border:2px solid #775691;border-radius:14px;background:#342044;cursor:pointer}.creator-audience strong{font-family:var(--display);font-size:15px;font-weight:400}.creator-audience small{font-size:12px;line-height:1.3;color:#c9b0db}.creator-audience [data-slot=radio-group-item]{position:absolute;right:10px;top:12px}.creator-audience .selected{border-color:#ffe06a;background:#694c32}.creator-audience .selected>svg{color:#ffe06a}
 .creator-durations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.creator-durations>label{display:flex;align-items:center;justify-content:center;gap:6px;min-height:49px;border:2px solid #7b589b;border-radius:12px;background:#352148;font-family:var(--display);font-size:14px;cursor:pointer}.creator-durations .selected{background:#ffda4a;border-color:#ffe995;color:#352039;box-shadow:0 3px 0 #11081b}.creator-durations [data-slot=radio-group-item]{width:14px;height:14px}
 .creator-footer{flex-shrink:0;padding:12px 17px max(16px,env(safe-area-inset-bottom));background:#25162f;border-top:1px solid #7b549b55;box-shadow:0 -8px 20px #20142f66}
-/* La salida del pleito: quien prefiera escribir los dos bandos no debería
+/* La salida del camino corto: quien prefiera escribir los dos bandos no debería
  * tener que retroceder para encontrarlo, pero tampoco competir con el botón. */
 .footer-salida{display:block;width:100%;margin-top:9px;font-size:13px;text-align:center}
 .zanja-creator .game-btn,.creator-share .game-btn{width:100%;min-height:54px;font-family:var(--display);font-size:17px;letter-spacing:0;gap:10px}

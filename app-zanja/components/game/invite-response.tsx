@@ -1,5 +1,5 @@
 'use client';
-// La pantalla de B: la otra mitad de un pleito.
+// La pantalla de B: la otra mitad de una zanja.
 //
 // Aquí llega alguien que no ha elegido esta app —le han mandado un enlace por
 // el chat donde estaban discutiendo—, así que no se le pide cuenta antes de

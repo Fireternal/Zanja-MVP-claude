@@ -48,7 +48,7 @@ export default function ZanjaApp(){
  const expSellado=useRef<boolean|null>(null);
  const [xpLlega,setXpLlega]=useState(false);
  const xpAnterior=useRef<number|null>(null);
- const [displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false),[pleito,setPleito]=useState(false),[invitado,setInvitado]=useState(false);
+ const [displayName,setDisplayName]=useState<string|null>(null),[signingIn,setSigningIn]=useState(false),[invitado,setInvitado]=useState(false);
  const [afterSignIn,setAfterSignIn]=useState<string|null>(null);
  // Si entras desde el creador o desde una invitación, se vuelve a donde estabas.
  const [creandoCuenta,setCreandoCuenta]=useState(false);
@@ -167,12 +167,12 @@ export default function ZanjaApp(){
   if(ahora.nivel>previo.nivel)nuevas.push({tipo:'nivel',nivel:ahora.nivel});
   if(nuevas.length)setCola(c=>[...c,...nuevas]);
  },[loading,level,expediente,signedIn]);
+ // El caso del día: el mismo para todo el mundo, lo elige el servidor.
+ const dailyCase=cases.find(c=>c.id===daily)||cases[0];
  const recent=cases.filter(c=>c.choice).sort((a,b)=>(b.votedAt||0)-(a.votedAt||0)),own=cases.filter(c=>c.mine);
  const displayed=mineTab==='created'?own:recent;
  const patch=(field:keyof Draft,value:any)=>setDraft(d=>({...d,[field]:value}));
- function openCreate(){setPleito(false);setCreated(null);setStep(1);setModal('create');}
- /** La puerta de El Pleito: el mismo creador, pero derecho al enlace. */
- function openPleito(){setPleito(true);setCreated(null);setStep(1);setModal('create');}
+ function openCreate(){setCreated(null);setStep(1);setModal('create');}
  function resume(c:Case){setDraft({...blank,story:c.story||'',q:c.q,tag:c.tag,a:draftDefenses(c.a),b:draftDefenses(c.b),pendingId:c.id,invite:c.invite,duration:c.duration||3600000,audience:c.audience||'public'});setModal('create');}
  function play(id?:string){recordar();const c=cases.find(c=>c.id===id);if(c?.mine&&['waiting','ready'].includes(c.status)){resume(c);return;}setCelebrate(false);setActive(id||null);setView('arena');scrollTop();}
 
@@ -224,10 +224,8 @@ export default function ZanjaApp(){
      ?<i className="hueco-expediente" aria-hidden="true"/>
      :<ExpedienteTarjeta expediente={expediente} saliendo={expSaliendo} onOpen={()=>setModal('expediente')}/>}
     <section className="mobile-lobby-hero"><div className="lobby-scene"><img width={768} height={512} fetchPriority="high" decoding="async" src="/arena-menu.webp" alt="Mazo dorado del Juzgado entre los bandos azul y coral"/><div className="scene-tint"/><span className="ribbon">JUZGADO</span><div className="scene-title">DOS BANDOS.<br/><span>TÚ DECIDES.</span></div><span className="scene-vs" aria-hidden="true">A <b>VS</b> B</span></div><div className="play-zone"><button className="game-btn yellow" onClick={()=>{setFilter('Todas');play();}}>¡A ZANJAR!</button></div></section>
-    <div className="home-shortcuts"><button className="home-shortcut shortcut-mine" onClick={()=>{setMineTab('created');go('mine');}}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/my-cases-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>MIS<br/>ZANJAS</h2><ArrowRight className="shortcut-arrow" size={21}/></button>{/* La puerta grande no es "crear una zanja" sino el momento en que a
-           alguien le hace falta: una discusión abierta ahora mismo. Desde
-           dentro se puede cambiar a escribir uno los dos bandos. */}
-      <button className="home-shortcut shortcut-create" onClick={openPleito}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/create-case-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>TENGO UN<br/>PLEITO</h2><ArrowRight className="shortcut-arrow" size={21}/></button></div>
+    <button className="daily-tile daily-feature illustrated-daily" onClick={()=>play(dailyCase.id)}><img width={768} height={512} loading="eager" decoding="async" className="daily-art" src="/daily-menu.webp" alt="" aria-hidden="true"/><span className="daily-art-shade" aria-hidden="true"/><div className="daily-feature-heading"><h2>CASO DEL DÍA</h2></div><div className="daily-question"><h3>{dailyCase.q}</h3></div><ArrowRight className="shortcut-arrow" aria-hidden="true"/></button>
+    <div className="home-shortcuts"><button className="home-shortcut shortcut-mine" onClick={()=>{setMineTab('created');go('mine');}}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/my-cases-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>MIS<br/>ZANJAS</h2><ArrowRight className="shortcut-arrow" size={21}/></button><button className="home-shortcut shortcut-create" onClick={openCreate}><img width={480} height={480} loading="eager" decoding="async" className="shortcut-art" src="/create-case-menu.webp" alt="" aria-hidden="true"/><span className="shortcut-art-shade" aria-hidden="true"/><h2>CREAR<br/>ZANJA</h2><ArrowRight className="shortcut-arrow" size={21}/></button></div>
     
    </div>}
    {view==='arena'&&<Court current={current} cases={cases} filter={filter} loading={loading} busy={busy} celebrate={celebrate} onBack={volver} onCambio={refresh} onVote={vote} onNext={next} onCreate={openCreate} onFilter={cat=>{setFilter(cat);setActive(null);setSkipped([]);scrollTop();}} onReport={()=>{setReport('');setModal('report');}} onShare={share} onRevise={revise}/>}
@@ -262,7 +260,7 @@ export default function ZanjaApp(){
     <span className="nav-nombre">{label}</span>
    </button>)}</nav>
   <Dialog open={!!modal} onOpenChange={open=>{if(!open&&!busy)setModal(null);}}><DialogContent className={'zanja-dialog '+(['create','invite'].includes(modal||'')?'create-screen creator-shell':'bottom-sheet')} showCloseButton={false}>{!['create','invite'].includes(modal||'')&&<button className="dialog-x icon-btn desnudo" aria-label="Cerrar" disabled={busy} onClick={()=>setModal(null)}><X size={21}/></button>}
-   {modal==='create'&&<CreateZanja modoPleito={pleito} paso={step} onPaso={setStep} onSignIn={()=>openSignIn('create')} onHome={()=>{setModal(null);go('home');}} onBusy={setBusy} draft={draft} onChange={setDraft} cases={cases} signedIn={signedIn} onRefresh={refresh} onClose={()=>setModal(null)} onCase={id=>{setModal(null);play(id);}} onReset={()=>setDraft(blank)}/>}
+   {modal==='create'&&<CreateZanja paso={step} onPaso={setStep} onSignIn={()=>openSignIn('create')} onHome={()=>{setModal(null);go('home');}} onBusy={setBusy} draft={draft} onChange={setDraft} cases={cases} signedIn={signedIn} onRefresh={refresh} onClose={()=>setModal(null)} onCase={id=>{setModal(null);play(id);}} onReset={()=>setDraft(blank)}/>}
    {modal==='success'&&created&&<><span className="success-emblem"><CheckCircle2 size={54}/></span><DialogTitle>{created.invite?'¡Le toca a la otra parte!':'¡Tu zanja está abierta!'}</DialogTitle><DialogDescription>{created.invite?'Comparte la invitación. Su versión se mantendrá independiente de la tuya.':'El jurado ya puede participar. Sigue los votos desde Mis zanjas.'}</DialogDescription><button className="game-btn yellow" onClick={()=>share(created,!!created.invite)}><Copy size={20}/>{created.invite?'COPIAR INVITACIÓN':'COMPARTIR CASO'}</button><p className="notice">Esta beta es privada. El enlace solo funciona para quienes tengan acceso a la aplicación.</p><button className="quiet-btn" onClick={()=>{setModal(null);go('profile');setMineTab('created');}}>Ver mis zanjas<ArrowRight size={17}/></button></>}
    {modal==='expediente'&&<ExpedienteHoja expediente={expediente} onIr={()=>{setModal(null);play();}}/>}
    {modal==='avisos'&&<AvisosHoja campana={hojaAvisos||campana} onIr={a=>{setModal(null);if(a.caseId)play(a.caseId);}}/>}

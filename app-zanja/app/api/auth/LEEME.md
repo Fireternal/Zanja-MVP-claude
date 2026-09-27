@@ -22,7 +22,7 @@ secreto, la app falla a propósito en vez de arrancar insegura.
 
 ## La sesión de invitado
 
-Hay una excepción a todo lo anterior: **responder a un pleito no pide cuenta**.
+Hay una excepción a todo lo anterior: **responder a una invitación no pide cuenta**.
 Quien recibe un enlace de invitación no ha elegido esta app —se lo han mandado
 por el chat donde estaban discutiendo—, y un registro puesto delante de su
 respuesta es donde se cae la mitad de la gente.

@@ -103,6 +103,6 @@ cosa a tamaño completo.
 | 11–12 | Inicio y el expediente del día |
 | 13–16 | Perfil, escalera de niveles, logros y ajustes |
 | 17, 22 | Mis zanjas, vacío y con casos |
-| 18–21 | Abrir un pleito: relato, tu versión, el enlace, la espera |
+| 18–21 | Crear una zanja: relato, tu versión, el enlace, la espera |
 | 23–25 | La otra parte al abrir el enlace, sin cuenta |
 | 26 | Perfil de quien entró como invitado |

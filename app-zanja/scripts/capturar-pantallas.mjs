@@ -127,22 +127,22 @@ await pestana(0);
 await toca(pagina.locator('.shortcut-mine'), 1300);
 await retrata('mis-zanjas-vacio');
 
-// --- Abrir un pleito -----------------------------------------------------
+// --- Crear una zanja -----------------------------------------------------
 await pestana(0);
 await toca(pagina.locator('.shortcut-create'), 1200);
-await retrata('pleito-paso1');
+await retrata('crear-paso1');
 await pagina.locator('#case-story').fill('Habíamos quedado a las ocho para cenar en casa y apareció a las nueve menos cuarto sin avisar. Otra vez.');
 await pagina.waitForTimeout(400);
 await toca(pagina.getByRole('button', {name: /DARLE FORMA/i}), 1000);
 const mias = pagina.locator('.creator-body textarea');
 for (let i = 0; i < await mias.count(); i++) await mias.nth(i).fill(`Motivo ${i + 1}: me dejó esperando con la cena hecha y fría.`);
-await retrata('pleito-paso2');
+await retrata('crear-paso2');
 await toca(pagina.getByRole('button', {name: /CONSEGUIR EL ENLACE/i}), 2300);
-await retrata('pleito-enlace');
+await retrata('crear-enlace');
 const enlace = await pagina.locator('#invitation-link').inputValue().catch(() => '');
 await pagina.keyboard.press('Escape');
 await pagina.waitForTimeout(800);
-await retrata('pleito-invitacion-preparada');
+await retrata('crear-invitacion-preparada');
 await toca(pagina.locator('.creator-top .icon-btn').last(), 1000);
 await pestana(0);
 await toca(pagina.locator('.shortcut-mine'), 1300);

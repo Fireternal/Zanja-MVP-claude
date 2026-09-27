@@ -38,7 +38,7 @@ function escribir(g:Guardado){try{localStorage.setItem(LLAVE,JSON.stringify(g));
 
 /** Un identificador nuevo, sin relación con el nombre, como en el servidor. */
 const nuevoUid=()=>'u_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
-/** Y el del invitado que responde a un pleito sin hacerse cuenta. */
+/** Y el del invitado que responde a una zanja sin hacerse cuenta. */
 const nuevoInvitado=()=>'g_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const esInvitado=(uid:string)=>uid.startsWith('g_');
 
@@ -146,7 +146,7 @@ function invitacion(g:Guardado,token:string){
 }
 
 function guardarPartida(g:Guardado,data:any){
- // Responder a un pleito es lo único que se hace sin cuenta: se firma una
+ // Responder a una zanja es lo único que se hace sin cuenta: se firma una
  // identidad de invitado al vuelo, igual que en app/api/game/route.ts.
  if(!g.user&&data.action==='respond')g.user={uid:nuevoInvitado(),name:'Invitado'};
  const user=g.user?.uid;
@@ -157,7 +157,7 @@ function guardarPartida(g:Guardado,data:any){
 
  if(data.action==='seen'){g.seen=ahora;escribir(g);return json({ok:true});}
  if(data.action==='create'){
-  if(esInvitado(user))return error('Has entrado como invitado para responder a un pleito. Crea una cuenta para abrir zanjas tuyas.',403);
+  if(esInvitado(user))return error('Has entrado como invitado para responder a una zanja. Crea una cuenta para abrir las tuyas.',403);
   const q=limpio(data.q,1200,12);
   const a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null;
   const b=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null;

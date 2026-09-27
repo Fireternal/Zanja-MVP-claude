@@ -1,14 +1,16 @@
 'use client';
-// El creador de zanjas, con dos puertas de entrada.
+// El creador de zanjas. Uno solo, con una sola puerta: CREAR ZANJA.
 //
-// La normal —CREAR ZANJA— pide el relato, tus tres motivos y luego pregunta
-// quién escribe el otro bando. La otra es EL PLEITO: la de quien está
-// discutiendo con alguien ahora mismo y quiere mandarle un enlace antes de
-// que se enfríe la conversación. Ahí la pregunta de quién escribe B sobra
-// —ya está respondida— así que el enlace sale directo del segundo paso.
+// Lo normal es que la otra versión la escriba la otra persona, así que el
+// camino por defecto es el corto: cuentas lo que pasó, escribes tus tres
+// motivos y sale el enlace para mandárselo, sin pasar por la pantalla de
+// "¿quién escribe el bando B?". Quien prefiera escribir los dos bandos él
+// mismo lo tiene a un toque en el pie del segundo paso, y entonces sí se le
+// pregunta.
 //
-// Es el mismo caso y el mismo formulario; lo que cambia es que el pleito no
-// pasa por la pantalla de elegir ruta y que lo dice con otras palabras.
+// Hubo un tiempo en que esto eran dos puertas —CREAR ZANJA y TENGO UN
+// PLEITO— con el mismo formulario detrás. Dos nombres para una cosa sólo
+// confundían.
 import {CreatorClash} from './creator-clash';
 import {GrowingTextarea} from './growing-textarea';
 import {useEffect,useRef,useState} from 'react';
@@ -20,13 +22,13 @@ import {EvidenceField,EvidenceAccess} from './evidence';
 import {creationBack} from '@/lib/creation-navigation';
 import {categories,validDefenses,type Case} from '@/lib/cases';
 export type ZanjaDraft={story:string;evidence:string|null;q:string;tag:string;at:string;a:[string,string,string];bt:string;b:[string,string,string];mode:string;duration:number;audience:'public'|'link';consent:boolean;pendingId?:string;invite?:string};
-type Props={modoPleito?:boolean;paso?:number;onPaso?:(n:number)=>void;onSignIn:()=>void;onBusy:(busy:boolean)=>void;draft:ZanjaDraft;onChange:(d:ZanjaDraft)=>void;cases:Case[];signedIn:boolean;onRefresh:()=>Promise<boolean>;onClose:()=>void;onHome:()=>void;onCase:(id:string)=>void;onReset:()=>void};
-export function CreateZanja({modoPleito=false,paso=1,onPaso,onSignIn,onBusy,draft:d,onChange,cases,signedIn,onRefresh,onClose,onHome,onCase,onReset}:Props){
+type Props={paso?:number;onPaso?:(n:number)=>void;onSignIn:()=>void;onBusy:(busy:boolean)=>void;draft:ZanjaDraft;onChange:(d:ZanjaDraft)=>void;cases:Case[];signedIn:boolean;onRefresh:()=>Promise<boolean>;onClose:()=>void;onHome:()=>void;onCase:(id:string)=>void;onReset:()=>void};
+export function CreateZanja({paso=1,onPaso,onSignIn,onBusy,draft:d,onChange,cases,signedIn,onRefresh,onClose,onHome,onCase,onReset}:Props){
  const remote=cases.find(c=>c.id===d.pendingId);
  const [step,setStep]=useState(d.pendingId?(remote?.status==='ready'?4:3):paso),[route,setRoute]=useState<'choose'|'local'>('choose');
- // El pleito se puede abandonar a mitad —"mejor escribo yo las dos"—, así que
- // vive en el estado y no sólo en la propiedad que lo abrió.
- const [pleito,setPleito]=useState(modoPleito&&!d.pendingId);
+ // El camino corto, derecho al enlace. Se abandona con "prefiero escribir yo
+ // las dos versiones", y no se toma si se retoma un caso que ya las tenía.
+ const [directo,setDirecto]=useState(!d.pendingId&&d.mode!=='solo');
  const [direction,setDirection]=useState<'forward'|'back'>('forward');
  const [busy,setBusy]=useState(false),[imageBusy,setImageBusy]=useState(false),[error,setError]=useState(''),[sharing,setSharing]=useState(false),[copied,setCopied]=useState(false),[published,setPublished]=useState<string|null>(null);
  const body=useRef<HTMLDivElement>(null);
@@ -43,22 +45,22 @@ export function CreateZanja({modoPleito=false,paso=1,onPaso,onSignIn,onBusy,draf
  function back(){setDirection('back');const target=creationBack(step,route,!!d.pendingId,!!published);if(target==='home')onHome();else if(target==='close')onClose();else if(target==='choose')setRoute('choose');else goStep(target);}
 
  async function invite(){setBusy(true);setError('');try{const result=await send({action:'create',...d,mode:'invite',audience:'link',deferPublication:true});onChange({...d,mode:'invite',pendingId:result.id,invite:result.invite});await onRefresh();setSharing(true);return true;}catch(e){setError((e as Error).message);return false;}finally{setBusy(false);}}
- /** El atajo del pleito: del segundo paso al enlace, sin escala. */
+ /** El camino corto: del segundo paso al enlace, sin escala. */
  async function pedirEnlace(){if(!signedIn){onSignIn();return;}if(await invite())goStep(3);}
  async function publish(){setBusy(true);setError('');try{const result=await send(d.pendingId?{action:'publish',id:d.pendingId,tag:d.tag,audience:d.audience,duration:d.duration}:{action:'create',...d,mode:'solo'});await onRefresh();setPublished(result.id);onReset();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
  const link=typeof window==='undefined'?'':`${location.origin}/?${published?'case='+published:'invite='+d.invite}`;
  async function copy(){try{await navigator.clipboard.writeText(link);setCopied(true);}catch{setError('No se pudo copiar. Selecciona el enlace y cópialo.');}}
  async function share(){try{if(navigator.share)await navigator.share({title:published?'Una nueva ZANJA':'Tu versión cuenta · ZANJA',text:published?'¿A quién das la razón?':'Cuenta tu versión y que decida el jurado. No hace falta cuenta.',url:link});else await copy();}catch(e){if((e as Error).name!=='AbortError')setError('No se pudo compartir. Puedes copiar el enlace.');}}
- const titles=pleito
+ const titles=directo
   ?['¿QUÉ HA PASADO?','TU VERSIÓN.','MÁNDASELO.','¿QUIÉN PUEDE JUZGAR?']
   :['¿QUÉ HA PASADO?','Defensa de Bando A','AHORA LE TOCA A B.','¿QUIÉN PUEDE JUZGAR?'];
- const notes=pleito
+ const notes=directo
   ?['Cuéntalo como se lo contarías a alguien de fuera. Esto es lo que leerá la otra parte y el jurado.','Tres motivos tuyos. La otra parte escribirá los suyos sin ver los tuyos.','Ya tienes el enlace. Pégalo donde estéis discutiendo.','Decide quién vota y durante cuánto tiempo.']
   :['Cuéntalo con tus palabras. Este es el relato que verán B y el jurado.','El relato ya está listo. Ahora escribe tus tres motivos.','Cada postura merece su espacio. Elige cómo recoger la otra versión.','Decide quién vota y durante cuánto tiempo.'];
  const readyToContinue=step===1?d.story.trim().length>=12&&!imageBusy:step===2?d.q.trim().length>=12&&d.q.trim().length<=1200&&validDefenses(d.a):validDefenses(d.b);
  return <div className="zanja-creator" data-step={step} data-direction={direction}>
- <header className="creator-top"><button className="icon-btn" onClick={back} disabled={busy} aria-label="Volver"><ArrowLeft size={21}/></button><span>{pleito?'TENGO UN PLEITO':'CREA TU ZANJA'}</span><button className="icon-btn" onClick={onClose} disabled={busy} aria-label="Cerrar y conservar borrador"><X size={21}/></button></header>
- <ol className="creator-progress" aria-label="Progreso">{(pleito?['Cuéntalo','Tu versión','El enlace','Jurado']:['Cuéntalo','Bando A','Bando B','Jurado']).map((label,i)=><li key={label} className={published||step>i?'done':''} aria-current={!published&&step===i+1?'step':undefined}><span/>{label}</li>)}</ol>
+ <header className="creator-top"><button className="icon-btn" onClick={back} disabled={busy} aria-label="Volver"><ArrowLeft size={21}/></button><span>CREA TU ZANJA</span><button className="icon-btn" onClick={onClose} disabled={busy} aria-label="Cerrar y conservar borrador"><X size={21}/></button></header>
+ <ol className="creator-progress" aria-label="Progreso">{(directo?['Cuéntalo','Tu versión','El enlace','Jurado']:['Cuéntalo','Bando A','Bando B','Jurado']).map((label,i)=><li key={label} className={published||step>i?'done':''} aria-current={!published&&step===i+1?'step':undefined}><span/>{label}</li>)}</ol>
  <div className="creator-body" ref={body}>
  {published?<section className="creator-success"><div className="case-opening" aria-hidden="true"><DoorClosed className="case-door-closed" size={66}/><DoorOpen className="case-door-open" size={66}/><span className="case-open-check"><Check size={20}/></span></div><span className="creator-eyebrow">CASO PUBLICADO</span><DialogTitle>¡YA PUEDE<br/>VOTAR EL JURADO!</DialogTitle><DialogDescription>Las dos posturas ya están listas. Que decida el jurado.</DialogDescription><button className="game-btn yellow" onClick={()=>onCase(published)}>VER EN EL JUZGADO<ArrowRight size={21}/></button><button className="creator-secondary" onClick={()=>setSharing(true)}><Share2 size={18}/>COMPARTIR ZANJA</button><button className="quiet-btn" onClick={onHome}>Volver al inicio</button></section>:<>
  <div className="creator-heading"><span className="creator-eyebrow">PASO {step} DE 4</span><DialogTitle>{step===3&&route==='local'?'Defensa de Bando B':titles[step-1]}</DialogTitle><DialogDescription>{notes[step-1]}</DialogDescription></div>
@@ -71,7 +73,7 @@ export function CreateZanja({modoPleito=false,paso=1,onPaso,onSignIn,onBusy,draf
  </div></>}
  {error&&<p className="creator-error" role="alert">{error}</p>}
  </div>
- {!published&&(step<3||step===3&&route==='local'&&!d.pendingId||step===4)&&<footer className="creator-footer">{step===4?!signedIn?<button className="game-btn yellow" onClick={onSignIn}>ENTRAR Y PUBLICAR<ArrowRight size={19}/></button>:<button className="game-btn yellow" disabled={busy} onClick={publish}>{busy?<LoaderCircle className="spin"/>:<>¡AL JUZGADO!<ArrowRight size={21}/></>}</button>:<><button className="game-btn yellow" disabled={!readyToContinue||busy} onClick={pleito&&step===2?pedirEnlace:next}>{busy?<LoaderCircle className="spin"/>:<>{step===1?'DARLE FORMA':step===2?(pleito?'CONSEGUIR EL ENLACE':'ESTA ES MI DEFENSA'):'PREPARAR PUBLICACIÓN'}<ArrowRight size={20}/></>}</button>{pleito&&step===2&&<button className="quiet-btn footer-salida" disabled={busy} onClick={()=>setPleito(false)}>Prefiero escribir yo las dos versiones</button>}</>}</footer>}
+ {!published&&(step<3||step===3&&route==='local'&&!d.pendingId||step===4)&&<footer className="creator-footer">{step===4?!signedIn?<button className="game-btn yellow" onClick={onSignIn}>ENTRAR Y PUBLICAR<ArrowRight size={19}/></button>:<button className="game-btn yellow" disabled={busy} onClick={publish}>{busy?<LoaderCircle className="spin"/>:<>¡AL JUZGADO!<ArrowRight size={21}/></>}</button>:<><button className="game-btn yellow" disabled={!readyToContinue||busy} onClick={directo&&step===2?pedirEnlace:next}>{busy?<LoaderCircle className="spin"/>:<>{step===1?'DARLE FORMA':step===2?(directo?'CONSEGUIR EL ENLACE':'ESTA ES MI DEFENSA'):'PREPARAR PUBLICACIÓN'}<ArrowRight size={20}/></>}</button>{directo&&step===2&&<button className="quiet-btn footer-salida" disabled={busy} onClick={()=>setDirecto(false)}>Prefiero escribir yo las dos versiones</button>}</>}</footer>}
  <Dialog open={sharing} onOpenChange={setSharing}><DialogContent className="zanja-dialog creator-share"><DialogTitle>{published?'¡Que entre el jurado!':'Tu turno, bando B.'}</DialogTitle><DialogDescription>{published?'Comparte el caso con quienes quieras que voten.':'Envía este enlace a B. Escribirá su versión desde el navegador, sin cuenta y sin descargar nada.'}</DialogDescription><label className="creator-label" htmlFor="invitation-link">ENLACE</label><input id="invitation-link" readOnly value={link} onFocus={e=>e.target.select()}/><button className="game-btn yellow" onClick={share}><Share2 size={19}/>COMPARTIR</button><button className="creator-secondary" onClick={copy}><Copy size={18}/>{copied?'ENLACE COPIADO':'COPIAR ENLACE'}</button></DialogContent></Dialog>
  </div>;
 }

@@ -19,7 +19,7 @@ async function quienEs(req:Request){
  return cabecera?{uid:cabecera,name:'Jurado'}:null;
 }
 /**
- * Quien llega por un enlace de pleito no tiene cuenta y no se le va a pedir
+ * Quien llega por un enlace de invitación no tiene cuenta y no se le va a pedir
  * una antes de dejarle contar su versión: ese registro, puesto delante de la
  * respuesta, es donde se cae la mitad de la gente. Así que al enviar la
  * defensa se le firma una sesión de invitado —un uid propio, sin contraseña y
@@ -144,7 +144,7 @@ export async function POST(req:Request){try{
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
  let data:any;try{data=await boundedJson(req);}catch(error){return fail(error instanceof Error?error.message:'Solicitud no válida.');} const database=db();const now=Date.now();
  let quien=await quienEs(req);
- // La única acción que se puede hacer sin cuenta: responder a un pleito. Se
+ // La única acción que se puede hacer sin cuenta: responder a una invitación. Se
  // firma la sesión antes de tocar nada para que el uid ya sirva de respondent.
  let cookieNueva:string|null=null;
  if(!quien&&data.action==='respond'){const nuevo=await invitado(req);quien=nuevo.quien;cookieNueva=nuevo.cookie;}
@@ -159,7 +159,7 @@ export async function POST(req:Request){try{
  return reply({ok:true});
  }
  if(data.action==='create'){
- if(esInvitado(user))return fail('Has entrado como invitado para responder a un pleito. Crea una cuenta para abrir zanjas tuyas.',403);
+ if(esInvitado(user))return fail('Has entrado como invitado para responder a una zanja. Crea una cuenta para abrir las tuyas.',403);
  const q=clean(data.q,1200,12), a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null, at='Bando A', b=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,bt='Bando B';
  if(!q||!a||!categories.slice(1).includes(data.tag)||!['invite','solo'].includes(data.mode)||(!b&&data.mode==='solo')||![900000,3600000,86400000].includes(data.duration))return fail('Cada bando necesita tres defensas distintas de 12 a 160 caracteres. Revisa también el relato y la duración.');
  const story=data.story==null?'':clean(data.story,1200,0);if(story===null||data.audience&&!['public','link'].includes(data.audience))return fail('Revisa el contexto y la audiencia del caso.');
