@@ -42,4 +42,25 @@ console.log(`Worker: ${worker}\nBase de datos: ${d1.nombre}\nImágenes: ${r2.nom
 
 const argumentos = [wrangler, 'deploy', '--config', destino, ...process.argv.slice(2)];
 const salida = spawnSync(process.execPath, argumentos, {cwd: raiz, stdio: 'inherit'});
-process.exit(salida.status ?? 1);
+if (salida.status) process.exit(salida.status);
+
+// El secreto de las sesiones lo pone el despliegue, no el panel.
+//
+// Un secreto añadido a mano en Workers & Pages no llega a la versión que
+// publica wrangler: el Worker acababa viendo sólo DB y la app devolvía 503
+// en todo. Así que se pasa como variable de compilación —encriptada, que
+// para eso está el botón— y aquí se instala en el Worker después de subirlo.
+const secreto = process.env.SESSION_SECRET;
+if (secreto) {
+  if (secreto.length < 32) aborta('SESSION_SECRET tiene menos de 32 caracteres.');
+  const puesto = spawnSync(
+    process.execPath,
+    [wrangler, 'secret', 'put', 'SESSION_SECRET', '--name', worker],
+    {cwd: raiz, input: secreto, stdio: ['pipe', 'inherit', 'inherit']},
+  );
+  if (puesto.status) process.exit(puesto.status);
+  console.log('\nSESSION_SECRET instalado en el Worker.');
+} else {
+  console.log('\nAviso: sin SESSION_SECRET en las variables de compilación, entrar dará error.');
+}
+process.exit(0);
