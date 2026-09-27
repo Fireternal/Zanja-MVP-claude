@@ -1,4 +1,5 @@
-import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {guardarPrueba,borrarPrueba} from '@/lib/almacen';
 import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
@@ -202,8 +203,8 @@ export async function POST(req:Request){try{
  let evidenceBytes:Uint8Array|null;try{evidenceBytes=decodeEvidence(data.evidence);}catch(error){return fail((error as Error).message);}
  const id=crypto.randomUUID(),invite=data.mode==='invite'?crypto.randomUUID():null;const status=invite?'waiting':'open';
  const evidence=evidenceBytes?`cases/${id}/evidence.webp`:null;
- if(evidence&&evidenceBytes)await bucket().put(evidence,evidenceBytes,{httpMetadata:{contentType:'image/webp'}});
- try{await database.prepare('INSERT INTO cases (id,owner,q,tag,at,a,bt,b,emoji,created,closes,status,invite,duration,evidence,story,audience,workflow) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,user,q,data.tag,at,JSON.stringify(a),bt,JSON.stringify(b||[]),'⚡',now,invite?0:now+data.duration,status,invite,data.duration,evidence,story,data.audience||'public',data.deferPublication===true?1:0).run();}catch(error){if(evidence)await bucket().delete(evidence).catch(e=>console.error('Evidence cleanup failed',e));throw error;}return reply({id,invite});
+ if(evidence&&evidenceBytes)await guardarPrueba(evidence,evidenceBytes);
+ try{await database.prepare('INSERT INTO cases (id,owner,q,tag,at,a,bt,b,emoji,created,closes,status,invite,duration,evidence,story,audience,workflow) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,user,q,data.tag,at,JSON.stringify(a),bt,JSON.stringify(b||[]),'⚡',now,invite?0:now+data.duration,status,invite,data.duration,evidence,story,data.audience||'public',data.deferPublication===true?1:0).run();}catch(error){if(evidence)await borrarPrueba(evidence).catch(e=>console.error('Evidence cleanup failed',e));throw error;}return reply({id,invite});
  }
  if(data.action==='respond'){
  const a=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,at='Bando B';if(!a||!data.consent)return fail('Escribe tres defensas distintas de 12 a 160 caracteres y confirma la pregunta.');
@@ -258,7 +259,7 @@ export async function POST(req:Request){try{
  if(!['public','link'].includes(data.audience)||![900000,3600000,86400000].includes(data.duration))return fail('Elige la audiencia y la duración.');
  const changed=await database.prepare("UPDATE cases SET tag=?,audience=?,duration=?,closes=?,status='open' WHERE id=? AND owner=? AND status='ready'").bind(data.tag||c.tag,data.audience,data.duration,now+data.duration,c.id,user).run();if(!changed.meta.changes)return fail('Este caso ya se ha publicado.',409);return reply({id:c.id});
  }
- if(data.action==='remove'){if(c.owner!==user)return fail('No puedes retirar este caso.',403);await database.prepare("UPDATE cases SET status='removed' WHERE id=? AND owner=?").bind(c.id,user).run();if(c.evidence)await bucket().delete(c.evidence).catch(e=>console.error('Evidence cleanup failed',e));return reply({ok:true});}
+ if(data.action==='remove'){if(c.owner!==user)return fail('No puedes retirar este caso.',403);await database.prepare("UPDATE cases SET status='removed' WHERE id=? AND owner=?").bind(c.id,user).run();if(c.evidence)await borrarPrueba(c.evidence).catch(e=>console.error('Evidence cleanup failed',e));return reply({ok:true});}
  if(data.action==='report'){
  if(!['Datos personales','Acoso o insultos','Contenido sensible','Relato engañoso','Otro motivo'].includes(data.reason))return fail('Selecciona un motivo.');
  await database.prepare('INSERT OR IGNORE INTO reports (case_id,user_id,reason,at) VALUES (?,?,?,?)').bind(c.id,user,data.reason,now).run();return reply({ok:true});

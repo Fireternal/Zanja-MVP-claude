@@ -1,7 +1,9 @@
 import {env} from 'cloudflare:workers';
 export function db():D1Database {if(!env.DB) throw new Error('Database unavailable'); return env.DB;}
 
-export function bucket():R2Bucket {if(!env.BUCKET) throw new Error('Image storage unavailable'); return env.BUCKET;}
+// El bucket es opcional: si no está atado, las pruebas gráficas van a la
+// base de datos. Ver lib/almacen.ts, que explica por qué.
+export function bucketOpcional():R2Bucket|null {return (env as unknown as {BUCKET?:R2Bucket}).BUCKET ?? null;}
 
 // Secreto con el que se firman las sesiones. En producción lo pone la
 // plataforma; en local se usa uno fijo para no tener que configurar nada, pero

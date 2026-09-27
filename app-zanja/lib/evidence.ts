@@ -1,10 +1,16 @@
-export const EVIDENCE_MAX_BYTES=750_000;
+// Las pruebas viven en la base de datos, que en el plan gratuito son 500 MB
+// para todo. A 400 KB por imagen caben más de mil, que para una beta sobra, y
+// a 1280 px de ancho una captura o una foto se leen perfectamente en un
+// móvil. Si algún día se ata un bucket, esto se puede subir sin más.
+export const EVIDENCE_MAX_BYTES=400_000;
+/** Lado mayor al que se reduce la imagen antes de comprimirla. */
+export const EVIDENCE_MAX_LADO=1280;
 export function decodeEvidence(value:unknown):Uint8Array|null{
  if(value==null||value==='')return null;
  if(typeof value!=='string'||value.length>1_000_024||!/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/.test(value))throw new Error('La imagen no tiene un formato válido. Vuelve a seleccionarla.');
  let raw:string;try{raw=atob(value.slice(23));}catch{throw new Error('No se pudo leer la imagen. Vuelve a seleccionarla.');}
  const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
- if(bytes.length<20||bytes.length>EVIDENCE_MAX_BYTES||raw.slice(0,4)!=='RIFF'||raw.slice(8,12)!=='WEBP'||!['VP8 ','VP8L','VP8X'].includes(raw.slice(12,16)))throw new Error('Selecciona una imagen WebP válida de menos de 750 KB.');
+ if(bytes.length<20||bytes.length>EVIDENCE_MAX_BYTES||raw.slice(0,4)!=='RIFF'||raw.slice(8,12)!=='WEBP'||!['VP8 ','VP8L','VP8X'].includes(raw.slice(12,16)))throw new Error(`Selecciona una imagen WebP válida de menos de ${Math.round(EVIDENCE_MAX_BYTES/1000)} KB.`);
  const declared=new DataView(bytes.buffer).getUint32(4,true)+8;
  if(declared!==bytes.length)throw new Error('La imagen está incompleta. Vuelve a seleccionarla.');
  return bytes;

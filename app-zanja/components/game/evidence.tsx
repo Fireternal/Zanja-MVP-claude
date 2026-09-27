@@ -2,7 +2,7 @@
 import {useId,useRef,useState} from 'react';
 import {ImagePlus,ImageIcon,Expand,LoaderCircle,Trash2,RotateCcw} from 'lucide-react';
 import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/ui/dialog';
-import {EVIDENCE_MAX_BYTES} from '@/lib/evidence';
+import {EVIDENCE_MAX_BYTES,EVIDENCE_MAX_LADO} from '@/lib/evidence';
 
 function EvidenceImage({src}:{src:string}){
  const [failed,setFailed]=useState(false);const [loaded,setLoaded]=useState(false);const [attempt,setAttempt]=useState(0);
@@ -24,9 +24,9 @@ async function prepareImage(file:File):Promise<string>{
  if(file.size>10*1024*1024)throw new Error('La imagen debe ocupar menos de 10 MB.');
  const bitmap=await createImageBitmap(file);try{
   if(bitmap.width*bitmap.height>40_000_000)throw new Error('La imagen es demasiado grande. Elige una versión más pequeña.');
-  const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const scale=Math.min(1,EVIDENCE_MAX_LADO/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
   const ctx=canvas.getContext('2d');if(!ctx)throw new Error('No se pudo preparar la imagen.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-  for(const quality of [.84,.7,.55]){const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/webp',quality));if(blob?.type==='image/webp'&&blob.size<=EVIDENCE_MAX_BYTES){return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('No se pudo leer la imagen.'));reader.readAsDataURL(blob);});}}
+  for(const quality of [.82,.7,.58,.46]){const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/webp',quality));if(blob?.type==='image/webp'&&blob.size<=EVIDENCE_MAX_BYTES){return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error('No se pudo leer la imagen.'));reader.readAsDataURL(blob);});}}
   throw new Error('No se pudo reducir la imagen. Prueba con una más pequeña.');
  }finally{bitmap.close();}
 }

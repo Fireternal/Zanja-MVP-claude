@@ -57,6 +57,13 @@
       "when": 1790388748743,
       "tag": "0007_rare_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790513224953,
+      "tag": "0008_thin_vance_astro",
+      "breakpoints": true
     }
   ]
 }

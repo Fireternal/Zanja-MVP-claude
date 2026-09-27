@@ -11,7 +11,10 @@ const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.Scri
 const moduleUrl=source=>'data:text/javascript;base64,'+Buffer.from(source).toString('base64');
 const seedsUrl=moduleUrl(compile(readFileSync(new URL('../lib/cases.ts',import.meta.url),'utf8')));
 const blobs=new Map();let failStorage=false;
-globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Error('Storage unavailable');blobs.set(key,new Uint8Array(bytes));},get:async key=>{const bytes=blobs.get(key);return bytes?{body:bytes,size:bytes.length}:null;},delete:async key=>{blobs.delete(key);}};
+globalThis.__zanjaTestBucket={put:async(key,bytes)=>{if(failStorage)throw new Error('Storage unavailable');blobs.set(key,new Uint8Array(bytes));},get:async key=>{const bytes=blobs.get(key);return bytes?{body:bytes,size:bytes.length,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)}:null;},delete:async key=>{blobs.delete(key);}};
+// El almacén: con bucket atado usa el bucket, sin él la propia base.
+const almacenUrl=moduleUrl(compile(readFileSync(new URL('../lib/almacen.ts',import.meta.url),'utf8')
+ .replace("import {db,bucketOpcional} from './server-db';","const db=()=>globalThis.__zanjaTestDb;const bucketOpcional=()=>globalThis.__zanjaTestBucket??null;")));
 const evidenceUrl=moduleUrl(compile(readFileSync(new URL('../lib/evidence.ts',import.meta.url),'utf8')));
 const pulseUrl=moduleUrl(compile(readFileSync(new URL('../lib/pulse.ts',import.meta.url),'utf8')));
 const expedienteUrl=moduleUrl(compile(readFileSync(new URL('../lib/expediente.ts',import.meta.url),'utf8')));
@@ -24,7 +27,7 @@ globalThis.__zanjaTrustHeader=false;
 const {SESSION_COOKIE,signSession}=await import(sessionUrl);
 // Cada identidad de prueba es una cookie firmada de verdad, no una cabecera.
 const cookieFor=async user=>SESSION_COOKIE+'='+encodeURIComponent(await signSession({uid:user,name:user,exp:Date.now()+3600000},globalThis.__zanjaTestSecret));
-const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl)).replace("'@/lib/avisos'",JSON.stringify(avisosUrl));
+const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'utf8').replace("import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/almacen'",JSON.stringify(almacenUrl)).replace("'@/lib/session'",JSON.stringify(sessionUrl)).replace("'@/lib/cases'",JSON.stringify(seedsUrl)).replace("'@/lib/evidence'",JSON.stringify(evidenceUrl)).replace("'@/lib/pulse'",JSON.stringify(pulseUrl)).replace("'@/lib/expediente'",JSON.stringify(expedienteUrl)).replace("'@/lib/niveles'",JSON.stringify(nivelesUrl)).replace("'@/lib/avisos'",JSON.stringify(avisosUrl));
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
 /**
@@ -117,7 +120,7 @@ test('editorial cases each expose three complete arguments per team',async()=>{
  const inv=await request({...noTitles,mode:'invite'},'no-title-inviter');const {invite}=await inv.json();assert.equal((await request({action:'respond',invite,b:valid.b,consent:true},'no-title-respondent')).status,200);
  });
 
-const evidenceSource=readFileSync(new URL('../app/api/evidence/route.ts',import.meta.url),'utf8').replace("import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const bucket=()=>globalThis.__zanjaTestBucket;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/session'",JSON.stringify(sessionUrl));
+const evidenceSource=readFileSync(new URL('../app/api/evidence/route.ts',import.meta.url),'utf8').replace("import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';","const db=()=>globalThis.__zanjaTestDb;const sessionSecret=()=>globalThis.__zanjaTestSecret;const trustsPlatformHeader=()=>globalThis.__zanjaTrustHeader===true;").replace("'@/lib/almacen'",JSON.stringify(almacenUrl)).replace("'@/lib/session'",JSON.stringify(sessionUrl));
 const {GET:readEvidence}=await import(moduleUrl(compile(evidenceSource)));
 const image='data:image/webp;base64,'+readFileSync(new URL('../public/arena-menu.webp',import.meta.url)).toString('base64');
 async function fetchImage(url,user='image-viewer'){return readEvidence(new Request(base+url,{headers:user?{cookie:await cookieFor(user)}:{}}));}
@@ -127,6 +130,33 @@ test('optional evidence persists in object storage, loads privately and is remov
  assert.equal((await fetchImage(c.evidenceUrl,null)).status,401);const img=await fetchImage(c.evidenceUrl);assert.equal(img.status,200);assert.equal(img.headers.get('content-type'),'image/webp');assert.equal(img.headers.get('cache-control'),'private, no-store');assert.equal((await img.arrayBuffer()).byteLength,blobs.values().next().value.length);
  assert.equal((await request({action:'remove',id},'stranger')).status,403);assert.equal((await fetchImage(c.evidenceUrl)).status,200);
  assert.equal((await request({action:'remove',id},'image-author')).status,200);assert.equal((await fetchImage(c.evidenceUrl)).status,404);assert.equal(blobs.size,0);
+});
+// Sin bucket atado, la prueba gráfica va a la propia base de datos. Es el
+// modo por defecto en producción: D1 devuelve error cuando se llena, pero no
+// cobra, y R2 sí cobraría. Ver lib/almacen.ts.
+test('sin bucket, la prueba se guarda en la base y se sigue sirviendo',async()=>{
+ const bucket=globalThis.__zanjaTestBucket;
+ globalThis.__zanjaTestBucket=null;
+ try{
+  const r=await request({...valid,evidence:image},'sin-bucket');assert.equal(r.status,200);
+  const {id}=await r.json();
+  // No ha tocado el bucket: está en la tabla.
+  assert.equal(blobs.size,0);
+  const fila=sql.prepare('SELECT clave,length(bytes) n FROM evidence').get();
+  assert.ok(fila,'la imagen debería estar en la tabla evidence');
+  assert.ok(fila.n>20,'la imagen guardada no puede estar vacía');
+  // Y se sirve igual que desde el bucket.
+  const c=(await state('sin-bucket-mirón')).cases.find(x=>x.id===id);
+  assert.ok(c.evidenceUrl);
+  const img=await fetchImage(c.evidenceUrl);
+  assert.equal(img.status,200);
+  assert.equal(img.headers.get('content-type'),'image/webp');
+  assert.equal((await img.arrayBuffer()).byteLength,fila.n);
+  // Y se borra con su caso.
+  assert.equal((await request({action:'remove',id},'sin-bucket')).status,200);
+  assert.equal(sql.prepare('SELECT count(*) n FROM evidence').get().n,0);
+  assert.equal((await fetchImage(c.evidenceUrl)).status,404);
+ }finally{globalThis.__zanjaTestBucket=bucket;}
 });
 test('evidence validates uploads and keeps drafts unpublished when storage fails',async(t)=>{
  t.mock.method(console,'error',()=>{});

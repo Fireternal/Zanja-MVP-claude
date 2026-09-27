@@ -1,4 +1,4 @@
-import {sqliteTable,text,integer,primaryKey,index} from 'drizzle-orm/sqlite-core';
+import {sqliteTable,text,integer,blob,primaryKey,index} from 'drizzle-orm/sqlite-core';
 export const cases = sqliteTable('cases', {id:text('id').primaryKey(),owner:text('owner').notNull(),q:text('q').notNull(),tag:text('tag').notNull(),at:text('at').notNull(),a:text('a').notNull(),bt:text('bt').notNull(),b:text('b').notNull(),emoji:text('emoji').notNull(),created:integer('created').notNull(),closes:integer('closes').notNull(),status:text('status').notNull(),story:text('story').notNull().default(''),audience:text('audience').notNull().default('public'),workflow:integer('workflow').notNull().default(0),evidence:text('evidence'),invite:text('invite'),respondent:text('respondent'),answered:integer('answered').notNull().default(0),duration:integer('duration').notNull()}, t=>[index('cases_owner').on(t.owner),index('cases_status').on(t.status)]);
 export const votes = sqliteTable('votes',{caseId:text('case_id').notNull(),userId:text('user_id').notNull(),choice:text('choice').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.caseId,t.userId]}),index('votes_user').on(t.userId)]);
 export const reports = sqliteTable('reports',{caseId:text('case_id').notNull(),userId:text('user_id').notNull(),reason:text('reason').notNull(),at:integer('at').notNull()},t=>[primaryKey({columns:[t.caseId,t.userId]})]);
@@ -26,3 +26,14 @@ export const users = sqliteTable('users',{
  created:integer('created').notNull(),
  fails:integer('fails').notNull().default(0),
  blocked:integer('blocked').notNull().default(0)});
+
+// Las pruebas gráficas viven aquí y no en R2 a propósito: R2 cobra por uso
+// desde el primer byte que pasa de su cuota, y Cloudflare no tiene tope duro
+// de gasto. D1 sí lo tiene —al llenarse devuelve error y deja de escribir,
+// pero no cobra nunca—, así que la beta corre sin ninguna vía de factura.
+// Con un bucket atado se sigue usando el bucket; ver lib/almacen.ts.
+export const evidence = sqliteTable('evidence',{
+ clave:text('clave').primaryKey(),
+ bytes:blob('bytes',{mode:'buffer'}).notNull(),
+ at:integer('at').notNull(),
+});

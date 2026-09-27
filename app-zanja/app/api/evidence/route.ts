@@ -1,4 +1,5 @@
-import {db,bucket,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
+import {leerPrueba} from '@/lib/almacen';
 import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
 export const dynamic='force-dynamic';
 export async function GET(req:Request){
@@ -13,7 +14,7 @@ export async function GET(req:Request){
   if(['waiting','ready'].includes(c.status)&&c.owner!==user&&c.respondent!==user&&(!c.invite||url.searchParams.get('invite')!==c.invite))return fail(404);
   const reports:any=await db().prepare('SELECT count(*) n FROM reports WHERE case_id=?').bind(c.id).first();
   if(reports.n>=3&&c.owner!==user)return fail(404);
-  const image=await bucket().get(c.evidence);if(!image)return fail(404);
-  return new Response(image.body,{headers:{...headers,'Content-Type':'image/webp','Content-Length':String(image.size),'Content-Disposition':'inline; filename="prueba.webp"'}});
+  const image=await leerPrueba(c.evidence);if(!image)return fail(404);
+  return new Response(image,{headers:{...headers,'Content-Type':'image/webp','Content-Length':String(image.byteLength),'Content-Disposition':'inline; filename="prueba.webp"'}});
  }catch(error){console.error('Evidence unavailable',error);return fail(503);}
 }

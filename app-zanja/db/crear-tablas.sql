@@ -114,3 +114,11 @@ CREATE TABLE `users` (
 );
 CREATE UNIQUE INDEX `users_handle_unique` ON `users` (`handle`);
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0007_rare_silver_samurai.sql');
+
+-- 0008_thin_vance_astro.sql
+CREATE TABLE `evidence` (
+	`clave` text PRIMARY KEY NOT NULL,
+	`bytes` blob NOT NULL,
+	`at` integer NOT NULL
+);
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0008_thin_vance_astro.sql');
