@@ -19,8 +19,13 @@ export function sessionSecret(req:Request):string{
  if(LOCAL_HOSTS.has(host)||host.endsWith('.local'))return DEV_SECRET;
  // Distinguir los dos casos ahorra una tarde: desde fuera se ven igual, y
  // "no llega" y "es corto" se arreglan de formas distintas.
+ // Qué ataduras ve el Worker. Son sólo los nombres, nunca los valores: si
+ // la lista sale vacía o sin DB, el problema no es el secreto sino que al
+ // Worker no le llega su entorno.
+ let vistas='(no se han podido leer)';
+ try{vistas=Object.keys(env as unknown as Record<string,unknown>).sort().join(', ')||'(ninguna)';}catch{}
  throw new Error(configured==null
-  ? 'SESSION_SECRET no llega al Worker: no está definido en su entorno.'
+  ? `SESSION_SECRET no llega al Worker. Ataduras que sí ve: ${vistas}`
   : typeof configured!=='string'
    ? 'SESSION_SECRET no es texto.'
    : `SESSION_SECRET demasiado corto: tiene ${configured.length} caracteres y hacen falta 32.`);
