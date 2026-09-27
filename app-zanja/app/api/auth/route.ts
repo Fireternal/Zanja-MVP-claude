@@ -29,7 +29,9 @@ async function abrirSesion(req:Request,uid:string,name:string){
 export async function GET(req:Request){try{
  const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
  return Response.json({user:session?{uid:session.uid,name:session.name}:null},{headers:noStore});
-}catch(e){console.error(e);return fail('No hemos podido comprobar tu sesión.',503);}}
+}catch(e){console.error(e);
+ const m=e instanceof Error?e.message:'';
+ return fail(m.startsWith('SESSION_SECRET')?m:'No hemos podido comprobar tu sesión.',503);}}
 
 /**
  * Crear una cuenta o entrar en la tuya.

@@ -17,7 +17,13 @@ export function sessionSecret(req:Request):string{
  if(typeof configured==='string'&&configured.length>=32)return configured;
  const host=new URL(req.url).hostname;
  if(LOCAL_HOSTS.has(host)||host.endsWith('.local'))return DEV_SECRET;
- throw new Error('SESSION_SECRET sin configurar: hace falta un secreto de 32 caracteres o más para servir fuera de local.');
+ // Distinguir los dos casos ahorra una tarde: desde fuera se ven igual, y
+ // "no llega" y "es corto" se arreglan de formas distintas.
+ throw new Error(configured==null
+  ? 'SESSION_SECRET no llega al Worker: no está definido en su entorno.'
+  : typeof configured!=='string'
+   ? 'SESSION_SECRET no es texto.'
+   : `SESSION_SECRET demasiado corto: tiene ${configured.length} caracteres y hacen falta 32.`);
 }
 
 // La plataforma de ChatGPT Sites inyectaba la identidad en una cabecera. Fuera
