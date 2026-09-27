@@ -117,12 +117,12 @@
 .fiesta h2{margin:12px 0 0;font-size:31px;line-height:1.18;text-shadow:0 4px 0 #2b1255;animation:fiesta-texto .5s .55s var(--suave) both}
 .fiesta>.fiesta-cuerpo>p{margin-top:12px;font-size:14px;line-height:1.6;color:#d9c8ee;animation:fiesta-texto .5s .65s var(--suave) both}
 @keyframes fiesta-texto{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.fiesta-llave{display:flex;align-items:center;gap:11px;margin-top:20px;padding:13px 15px;border:2px solid #d3a53f;border-radius:14px;
- background:linear-gradient(120deg,#41301b,#2b2138);text-align:left;animation:fiesta-llave .6s .8s var(--salto) both}
-@keyframes fiesta-llave{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
-.fiesta-llave>span{display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:11px;color:#3c2a12;background:var(--yellow)}
-.fiesta-llave small{display:block;color:#e2c979;font-size:10px;letter-spacing:1.2px;font-weight:1000}
-.fiesta-llave strong{display:block;margin-top:3px;font-size:14px;line-height:1.3}
+.fiesta-racha{display:flex;align-items:center;gap:11px;margin-top:20px;padding:13px 15px;border:2px solid #d3a53f;border-radius:14px;
+ background:linear-gradient(120deg,#41301b,#2b2138);text-align:left;animation:fiesta-racha .6s .8s var(--salto) both}
+@keyframes fiesta-racha{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
+.fiesta-racha>span{display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:11px;color:#3c2a12;background:var(--yellow)}
+.fiesta-racha small{display:block;color:#e2c979;font-size:10px;letter-spacing:1.2px;font-weight:1000}
+.fiesta-racha strong{display:block;margin-top:3px;font-size:14px;line-height:1.3}
 .fiesta-xp{margin-top:18px;font-family:var(--display);font-size:22px;color:var(--yellow);text-shadow:0 3px 0 #2b1255;animation:fiesta-texto .5s .7s var(--suave) both}
 .fiesta-salir{margin-top:26px;min-width:210px;animation:fiesta-texto .5s .95s var(--suave) both}
 /* El confeti: cada trozo lleva su ángulo y su color en el estilo. */
@@ -215,7 +215,7 @@
 @media(prefers-reduced-motion:reduce){
  .entra-lista>*,.screen-in,.mobile-nav button.active .nav-pieza>svg,.campana-marca,.brillo:after,
  .fiesta,.fiesta-rayos,.fiesta-aro,.fiesta-emblema,.fiesta.sello .fiesta-emblema,.fiesta.sello .fiesta-cuerpo,
- .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-llave,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned,
+ .fiesta-eyebrow,.fiesta h2,.fiesta>.fiesta-cuerpo>p,.fiesta-racha,.fiesta-xp,.fiesta-salir,.fiesta-confeti,.xp-earned,
  .vote-pending .vote-team.selected,.vote-pending .vote-both.selected,
  .vote-pending .vote-team:not(.selected),.vote-pending .vote-both:not(.selected),
  .mission-segments.recien-hecha>i.done,.level-chip.xp-entra,.level-chip.xp-entra>svg,.voz-recien{animation:none!important}

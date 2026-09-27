@@ -1,12 +1,12 @@
 'use client';
 // Las dos celebraciones de la app.
 //
-// Subir de nivel abre una puerta y sellar el expediente cierra un día: son los
-// únicos dos momentos que se ganan la pantalla entera. El resto de la app
+// Subir de nivel y sellar el expediente son los únicos dos momentos que se
+// ganan la pantalla entera. El resto de la app
 // celebra en pequeño —un golpe, un destello— para que estos dos signifiquen
 // algo cuando llegan.
 import {useEffect} from 'react';
-import {KeyRound,Flame,ArrowRight} from 'lucide-react';
+import {Flame,ArrowRight} from 'lucide-react';
 import {rangos,tituloDe} from '@/lib/niveles';
 import {SELLO_XP} from '@/lib/expediente';
 
@@ -50,16 +50,13 @@ export function Celebracion({fiesta,onCerrar}:{fiesta:Fiesta;onCerrar:()=>void})
    {fiesta.tipo==='nivel'?<>
     <span className="fiesta-eyebrow">HAS SUBIDO AL NIVEL {fiesta.nivel}</span>
     <h2>{tituloDe(fiesta.nivel)}</h2>
-    {rango?.llave
-     ?<div className="fiesta-llave"><span><KeyRound size={20}/></span>
-       <div><small>LLAVE NUEVA</small><strong>{rango.desbloqueo}</strong></div></div>
-     :<p>{rango?.desbloqueo||'Sigues subiendo. El Juzgado ya te conoce.'}</p>}
+    <p>{rango?.nota||'Sigues subiendo. El Juzgado ya te conoce.'}</p>
    </>:<>
     <span className="fiesta-eyebrow">EXPEDIENTE DEL DÍA</span>
     <h2>Día sellado.</h2>
     <p>Has pasado por el Juzgado, por el Pulso y por La Sala.</p>
     <span className="fiesta-xp">+{SELLO_XP} XP</span>
-    {fiesta.racha>1&&<div className="fiesta-llave"><span><Flame size={20} fill="currentColor"/></span>
+    {fiesta.racha>1&&<div className="fiesta-racha"><span><Flame size={20} fill="currentColor"/></span>
      <div><small>RACHA</small><strong>{fiesta.racha} días seguidos</strong></div></div>}
    </>}
    <button className="game-btn yellow fiesta-salir" onClick={onCerrar}>

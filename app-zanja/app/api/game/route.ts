@@ -5,7 +5,7 @@ import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {expedienteDe} from '@/lib/expediente';
-import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
+import {xpDe,limiteDiario} from '@/lib/niveles';
 import {avisosDe} from '@/lib/avisos';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
@@ -195,9 +195,6 @@ export async function POST(req:Request){try{
  if(!q||!a||!categories.slice(1).includes(data.tag)||!['invite','solo'].includes(data.mode)||(!b&&data.mode==='solo')||![900000,3600000,86400000].includes(data.duration))return fail('Cada bando necesita tres defensas distintas de 12 a 160 caracteres. Revisa también el relato y la duración.');
  const story=data.story==null?'':clean(data.story,1200,0);if(story===null||data.audience&&!['public','link'].includes(data.audience))return fail('Revisa el contexto y la audiencia del caso.');
  const xp=await xpDeUsuario(database,user);
- if(!puede(xp,'crear'))return fail(pegaDeLlave('crear'),403);
- if(data.mode==='invite'&&!puede(xp,'invitar'))return fail(pegaDeLlave('invitar'),403);
- if(data.evidence&&!puede(xp,'prueba'))return fail(pegaDeLlave('prueba'),403);
  const tope=limiteDiario(xp);
  const recent:any=await database.prepare('SELECT count(*) n FROM cases WHERE owner=? AND created>?').bind(user,now-86400000).first();if(recent.n>=tope)return fail(`Puedes abrir hasta ${tope} zanjas al día. Vuelve mañana o sube de nivel.`,429);
  let evidenceBytes:Uint8Array|null;try{evidenceBytes=decodeEvidence(data.evidence);}catch(error){return fail((error as Error).message);}

@@ -18,7 +18,7 @@ import {CLAVE_MIN,RONDAS,derivar,handleDe,iguales,limpiaClave,nuevaSal} from '@/
 import {juradoDeEjemplo,casosCerrados,vocesDeEjemplo,repartoPulso,vocesDelPulso,type Reparto,type Voz} from './jurado';
 import {CHOICES,PULSE_POINTS,dayOf,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {expedienteDe} from '@/lib/expediente';
-import {xpDe,puede,limiteDiario,pegaDeLlave} from '@/lib/niveles';
+import {xpDe,limiteDiario} from '@/lib/niveles';
 import {avisosDe} from '@/lib/avisos';
 
 const LLAVE='zanja-vitrina-v1';
@@ -168,9 +168,6 @@ function guardarPartida(g:Guardado,data:any){
   const story=data.story==null?'':limpio(data.story,1200,0);
   if(story===null||(data.audience&&!['public','link'].includes(data.audience)))return error('Revisa el contexto y la audiencia del caso.');
   const xp=xpDelJurado(g,user);
-  if(!puede(xp,'crear'))return error(pegaDeLlave('crear'),403);
-  if(data.mode==='invite'&&!puede(xp,'invitar'))return error(pegaDeLlave('invitar'),403);
-  if(data.evidence&&!puede(xp,'prueba'))return error(pegaDeLlave('prueba'),403);
   const tope=limiteDiario(xp);
   if(g.cases.filter(c=>c.owner===user&&c.created>ahora-86400000).length>=tope)return error(`Puedes abrir hasta ${tope} zanjas al día. Vuelve mañana o sube de nivel.`,429);
   try{decodeEvidence(data.evidence);}catch(e){return error((e as Error).message);}

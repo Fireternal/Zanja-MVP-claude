@@ -1,4 +1,4 @@
-// Los niveles: la escalera, las llaves y lo que pasa más allá de la cima.
+// Los niveles: la escalera, el tope diario y lo que pasa más allá de la cima.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -9,7 +9,7 @@ const url=nombre=>'data:text/javascript;base64,'+Buffer.from(compile(readFileSyn
 const pulseUrl=url('pulse.ts'),expedienteUrl=url('expediente.ts');
 const fuente=compile(readFileSync(new URL('../lib/niveles.ts',import.meta.url),'utf8'))
  .replace("'./pulse'",JSON.stringify(pulseUrl)).replace("'./expediente'",JSON.stringify(expedienteUrl));
-const {rangos,XP_VOTO,nivelDe,xpDelNivel,tituloDe,progresoDe,puede,NIVEL_LLAVE,limiteDiario,xpDe,PASO_EXTRA,LIMITE_BASE,LIMITE_VETERANO,pegaDeLlave}
+const {rangos,XP_VOTO,nivelDe,xpDelNivel,tituloDe,progresoDe,limiteDiario,xpDe,PASO_EXTRA,LIMITE_BASE,LIMITE_VETERANO}
  =await import('data:text/javascript;base64,'+Buffer.from(fuente).toString('base64'));
 
 test('la escalera sube y no se repite',()=>{
@@ -50,16 +50,13 @@ test('el progreso no se sale nunca de su tramo',()=>{
  assert.equal(progresoDe(0).siguiente.nivel,2);
 });
 
-test('las llaves se abren en su nivel y no antes',()=>{
- assert.equal(puede(0,'crear'),false);
- assert.equal(puede(xpDelNivel(NIVEL_LLAVE.crear)-1,'crear'),false);
- assert.equal(puede(xpDelNivel(NIVEL_LLAVE.crear),'crear'),true);
- assert.equal(puede(xpDelNivel(NIVEL_LLAVE.invitar),'invitar'),true);
- assert.equal(puede(xpDelNivel(NIVEL_LLAVE.invitar),'prueba'),false);
- assert.equal(puede(xpDelNivel(NIVEL_LLAVE.prueba),'prueba'),true);
- // Quien puede lo difícil puede lo fácil.
- assert.equal(puede(99999,'crear')&&puede(99999,'invitar')&&puede(99999,'prueba'),true);
- assert.match(pegaDeLlave('crear'),/nivel 2/);
+test('ningún rango cierra ya una puerta',()=>{
+ // La escalera es reconocimiento: ni llaves, ni candados, ni permisos que
+ // dependan del nivel. Si alguien vuelve a añadir uno, que salte aquí.
+ for(const r of rangos){
+  assert.equal('llave' in r,false,`el rango ${r.nivel} ha vuelto a repartir llaves`);
+  assert.ok(r.titulo&&r.nota,`al rango ${r.nivel} le falta título o nota`);
+ }
 });
 
 test('el límite diario de zanjas depende del nivel',()=>{
@@ -72,10 +69,10 @@ test('la experiencia suma los tres sitios',()=>{
  assert.equal(xpDe({}),0);
  assert.equal(xpDe({votos:10}),50);
  assert.ok(xpDe({votos:5,aciertos:1,sellos:1})>xpDe({votos:5}));
- // El nivel 2 está puesto justo en un día completo del expediente: quien se
- // lo toma en serio una tarde se gana el derecho a crear.
+ // El nivel 2 sigue puesto justo en un día completo del expediente: ya no
+ // abre nada, pero marca que quien se lo toma en serio una tarde sube.
  const unDia=xpDe({votos:5,aciertos:1,sellos:1});
  assert.equal(unDia,xpDelNivel(2));
- assert.equal(puede(unDia,'crear'),true);
- assert.equal(puede(unDia-XP_VOTO,'crear'),false);
+ assert.equal(nivelDe(unDia),2);
+ assert.equal(nivelDe(unDia-XP_VOTO),1);
 });

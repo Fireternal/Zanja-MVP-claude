@@ -437,23 +437,21 @@ test('una sala que no existe no se abre',async()=>{
  assert.equal((await sala_('pulso-no','callado')).status,404);
 });
 
-test('los niveles abren la creación, la invitación y las pruebas',async()=>{
- const nuevo='recien-llegado';
- const vota=n=>{const ins=sql.prepare('INSERT OR IGNORE INTO votes (case_id,user_id,choice,at) VALUES (?,?,?,?)');for(let i=0;i<n;i++)ins.run('nivel-'+i,nuevo,'a',Date.now());};
- // Quien acaba de llegar no publica nada: primero tiene que ver casos.
- assert.equal((await request(valid,nuevo,false)).status,403);
+test('quien acaba de llegar ya puede crear, invitar y adjuntar una prueba',async()=>{
+ // El nivel dejó de repartir permisos: el Juzgado entra abierto. Quien llega
+ // con una discusión encima la publica ese mismo minuto, que es cuando la app
+ // le sirve para algo.
+ const recien='recien-llegado';
+ const conFoto=await request({...valid,q:'¿Vale la primera zanja de alguien sin ni un voto?',evidence:image},recien,false);
+ assert.equal(conFoto.status,200,'crear y adjuntar prueba, sin XP ninguno');
 
- vota(12); // 60 XP: nivel 2, la llave de crear.
- assert.equal((await request({...valid,mode:'invite',bt:'',b:''},nuevo,false)).status,403);
- assert.equal((await request({...valid,evidence:'data:image/webp;base64,AAAA'},nuevo,false)).status,403);
- assert.equal((await request({...valid,q:'¿La primera zanja de alguien de nivel dos vale?'},nuevo,false)).status,200);
+ const invitando=await request({...valid,q:'¿Y puede invitar a la otra parte el primer día?',mode:'invite',bt:'',b:''},recien,false);
+ assert.equal(invitando.status,200);
+ assert.ok((await invitando.json()).invite,'la invitación se entrega igual');
 
- vota(36); // 180 XP: nivel 3, la llave de invitar.
- assert.equal((await request({...valid,q:'¿Y la invitación a la otra parte?',mode:'invite',bt:'',b:''},nuevo,false)).status,200);
- assert.equal((await request({...valid,evidence:'data:image/webp;base64,AAAA'},nuevo,false)).status,403);
-
- // Dos al día hasta el nivel cinco: la tercera ya no entra.
- const tope=await request({...valid,q:'¿Cabe una tercera zanja el mismo día?'},nuevo,false);
+ // Lo que sí sigue en pie es el tope diario, que no es una llave sino un
+ // freno contra el ruido: dos al día hasta el nivel cinco.
+ const tope=await request({...valid,q:'¿Cabe una tercera zanja el mismo día?'},recien,false);
  assert.equal(tope.status,429);
  assert.match((await tope.json()).error,/2 zanjas al día/);
 });

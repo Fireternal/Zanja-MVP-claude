@@ -54,10 +54,10 @@ byte que pase de los 10 GB gratis. Workers y D1 no: cuando se pasan de su
 límite gratuito devuelven error y dejan de servir, pero no cobran.
 
 Si prefieres cero exposición, **sáltate este paso y deja `ZANJA_R2_NOMBRE`
-sin poner** en el paso 5. La app despliega y funciona igual; lo único que
-no estará disponible es adjuntar una prueba gráfica, que además sólo se
-desbloquea en el nivel 4. Se puede añadir cuando quieras: creas el bucket,
-añades la variable y vuelve a compilar solo.
+sin poner** en el paso 5. Las fotos siguen funcionando: sin bucket se
+guardan en la tabla `evidence` de D1, que no cobra nunca. R2 sólo merece
+la pena cuando haya volumen de verdad, y entonces basta con crear el
+bucket, añadir la variable y volver a compilar.
 
 ## 4. Conectar GitHub
 

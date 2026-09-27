@@ -1,13 +1,17 @@
-// Los niveles y lo que abren.
+// Los niveles: reconocimiento, no permisos.
 //
-// Un nivel que sólo sube un número no es una recompensa. Aquí cada rango
-// entrega una llave: crear zanjas, invitar a la otra parte, adjuntar una
-// prueba. Así el nivel se lee como permiso ganado y no como puntuación, y de
-// paso la gente que acaba de llegar no puede publicar nada hasta haber visto
-// unos cuantos casos por dentro.
+// Durante un tiempo cada rango entregaba una llave —crear zanjas, invitar a la
+// otra parte, adjuntar una prueba— y el Juzgado se abría a plazos. La idea era
+// que nadie publicara antes de haber visto casos por dentro; el efecto real era
+// que quien llegaba con una discusión encima no podía hacer nada con ella, que
+// es justo el momento en que la app sirve para algo. Así que el Juzgado entra
+// abierto: se crea, se invita y se adjunta una foto desde el primer minuto.
 //
-// Lo que nunca desbloquea un nivel es peso en la sentencia: un voto es un
-// voto. El nivel premia la participación, no da la razón.
+// Lo único que sigue dependiendo del nivel es cuántas zanjas caben en un día,
+// y eso no es una llave sino un freno contra el ruido.
+//
+// Lo que nunca da un nivel es peso en la sentencia: un voto es un voto. El
+// nivel premia la participación, no da la razón.
 import {PULSE_POINTS} from './pulse';
 import {SELLO_XP} from './expediente';
 
@@ -18,16 +22,15 @@ export const XP_VOTO=5;
 export const xpDe=({votos=0,aciertos=0,sellos=0}:{votos?:number;aciertos?:number;sellos?:number})=>
  votos*XP_VOTO+aciertos*PULSE_POINTS+sellos*SELLO_XP;
 
-export type Llave='crear'|'invitar'|'prueba';
-export type Rango={nivel:number;xp:number;titulo:string;desbloqueo:string;llave:Llave|null};
+export type Rango={nivel:number;xp:number;titulo:string;nota:string};
 
 export const rangos:Rango[]=[
- {nivel:1,xp:0,  titulo:'Jurado novato',        desbloqueo:'Votar en el Juzgado y responder al Pulso', llave:null},
- {nivel:2,xp:60, titulo:'Jurado de guardia',    desbloqueo:'Crear tus propias zanjas',                 llave:'crear'},
- {nivel:3,xp:180,titulo:'Instructor del caso',  desbloqueo:'Invitar a la otra parte a defenderse',     llave:'invitar'},
- {nivel:4,xp:360,titulo:'Fiscal',               desbloqueo:'Adjuntar una prueba a tus casos',          llave:'prueba'},
- {nivel:5,xp:600,titulo:'Magistrado',           desbloqueo:'Abrir cinco zanjas al día en vez de dos',  llave:null},
- {nivel:6,xp:900,titulo:'Presidente del tribunal',desbloqueo:'Ya tienes todas las llaves del Juzgado', llave:null}];
+ {nivel:1,xp:0,  titulo:'Jurado novato',        nota:'Acabas de entrar y el Juzgado ya está entero abierto'},
+ {nivel:2,xp:60, titulo:'Jurado de guardia',    nota:'Un día completo de expediente en tu hoja'},
+ {nivel:3,xp:180,titulo:'Instructor del caso',  nota:'Vienes a menudo y aquí se nota'},
+ {nivel:4,xp:360,titulo:'Fiscal',               nota:'De los que no fallan un día'},
+ {nivel:5,xp:600,titulo:'Magistrado',           nota:'Abrir cinco zanjas al día en vez de dos'},
+ {nivel:6,xp:900,titulo:'Presidente del tribunal',nota:'Lo más alto de la escalera. De aquí en adelante, oficio'}];
 
 /** Pasada la escalera con nombre, los niveles siguen cada tantos puntos. */
 export const PASO_EXTRA=400;
@@ -55,18 +58,6 @@ export function progresoDe(xp:number):Progreso{
   siguiente:rangos.find(r=>r.nivel===nivel+1)||null};
 }
 
-/** El nivel al que se abre cada llave. */
-export const NIVEL_LLAVE:Record<Llave,number>=Object.fromEntries(
- rangos.filter(r=>r.llave).map(r=>[r.llave as Llave,r.nivel])) as Record<Llave,number>;
-
-export const puede=(xp:number,llave:Llave)=>nivelDe(xp)>=NIVEL_LLAVE[llave];
-
-/** Cuántas zanjas al día, que también es cosa del nivel. */
+/** Cuántas zanjas al día: lo único que el nivel todavía decide. */
 export const LIMITE_BASE=2,LIMITE_VETERANO=5;
 export const limiteDiario=(xp:number)=>nivelDe(xp)>=5?LIMITE_VETERANO:LIMITE_BASE;
-
-/** Lo que se le dice a alguien que todavía no tiene la llave. */
-export function pegaDeLlave(llave:Llave):string{
- const nivel=NIVEL_LLAVE[llave];
- return `Necesitas el nivel ${nivel} (${tituloDe(nivel)}) para esto. Vota, responde al Pulso y sella el expediente del día.`;
-}
