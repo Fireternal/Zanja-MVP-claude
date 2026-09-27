@@ -5,6 +5,7 @@ import "./court.css";
 import "./overlays.css";
 import "./creator.css";
 import "./botones.css";
+import "./presentacion.css";
 import "./motion.css";
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#21162f" };

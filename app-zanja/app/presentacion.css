@@ -1,0 +1,192 @@
+/* ==========================================================================
+ * LA PRESENTACIÓN
+ *
+ * Cuatro láminas a pantalla completa, dentro del marco del teléfono. Cada una
+ * tiene una escena arriba que se mueve sola y el texto abajo; el carril se
+ * desliza con el dedo. Todo el movimiento muere con [data-motion=off] y con
+ * prefers-reduced-motion, como el resto de la app.
+ * ========================================================================== */
+
+.presentacion{
+ position:fixed;inset:0;z-index:60;
+ max-width:var(--phone-width);margin:0 auto;
+ display:flex;flex-direction:column;
+ background:radial-gradient(ellipse at 50% 12%,#3b2468,#150f24 68%),#120c1e;
+ color:#fff;overflow:hidden;
+ padding:max(14px,env(safe-area-inset-top)) 0 max(16px,env(safe-area-inset-bottom));
+ animation:presentacion-entra .45s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes presentacion-entra{from{opacity:0}to{opacity:1}}
+
+/* --- El mando de arriba: dónde estoy y cómo me voy ---------------------- */
+.presentacion-mando{
+ position:relative;z-index:1;
+ display:flex;align-items:center;gap:14px;padding:4px 16px 0;min-height:46px}
+.presentacion-puntos{display:flex;gap:7px;margin:0;padding:0;list-style:none}
+.presentacion-puntos>li{
+ width:9px;height:9px;border-radius:50%;background:#ffffff26;
+ transition:width .3s cubic-bezier(.2,.7,.3,1),background .3s}
+.presentacion-puntos>li.es-visto{background:#a98bff}
+.presentacion-puntos>li.es-ahora{width:26px;border-radius:5px;background:var(--yellow)}
+.presentacion-mando>.quiet-btn{margin-left:auto;font-size:13px}
+
+/* --- El carril ---------------------------------------------------------- */
+.presentacion-visor{position:relative;z-index:1;flex:1;min-height:0;overflow:hidden;touch-action:pan-y}
+.presentacion-carril{
+ display:flex;height:100%;
+ transition:transform .34s cubic-bezier(.2,.8,.3,1)}
+.presentacion-lamina{
+ flex:0 0 100%;min-width:0;height:100%;
+ display:flex;flex-direction:column;
+ padding:0 22px;overflow-y:auto;
+ /* Una lámina que no se ve no se lee ni se toca. */
+ opacity:.35;transition:opacity .34s}
+.presentacion-lamina.es-ahora{opacity:1}
+
+/* --- La escena de arriba ------------------------------------------------ */
+.presentacion-escena{
+ position:relative;flex:1 1 auto;min-height:186px;
+ display:grid;place-items:center}
+.presentacion-mascota{
+ width:min(62vw,232px);height:auto;
+ filter:drop-shadow(0 16px 26px #0009);
+ animation:mascota-flota 4.6s ease-in-out infinite}
+@keyframes mascota-flota{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-11px) rotate(1.5deg)}}
+/* La mascota de cada lámina entra cuando le toca, no antes. */
+.presentacion-lamina .presentacion-mascota{opacity:0}
+.presentacion-lamina.es-ahora .presentacion-mascota{
+ animation:mascota-llega .5s cubic-bezier(.16,.9,.3,1.1) both,
+  mascota-flota 4.6s ease-in-out .5s infinite}
+@keyframes mascota-llega{from{opacity:0;transform:scale(.78) translateY(22px)}to{opacity:1;transform:none}}
+
+/* Lámina 1: A y B entran por los lados y se quedan enfrentados. */
+.mini-bando{
+ position:absolute;top:34%;
+ display:grid;place-items:center;width:52px;height:56px;
+ border:2px solid var(--b-borde);border-radius:14px;
+ font-family:var(--display);font-size:27px;color:#fff;
+ text-shadow:0 3px 0 #0006;opacity:0}
+.mini-a{left:2%;background:linear-gradient(160deg,#3ba7d6,var(--a-fondo));border-color:var(--a-marco);
+ box-shadow:0 4px 0 #0a2b3d,inset 0 2px 0 #ffffff40}
+.mini-b{right:2%;background:linear-gradient(160deg,#e0708f,var(--b-fondo));border-color:var(--b-marco);
+ box-shadow:0 4px 0 #3d1122,inset 0 2px 0 #ffffff40}
+.lamina-que-es.es-ahora .mini-a{animation:bando-izq .62s cubic-bezier(.2,.9,.3,1.2) .22s both,mini-late 3.4s ease-in-out 1s infinite}
+.lamina-que-es.es-ahora .mini-b{animation:bando-der .62s cubic-bezier(.2,.9,.3,1.2) .32s both,mini-late 3.4s ease-in-out 1.2s infinite}
+@keyframes bando-izq{from{opacity:0;transform:translateX(-78px) rotate(-18deg)}to{opacity:1;transform:rotate(-8deg)}}
+@keyframes bando-der{from{opacity:0;transform:translateX(78px) rotate(18deg)}to{opacity:1;transform:rotate(8deg)}}
+@keyframes mini-late{0%,100%{translate:0 0}50%{translate:0 -7px}}
+
+/* Lámina 2: las cuatro respuestas se encienden por turnos, en bucle. */
+.mini-respuestas{
+ position:absolute;inset:auto 0 0;
+ display:grid;grid-template-columns:1fr 1fr;gap:8px;
+ margin:0;padding:0 6px;list-style:none}
+.mini-respuestas>li{
+ display:grid;place-items:center;min-height:40px;
+ border:2px solid var(--b-borde);border-radius:var(--b-radio-chico);
+ background:linear-gradient(var(--uva-mudo-alto),var(--uva-mudo-bajo));
+ box-shadow:0 3px 0 var(--uva-hundido);
+ font-family:var(--display);font-size:14px;color:#c6bad9;
+ letter-spacing:.4px}
+.mini-respuestas>li.es-a{border-color:var(--a-marco);color:var(--a-luz);
+ background:linear-gradient(#2a6d8e,#1d4a63)}
+.mini-respuestas>li.es-b{border-color:var(--b-marco);color:var(--b-luz);
+ background:linear-gradient(#93415a,#642c3e)}
+.mini-respuestas>li.es-ambos{border-color:var(--ambos-marco);color:var(--ambos-luz);
+ background:linear-gradient(#5b3486,#3d2359)}
+.lamina-votar.es-ahora .mini-respuestas>li{
+ animation:respuesta-enciende 4.4s ease-in-out infinite;
+ animation-delay:calc(var(--turno) * .55s)}
+@keyframes respuesta-enciende{
+ 0%,12%,100%{transform:none;filter:none}
+ 4%{transform:translateY(2px)}
+ 6%,11%{transform:translateY(-2px);
+  filter:brightness(1.55) drop-shadow(0 0 12px #ffd13e70)}}
+
+/* Lámina 3: la barra se llena y el número aparece al final. */
+.mini-barra{
+ position:absolute;inset:auto 10px 6px;
+ height:34px;border:2px solid var(--b-borde);border-radius:11px;
+ background:#1a1329;box-shadow:inset 0 2px 5px #0007;overflow:hidden}
+.mini-barra>i{
+ display:block;height:100%;width:68%;transform-origin:0 50%;transform:scaleX(0);
+ background:linear-gradient(90deg,var(--a-fondo),var(--a-luz))}
+.mini-barra>b{
+ position:absolute;inset:0;display:grid;place-items:center;
+ font-family:var(--display);font-size:17px;color:#fff;
+ text-shadow:0 2px 0 #0007;opacity:0}
+.lamina-veredicto.es-ahora .mini-barra>i{animation:barra-llena 2.6s cubic-bezier(.3,.9,.3,1) .35s infinite}
+.lamina-veredicto.es-ahora .mini-barra>b{animation:barra-cifra 2.6s ease-out .35s infinite}
+@keyframes barra-llena{0%{transform:scaleX(0)}42%,100%{transform:scaleX(1)}}
+@keyframes barra-cifra{0%,30%{opacity:0}46%,100%{opacity:1}}
+/* Y el mazo golpea justo cuando la barra termina de llenarse. */
+.lamina-veredicto.es-ahora .presentacion-mascota{
+ animation:mascota-llega .5s cubic-bezier(.16,.9,.3,1.1) both,
+  mazo-cae 2.6s ease-in-out .35s infinite}
+@keyframes mazo-cae{
+ 0%,30%{transform:rotate(-7deg) translateY(0)}
+ 40%{transform:rotate(4deg) translateY(9px)}
+ 48%{transform:rotate(-2deg) translateY(0)}
+ 55%,100%{transform:rotate(-7deg) translateY(0)}}
+
+/* --- El texto de abajo -------------------------------------------------- */
+.presentacion-texto{flex:0 0 auto;padding:18px 0 6px}
+.presentacion-texto .eyebrow{color:#c9a9ff;font-size:12px;letter-spacing:1.6px;margin-bottom:9px}
+.presentacion-texto h2{
+ font-family:var(--display);font-weight:400;
+ font-size:clamp(28px,8.2vw,37px);line-height:1.1;letter-spacing:.2px;
+ text-shadow:0 4px 0 #1d0f36;outline:none}
+.presentacion-texto h2>span{display:block}
+.presentacion-texto p{margin-top:13px;font-size:15px;line-height:1.6;color:#cabbdd}
+/* Titular y párrafo entran escalonados con la lámina. */
+.presentacion-lamina.es-ahora .presentacion-texto>*{
+ animation:texto-sube .44s cubic-bezier(.2,.7,.3,1) both}
+.presentacion-lamina.es-ahora .presentacion-texto>*:nth-child(1){animation-delay:.1s}
+.presentacion-lamina.es-ahora .presentacion-texto>*:nth-child(2){animation-delay:.17s}
+.presentacion-lamina.es-ahora .presentacion-texto>*:nth-child(3){animation-delay:.24s}
+@keyframes texto-sube{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
+
+/* La lista de la última lámina. */
+.presentacion-lista{display:flex;flex-direction:column;gap:11px;margin:16px 0 0;padding:0;list-style:none}
+.presentacion-lista>li{
+ display:flex;gap:12px;align-items:flex-start;
+ padding:12px;border:2px solid #45355e;border-radius:var(--b-radio);
+ background:#241b39a8}
+.presentacion-lista>li>span{
+ display:grid;place-items:center;flex:0 0 38px;height:38px;
+ border:2px solid var(--uva-borde);border-radius:11px;
+ background:linear-gradient(var(--uva-alto),var(--uva-bajo));
+ color:var(--yellow);box-shadow:0 3px 0 var(--uva-hundido)}
+.presentacion-lista strong{display:block;font-size:14px}
+.presentacion-lista small{display:block;font-size:12px;line-height:1.5;color:#b3a5c7;margin-top:3px}
+.lamina-tu-dia.es-ahora .presentacion-lista>li{
+ animation:texto-sube .42s cubic-bezier(.2,.7,.3,1) both;
+ animation-delay:calc(.3s + var(--turno) * .09s)}
+
+/* --- El pie ------------------------------------------------------------- */
+.presentacion-pie{
+ position:relative;z-index:1;
+ display:flex;align-items:center;gap:11px;padding:14px 18px 2px}
+.presentacion-pie>.game-btn{flex:1;min-height:56px;font-size:16px}
+
+/* --- Volver a verla desde Ajustes --------------------------------------- */
+.presentacion-otra-vez{margin-top:4px}
+
+@media(max-height:700px){
+ .presentacion-escena{min-height:140px}
+ .presentacion-mascota{width:min(46vw,168px)}
+ .presentacion-texto h2{font-size:clamp(25px,7.4vw,31px)}
+ .presentacion-texto p{font-size:14px}
+}
+
+/* Sin movimiento: las láminas siguen contando lo mismo, quietas. */
+[data-motion=off] .presentacion-carril,[data-motion=off] .presentacion-lamina{transition:none}
+[data-motion=off] .presentacion-mascota,[data-motion=off] .mini-bando,
+[data-motion=off] .mini-respuestas>li,[data-motion=off] .mini-barra>i,
+[data-motion=off] .mini-barra>b,[data-motion=off] .presentacion-lista>li,
+[data-motion=off] .presentacion-texto>*{animation:none!important;opacity:1;transform:none}
+[data-motion=off] .mini-barra>i{transform:scaleX(1)}
+@media(prefers-reduced-motion:reduce){
+ .mini-barra>i{transform:scaleX(1)}
+ .mini-bando,.presentacion-lamina .presentacion-mascota{opacity:1}
+}

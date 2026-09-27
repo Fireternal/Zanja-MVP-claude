@@ -9,6 +9,7 @@ import '@/app/court.css';
 import '@/app/overlays.css';
 import '@/app/creator.css';
 import '@/app/botones.css';
+import '@/app/presentacion.css';
 import '@/app/motion.css';
 import {instalarApiLocal} from './api-local';
 import Game from '@/components/game/zanja-app';
