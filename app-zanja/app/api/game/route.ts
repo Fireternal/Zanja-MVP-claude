@@ -1,6 +1,6 @@
 import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
 import {guardarPrueba,borrarPrueba} from '@/lib/almacen';
-import {SESSION_COOKIE,readCookie,verifySession} from '@/lib/session';
+import {SESSION_COOKIE,SESSION_DAYS,readCookie,sessionCookie,signSession,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
 import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
@@ -9,7 +9,8 @@ import {xpDe,limiteDiario} from '@/lib/niveles';
 import {avisosDe} from '@/lib/avisos';
 export const dynamic='force-dynamic';
 const fail=(error:string,status=400)=>Response.json({error},{status});
-const reply=(data:unknown)=>Response.json(data,{headers:{'Cache-Control':'no-store'}});
+const reply=(data:unknown,cookie?:string|null)=>Response.json(data,
+ {headers:cookie?{'Cache-Control':'no-store','Set-Cookie':cookie}:{'Cache-Control':'no-store'}});
 // La identidad sale de la cookie firmada. La cabecera de la plataforma sólo se
 // acepta si el despliegue declara que tiene delante un proxy que la limpia.
 async function quienEs(req:Request){
@@ -18,6 +19,25 @@ async function quienEs(req:Request){
  const cabecera=trustsPlatformHeader()?req.headers.get('oai-authenticated-user-id'):null;
  return cabecera?{uid:cabecera,name:'Jurado'}:null;
 }
+/**
+ * Quien llega por un enlace de pleito no tiene cuenta y no se le va a pedir
+ * una antes de dejarle contar su versión: ese registro, puesto delante de la
+ * respuesta, es donde se cae la mitad de la gente. Así que al enviar la
+ * defensa se le firma una sesión de invitado —un uid propio, sin contraseña y
+ * sin fila en users— con la misma cookie que cualquier otra. Puede votar y
+ * hablar en La Sala; para abrir zanjas propias sí se le pide cuenta, que es
+ * lo único que un invitado podría repetir sin coste borrando la cookie.
+ */
+async function invitado(req:Request){
+ const uid='g_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
+ const name='Invitado';
+ const token=await signSession({uid,name,exp:Date.now()+SESSION_DAYS*86400000},sessionSecret(req));
+ return {quien:{uid,name},cookie:sessionCookie(req,token,SESSION_DAYS*86400)};
+}
+
+/** Los invitados no tienen cuenta que perder, así que no abren zanjas. */
+const esInvitado=(uid:string)=>uid.startsWith('g_');
+
 async function identity(req:Request){
  const session=await verifySession(readCookie(req,SESSION_COOKIE),sessionSecret(req));
  if(session)return session.uid;
@@ -175,13 +195,18 @@ export async function GET(req:Request){try{
   pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
   comentarios:(charlas.results as any[]).map(r=>Number(r.at))});
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
- return reply({cases:data,pulse,expediente,avisos:campana,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,daily:seeds[Math.floor(now/86400000)%seeds.length].id});
+ return reply({cases:data,pulse,expediente,avisos:campana,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
- const quien=await quienEs(req);if(!quien)return fail('Inicia sesión para guardar tu participación.',401);
- const user=quien.uid;
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
  let data:any;try{data=await boundedJson(req);}catch(error){return fail(error instanceof Error?error.message:'Solicitud no válida.');} const database=db();const now=Date.now();
+ let quien=await quienEs(req);
+ // La única acción que se puede hacer sin cuenta: responder a un pleito. Se
+ // firma la sesión antes de tocar nada para que el uid ya sirva de respondent.
+ let cookieNueva:string|null=null;
+ if(!quien&&data.action==='respond'){const nuevo=await invitado(req);quien=nuevo.quien;cookieNueva=nuevo.cookie;}
+ if(!quien)return fail('Inicia sesión para guardar tu participación.',401);
+ const user=quien.uid;
  if(data.action==='seen'){
  await database.prepare('INSERT INTO seen (user_id,at) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET at=?').bind(user,now,now).run();
  return reply({ok:true});
@@ -191,6 +216,7 @@ export async function POST(req:Request){try{
  return reply({ok:true});
  }
  if(data.action==='create'){
+ if(esInvitado(user))return fail('Has entrado como invitado para responder a un pleito. Crea una cuenta para abrir zanjas tuyas.',403);
  const q=clean(data.q,1200,12), a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null, at='Bando A', b=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,bt='Bando B';
  if(!q||!a||!categories.slice(1).includes(data.tag)||!['invite','solo'].includes(data.mode)||(!b&&data.mode==='solo')||![900000,3600000,86400000].includes(data.duration))return fail('Cada bando necesita tres defensas distintas de 12 a 160 caracteres. Revisa también el relato y la duración.');
  const story=data.story==null?'':clean(data.story,1200,0);if(story===null||data.audience&&!['public','link'].includes(data.audience))return fail('Revisa el contexto y la audiencia del caso.');
@@ -206,7 +232,7 @@ export async function POST(req:Request){try{
  if(data.action==='respond'){
  const a=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,at='Bando B';if(!a||!data.consent)return fail('Escribe tres defensas distintas de 12 a 160 caracteres y confirma la pregunta.');
  const invited:any=await database.prepare('SELECT a,workflow FROM cases WHERE invite=?').bind(data.invite).first();if(!invited||!validDefenses(readDefenses(invited.a)))return fail('Esta invitación es anterior al nuevo formato. Pide al autor una nueva zanja.',409);
- const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow});
+ const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow},cookieNueva);
  }
  if(data.action==='pulse'){
  if(!CHOICES.includes(data.choice))return fail('Elige sí o no.');

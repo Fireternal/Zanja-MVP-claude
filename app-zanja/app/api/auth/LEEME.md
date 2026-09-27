@@ -20,9 +20,32 @@ El secreto de firma sale de `SESSION_SECRET`. Si no está definido y la petició
 viene de `localhost`, se usa uno fijo de desarrollo; fuera de local, sin
 secreto, la app falla a propósito en vez de arrancar insegura.
 
+## La sesión de invitado
+
+Hay una excepción a todo lo anterior: **responder a un pleito no pide cuenta**.
+Quien recibe un enlace de invitación no ha elegido esta app —se lo han mandado
+por el chat donde estaban discutiendo—, y un registro puesto delante de su
+respuesta es donde se cae la mitad de la gente.
+
+Así que al enviar la defensa, `app/api/game/route.ts` firma una sesión con un
+`uid` que empieza por `g_`, nombre `Invitado` y **sin fila en `users`**. Es la
+misma cookie firmada que cualquier otra: puede votar, hablar en La Sala y
+seguir el veredicto de su caso.
+
+Lo que un invitado **no** puede hacer es abrir zanjas propias. Una identidad
+que se renueva borrando la cookie no tiene ningún freno, y el tope diario de
+zanjas dejaría de significar nada. Para eso se le pide cuenta, y se le ofrece
+en el momento en que tiene sentido: justo después de enviar su versión.
+
+La sesión se firma sólo cuando la respuesta es válida y la invitación existe;
+un `respond` mal formado no reparte identidades. Y como no hay contraseña, un
+invitado que borre los datos del navegador pierde el acceso a lo suyo: por eso
+la app se lo dice y le ofrece ponerle nombre y contraseña.
+
 ## El identificador
 
-El `uid` es aleatorio y no tiene ninguna relación con el nombre. Antes se
+El `uid` es aleatorio y no tiene ninguna relación con el nombre. Empieza por
+`u_` si hay cuenta detrás y por `g_` si es un invitado. Antes se
 derivaba del nombre, lo que permitía calcular el identificador de cualquiera
 conociendo el secreto; ahora el nombre sólo sirve para encontrar la fila y para
 que te vean en La Sala.

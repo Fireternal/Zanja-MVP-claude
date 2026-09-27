@@ -40,6 +40,9 @@ function escribir(g:Guardado){try{localStorage.setItem(LLAVE,JSON.stringify(g));
 
 /** Un identificador nuevo, sin relación con el nombre, como en el servidor. */
 const nuevoUid=()=>'u_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
+/** Y el del invitado que responde a un pleito sin hacerse cuenta. */
+const nuevoInvitado=()=>'g_'+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const esInvitado=(uid:string)=>uid.startsWith('g_');
 
 const json=(cuerpo:unknown,status=200)=>new Response(JSON.stringify(cuerpo),{status,headers:{'Content-Type':'application/json'}});
 const error=(mensaje:string,status=400)=>json({error:mensaje},status);
@@ -140,7 +143,7 @@ function estadoDeLaPartida(g:Guardado,params:URLSearchParams){
  return {cases:data,expediente,avisos:campanaDe(g,user,latido),
   profile:{votes:mios.length,xp:xpDe({votos:mios.length,aciertos:latido.hits,sellos:expediente.sellos}),today:mios.filter(v=>new Date(v.at).toISOString().slice(0,10)===hoy).length,
    dailyAchieved:Object.values(porDia).some(n=>n>=5),created:g.cases.filter(c=>c.owner===user&&c.status!=='removed').length},
-  signedIn:!!user,daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
+  signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(ahora/86400000)%seeds.length].id,pulse:latido};
 }
 
 function invitacion(g:Guardado,token:string){
@@ -152,6 +155,9 @@ function invitacion(g:Guardado,token:string){
 }
 
 function guardarPartida(g:Guardado,data:any){
+ // Responder a un pleito es lo único que se hace sin cuenta: se firma una
+ // identidad de invitado al vuelo, igual que en app/api/game/route.ts.
+ if(!g.user&&data.action==='respond')g.user={uid:nuevoInvitado(),name:'Invitado'};
  const user=g.user?.uid;
  if(!user)return error('Inicia sesión para guardar tu participación.',401);
  const ahora=Date.now();
@@ -160,6 +166,7 @@ function guardarPartida(g:Guardado,data:any){
 
  if(data.action==='seen'){g.seen=ahora;escribir(g);return json({ok:true});}
  if(data.action==='create'){
+  if(esInvitado(user))return error('Has entrado como invitado para responder a un pleito. Crea una cuenta para abrir zanjas tuyas.',403);
   const q=limpio(data.q,1200,12);
   const a=validDefenses(data.a)?data.a.map((x:string)=>x.trim()):null;
   const b=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null;

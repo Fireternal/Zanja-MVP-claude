@@ -31,9 +31,10 @@ const source=readFileSync(new URL('../app/api/game/route.ts',import.meta.url),'u
 const {GET,POST}=await import(moduleUrl(compile(source)));
 const base='https://zanja.test';
 /**
- * Crear una zanja exige nivel. Estas pruebas van de otra cosa, así que a quien
- * crea le damos por hecha la experiencia; la puerta se prueba aparte, pasando
- * `false` en el tercer argumento.
+ * Crear ya no exige nivel, pero sí hay un tope de zanjas al día que sube en el
+ * cinco. Estas pruebas van de otra cosa, así que a quien crea le damos rodaje
+ * para que el tope no las estorbe; se prueba aparte pasando `false` en el
+ * tercer argumento.
  */
 const conLlaves=user=>{const ins=sql.prepare('INSERT OR IGNORE INTO votes (case_id,user_id,choice,at) VALUES (?,?,?,?)');for(let i=0;i<200;i++)ins.run('xp-'+i,user,'a',Date.now());};
 async function request(data,user='juror',darLlaves=true){if(darLlaves&&user&&data?.action==='create')conLlaves(user);return POST(new Request(base+'/api/game',{method:'POST',headers:{'content-type':'application/json','origin':base,...(user?{cookie:await cookieFor(user)}:{})},body:JSON.stringify(data)}));}
@@ -454,6 +455,67 @@ test('quien acaba de llegar ya puede crear, invitar y adjuntar una prueba',async
  const tope=await request({...valid,q:'¿Cabe una tercera zanja el mismo día?'},recien,false);
  assert.equal(tope.status,429);
  assert.match((await tope.json()).error,/2 zanjas al día/);
+});
+
+test('quien llega por un enlace responde sin cuenta',async()=>{
+ // El registro puesto delante de la respuesta era la fuga: a B le mandan el
+ // enlace por el chat donde discutían y no ha elegido esta app. Ahora envía y
+ // el servidor le firma una sesión de invitado con la propia respuesta.
+ const autor='autor-del-pleito';
+ const defensasB=['Avisé con tiempo de sobra y no me contestó nadie.','La casa también es mía y pago la mitad del alquiler.','No es la primera vez que pasa exactamente esto.'];
+ const creado=await(await request({...valid,q:'¿Hay que avisar antes de traer a alguien a cenar a casa?',mode:'invite',bt:'',b:'',deferPublication:true},autor)).json();
+ assert.ok(creado.invite);
+
+ const sinCuenta=await POST(new Request(base+'/api/game',{method:'POST',
+  headers:{'content-type':'application/json','origin':base},
+  body:JSON.stringify({action:'respond',invite:creado.invite,consent:true,b:defensasB})}));
+ assert.equal(sinCuenta.status,200,'responder no pide cuenta');
+
+ const galleta=sinCuenta.headers.get('set-cookie');
+ assert.ok(galleta?.startsWith(SESSION_COOKIE+'='),'la respuesta trae la sesión del invitado');
+ assert.match(galleta,/HttpOnly/,'y no la puede leer el JavaScript de la página');
+
+ const fila=sql.prepare('SELECT respondent,status FROM cases WHERE invite=?').get(creado.invite);
+ assert.match(fila.respondent,/^g_/,'el invitado queda como la otra parte del caso');
+ assert.equal(fila.status,'ready');
+
+ // Con esa cookie sigue en la app y se sabe que es un invitado.
+ const suCookie=galleta.split(';')[0];
+ const mirada=await GET(new Request(base+'/api/game',{headers:{cookie:suCookie}}));
+ const visto=await mirada.json();
+ assert.equal(visto.signedIn,true);
+ assert.equal(visto.invitado,true);
+
+ // Lo único que no puede hacer es abrir zanjas suyas: eso sí pide cuenta,
+ // porque una identidad que se renueva borrando la cookie no tiene freno.
+ const propia=await POST(new Request(base+'/api/game',{method:'POST',
+  headers:{'content-type':'application/json','origin':base,cookie:suCookie},
+  body:JSON.stringify({...valid,q:'¿Puede un invitado abrir su propia zanja sin cuenta?'})}));
+ assert.equal(propia.status,403);
+ assert.match((await propia.json()).error,/Crea una cuenta/);
+
+ // Y la invitación sigue siendo de un solo uso.
+ const repetida=await POST(new Request(base+'/api/game',{method:'POST',
+  headers:{'content-type':'application/json','origin':base},
+  body:JSON.stringify({action:'respond',invite:creado.invite,consent:true,b:defensasB})}));
+ assert.equal(repetida.status,409);
+});
+
+test('un invitado no se cuela con la respuesta mal puesta',async()=>{
+ // Firmar la sesión antes de validar sería regalar identidades a quien golpee
+ // el endpoint: la defensa tiene que ser válida y la invitación existir.
+ const floja=await POST(new Request(base+'/api/game',{method:'POST',
+  headers:{'content-type':'application/json','origin':base},
+  body:JSON.stringify({action:'respond',invite:'no-existe',consent:true,b:['corta','corta','corta']})}));
+ assert.equal(floja.status,400);
+ assert.equal(floja.headers.get('set-cookie'),null,'sin defensa válida no hay sesión');
+
+ const perdida=await POST(new Request(base+'/api/game',{method:'POST',
+  headers:{'content-type':'application/json','origin':base},
+  body:JSON.stringify({action:'respond',invite:'no-existe',consent:true,
+   b:['Un motivo con longitud más que suficiente.','Otro motivo distinto y bien largo también.','Y un tercero para completar la defensa.']})}));
+ assert.equal(perdida.status,409);
+ assert.equal(perdida.headers.get('set-cookie'),null,'una invitación que no existe tampoco abre sesión');
 });
 
 test('la campana avisa de lo tuyo y se calla al mirarla',async()=>{

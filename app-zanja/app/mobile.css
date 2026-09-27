@@ -382,6 +382,9 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 .sin-cuenta p{margin-top:11px;font-size:14px;line-height:1.6;color:#c2b3d6}
 .sin-cuenta>.game-btn{width:100%;margin-top:19px}
 .sin-cuenta>.quiet-btn{margin-top:6px;font-size:13px}
+/* El invitado sí tiene algo hecho, así que su aviso pesa menos que el de
+ * quien no ha entrado: misma tarjeta, media mascota. */
+.sin-cuenta.es-invitado>img{width:min(34vw,118px)}
 /* La puerta ocupa el sitio del nivel mientras no haya cuenta. */
 .level-chip.chip-entrar{color:#e3d6f7}
 .level-chip.chip-entrar>svg{color:var(--yellow)}
