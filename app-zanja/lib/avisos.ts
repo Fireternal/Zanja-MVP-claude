@@ -8,7 +8,7 @@
 // tu argumento son una buena noticia, no diez; una lista que se llena de
 // repeticiones deja de leerse a la semana.
 
-export type TipoAviso='zanjada'|'respondida'|'secundado'|'sala';
+export type TipoAviso='zanjada'|'respondida'|'secundado'|'sala'|'pulso';
 export type Aviso={id:string;tipo:TipoAviso;at:number;nuevo:boolean;caseId?:string;q?:string;cuantos?:number};
 
 /** Cuántos avisos se guardan: lo de hace un mes ya no es un aviso. */
@@ -21,6 +21,8 @@ export type Material={
  apoyos:{commentId:string;caseId:string;q:string;at:number}[];
  /** Voces de otras personas en casos tuyos. */
  voces:{caseId:string;q:string;at:number}[];
+ /** El acierto del Pulso de ayer, si lo hubo. */
+ pulso:{acierto:boolean;dia:number}|null;
 };
 
 /** Junta varias cosas del mismo sitio en un solo aviso, con su recuento. */
@@ -48,6 +50,8 @@ export function avisosDe(m:Material,visto:number,ahora:number=Date.now()):{items
 
  items.push(...agrupar(m.voces,v=>v.caseId,(v,cuantos,at)=>
   ({id:'sala:'+v.caseId,tipo:'sala',at,nuevo:false,caseId:v.caseId,q:v.q,cuantos})));
+
+ if(m.pulso?.acierto)items.push({id:'pulso:'+m.pulso.dia,tipo:'pulso',at:(m.pulso.dia+1)*86400000,nuevo:false});
 
  const ordenados=items.filter(a=>a.at>0&&a.at<=ahora).sort((x,y)=>y.at-x.at).slice(0,TOPE_AVISOS)
   .map(a=>({...a,nuevo:a.at>visto}));

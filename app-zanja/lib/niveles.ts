@@ -12,14 +12,15 @@
 //
 // Lo que nunca da un nivel es peso en la sentencia: un voto es un voto. El
 // nivel premia la participación, no da la razón.
+import {PULSE_POINTS} from './pulse';
 import {SELLO_XP} from './expediente';
 
 /** Lo que da un voto en el Juzgado. */
 export const XP_VOTO=5;
 
-/** La experiencia sale de juzgar y de cumplir el expediente del día. */
-export const xpDe=({votos=0,sellos=0}:{votos?:number;sellos?:number})=>
- votos*XP_VOTO+sellos*SELLO_XP;
+/** La experiencia sale de los tres sitios donde se participa. */
+export const xpDe=({votos=0,aciertos=0,sellos=0}:{votos?:number;aciertos?:number;sellos?:number})=>
+ votos*XP_VOTO+aciertos*PULSE_POINTS+sellos*SELLO_XP;
 
 export type Rango={nivel:number;xp:number;titulo:string;nota:string};
 

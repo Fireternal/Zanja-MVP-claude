@@ -33,9 +33,8 @@ Abre el archivo [`db/crear-tablas.sql`](db/crear-tablas.sql) de este
 repositorio, copia todo su contenido, pégalo en la consola y dale a
 **Execute**.
 
-Eso crea las ocho tablas: casos, votos, denuncias, comentarios, apoyos, los
-avisos vistos, las cuentas y la del Pulso, que ya no se usa pero sigue en el
-esquema. Es lo único de todo el proceso que
+Eso crea las ocho tablas: casos, votos, denuncias, comentarios, apoyos, el
+Pulso, los avisos vistos y las cuentas. Es lo único de todo el proceso que
 hay que hacer una vez y sólo una.
 
 ## 3. El almacén de imágenes

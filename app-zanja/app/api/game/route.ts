@@ -2,6 +2,7 @@ import {db,sessionSecret,trustsPlatformHeader} from '@/lib/server-db';
 import {guardarPrueba,borrarPrueba} from '@/lib/almacen';
 import {SESSION_COOKIE,SESSION_DAYS,readCookie,sessionCookie,signSession,verifySession} from '@/lib/session';
 import {boundedJson,decodeEvidence} from '@/lib/evidence';
+import {CHOICES,PULSE_POINTS,dayOf,percentOf as pulsePercent,questionFor,totalOf,winnerOf,type Choice,type Tally} from '@/lib/pulse';
 import {seeds,categories,readDefenses,validDefenses,COMMENT_MIN,COMMENT_MAX} from '@/lib/cases';
 import {expedienteDe} from '@/lib/expediente';
 import {xpDe,limiteDiario} from '@/lib/niveles';
@@ -48,8 +49,16 @@ async function identity(req:Request){
 const caseFor=async(database:any,id:string)=>seeds.find(x=>x.id===id)||await database.prepare('SELECT id,owner,respondent,status,closes FROM cases WHERE id=?').bind(id).first();
 const roomOpen=(c:any)=>!!c&&c.status==='open'&&!(c.closes&&c.closes<=Date.now());
 
-/** Quién puede hablar en la sala de un caso. */
+/** El día de una sala del Pulso, o null si la sala es de un caso. */
+const pulseDay=(id:string)=>/^pulso-\d+$/.test(id)?Number(id.slice(6)):null;
+
+/** Quién puede hablar en una sala, sea de un caso o del Pulso. */
 async function roomContext(database:any,id:string,user:string|null){
+ const dia=pulseDay(id);
+ if(dia!==null){
+  const voto:any=user?await database.prepare('SELECT choice FROM pulse WHERE day=? AND user_id=?').bind(dia,user).first():null;
+  return {exists:true,open:dia===dayOf(),side:voto?.choice||null,protagonist:false};
+ }
  const c:any=await caseFor(database,id);
  if(!c)return {exists:false,open:false,side:null,protagonist:false};
  const voto:any=user?await database.prepare('SELECT choice FROM votes WHERE case_id=? AND user_id=?').bind(id,user).first():null;
@@ -83,6 +92,40 @@ async function topComments(database:any){
  return best;
 }
 
+// --- El Pulso -----------------------------------------------------------
+// Una pregunta al día. El reparto se ve después de responder, como en el
+// Juzgado, y los puntos se cobran al día siguiente: sin eso no hay motivo
+// para volver mañana.
+async function pulso(database:any,user:string|null){
+ const hoy=dayOf(),ayer=hoy-1;
+ const [recuento,mios,voces]=await database.batch([
+  database.prepare('SELECT day,choice,count(*) n FROM pulse GROUP BY day,choice'),
+  database.prepare('SELECT day,choice FROM pulse WHERE user_id=?').bind(user||''),
+  database.prepare('SELECT count(*) n FROM comments WHERE case_id=?').bind('pulso-'+dayOf())]);
+ const marca=(d:number):Tally=>{const t:Tally={si:0,no:0};
+  for(const r of recuento.results as any[])if(Number(r.day)===d&&(r.choice==='si'||r.choice==='no'))t[r.choice as Choice]=Number(r.n);
+  return t;};
+ const mio=(d:number)=>user?((mios.results as any[]).find(r=>Number(r.day)===d)?.choice as Choice|undefined)||null:null;
+
+ const hoyT=marca(hoy),elegido=mio(hoy);
+ const ayerT=marca(ayer),elegidoAyer=mio(ayer),ganadorAyer=winnerOf(ayerT);
+
+ // Los aciertos sólo cuentan días ya cerrados: el de hoy todavía se mueve.
+ let aciertos=0;
+ for(const r of mios.results as any[]){
+  const d=Number(r.day);if(d>=hoy)continue;
+  if(winnerOf(marca(d))===r.choice)aciertos++;
+ }
+
+ return {day:hoy,question:questionFor(hoy),choice:elegido,
+  counts:elegido?hoyT:null,total:totalOf(hoyT),
+  voices:Number((voces.results as any[])[0]?.n||0),
+  hits:aciertos,points:aciertos*PULSE_POINTS,
+  yesterday:elegidoAyer?{question:questionFor(ayer),choice:elegidoAyer,winner:ganadorAyer,
+   hit:!!ganadorAyer&&ganadorAyer===elegidoAyer,points:PULSE_POINTS,
+   counts:ayerT,total:totalOf(ayerT)}:null};
+}
+
 /**
  * La experiencia de alguien, contada igual que en la pantalla de perfil.
  *
@@ -90,29 +133,39 @@ async function topComments(database:any){
  * candado del botón es una cortesía, esto es la puerta.
  */
 async function xpDeUsuario(database:any,user:string){
- const [votos,charlas]=await database.batch([
+ const [votos,latidos,charlas,todos]=await database.batch([
   database.prepare('SELECT at FROM votes WHERE user_id=?').bind(user),
-  database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user)]);
+  database.prepare('SELECT day,choice FROM pulse WHERE user_id=?').bind(user),
+  database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user),
+  database.prepare('SELECT day,choice,count(*) n FROM pulse GROUP BY day,choice')]);
+ const hoy=dayOf();
+ const marca=(d:number):Tally=>{const t:Tally={si:0,no:0};
+  for(const r of todos.results as any[])if(Number(r.day)===d&&(r.choice==='si'||r.choice==='no'))t[r.choice as Choice]=Number(r.n);
+  return t;};
+ const aciertos=(latidos.results as any[]).filter(r=>Number(r.day)<hoy&&winnerOf(marca(Number(r.day)))===r.choice).length;
  const sellos=expedienteDe({votos:(votos.results as any[]).map(v=>Number(v.at)),
+  pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
   comentarios:(charlas.results as any[]).map(r=>Number(r.at))}).sellos;
- return xpDe({votos:(votos.results as any[]).length,sellos});
+ return xpDe({votos:(votos.results as any[]).length,aciertos,sellos});
 }
 
 // --- La campana ----------------------------------------------------------
 // Los avisos se deducen; lo único guardado es cuándo se miró por última vez.
-async function avisos(database:any,user:string|null){
+async function avisos(database:any,user:string|null,pulse:any){
  if(!user)return {items:[],nuevos:0};
  const [mios,apoyos,voces,visto]=await database.batch([
   database.prepare("SELECT id,q,status,closes,answered,respondent FROM cases WHERE owner=? AND status!='removed'").bind(user),
-  database.prepare('SELECT s.comment_id,s.at,c.case_id,ca.q FROM seconds s JOIN comments c ON c.id=s.comment_id LEFT JOIN cases ca ON ca.id=c.case_id WHERE c.user_id=? AND s.user_id!=? AND c.case_id NOT LIKE \'pulso-%\'').bind(user,user),
+  database.prepare('SELECT s.comment_id,s.at,c.case_id,ca.q FROM seconds s JOIN comments c ON c.id=s.comment_id LEFT JOIN cases ca ON ca.id=c.case_id WHERE c.user_id=? AND s.user_id!=?').bind(user,user),
   database.prepare('SELECT co.case_id,co.at,ca.q FROM comments co JOIN cases ca ON ca.id=co.case_id WHERE ca.owner=? AND co.user_id!=?').bind(user,user),
   database.prepare('SELECT at FROM seen WHERE user_id=?').bind(user)]);
- // La sala puede ser de un caso del catálogo, que no está en la tabla.
- const titulo=(id:string,q:string|null)=>q||seeds.find(x=>x.id===id)?.q||'';
+ // La sala puede ser de un caso del catálogo o del Pulso, que no están en la tabla.
+ const titulo=(id:string,q:string|null)=>{const dia=pulseDay(id);
+  return q||(dia!==null?questionFor(dia):seeds.find(x=>x.id===id)?.q||'');};
  return avisosDe({
   mios:(mios.results as any[]).map(c=>({id:c.id,q:c.q,status:c.status,closes:Number(c.closes),answered:Number(c.answered||0),respondent:c.respondent})),
   apoyos:(apoyos.results as any[]).map(r=>({commentId:r.comment_id,caseId:r.case_id,q:titulo(r.case_id,r.q),at:Number(r.at)})),
-  voces:(voces.results as any[]).map(r=>({caseId:r.case_id,q:titulo(r.case_id,r.q),at:Number(r.at)}))},
+  voces:(voces.results as any[]).map(r=>({caseId:r.case_id,q:titulo(r.case_id,r.q),at:Number(r.at)})),
+  pulso:pulse.yesterday?{acierto:!!pulse.yesterday.hit,dia:dayOf()-1}:null},
   Number((visto.results as any[])[0]?.at||0));
 }
 
@@ -125,20 +178,24 @@ export async function GET(req:Request){try{
  const [cs,vs,rs]=await database.batch([database.prepare("SELECT * FROM cases WHERE status != 'removed' ORDER BY created DESC LIMIT 300"),database.prepare('SELECT case_id,choice,count(*) n FROM votes GROUP BY case_id,choice'),database.prepare('SELECT case_id,count(*) n FROM reports GROUP BY case_id')]);
  const personal=user?await database.prepare('SELECT case_id,choice,at FROM votes WHERE user_id=?').bind(user).all():{results:[]};
  const voices=await topComments(database);
+ const pulse=await pulso(database,user);
  const reported=user?await database.prepare('SELECT case_id FROM reports WHERE user_id=?').bind(user).all():{results:[]};
- const campana=await avisos(database,user);
+ const campana=await avisos(database,user,pulse);
  const now=Date.now(); const editorialIds=new Set(seeds.map(c=>c.id)); const records=[...seeds,...cs.results.filter((c:any)=>!editorialIds.has(c.id))] as any[];
  const data=records.filter(c=>!['waiting','ready'].includes(c.status)||c.owner===user||(c.status==='ready'&&c.respondent===user)).filter(c=>c.audience!=='link'||c.owner===user||c.respondent===user||c.id===url.searchParams.get('case')).filter(c=>c.owner===user||!rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)).map(c=>{
  const a=readDefenses(c.a),b=readDefenses(c.b);const needsDefenses=!validDefenses(a)||(c.status!=='waiting'&&!validDefenses(b));
  const vote:any=personal.results.find((v:any)=>v.case_id===c.id);const closed=c.closes>0&&c.closes<=now&&c.status!=='waiting';const counts={a:0,both:0,b:0,none:0};vs.results.filter((v:any)=>v.case_id===c.id).forEach((v:any)=>{counts[v.choice as keyof typeof counts]=Number(v.n);});
  return {id:c.id,story:c.story||'',audience:c.audience||'public',workflow:c.workflow||0,duration:c.duration,evidenceUrl:c.evidence?'/api/evidence?id='+encodeURIComponent(c.id):(c.editorial?c.evidenceUrl||null:null),q:c.q,tag:c.tag,at:c.at,a:c.status==='ready'&&c.owner!==user?[]:a,bt:c.bt,b,needsDefenses,emoji:c.emoji,created:c.created,closes:c.closes,status:rs.results.some((r:any)=>r.case_id===c.id&&r.n>=3)?'review':closed?'closed':needsDefenses?'incomplete':c.status,editorial:c.editorial||0,mine:c.owner===user,participant:c.respondent===user,votedAt:vote?.at||0,bilateral:!!c.respondent,choice:vote?.choice||null,counts:vote||closed||c.owner===user?counts:null,voice:vote||closed||c.owner===user?voices.get(c.id)||null:null,total:Object.values(counts).reduce((a,b)=>a+b,0),invite:c.owner===user?c.invite:undefined,reported:reported.results.some((r:any)=>r.case_id===c.id)};
  });
- // El expediente se deduce de lo que ya está guardado: votos y voces.
- const charlas=user?await database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user).all():{results:[]};
+ // El expediente se deduce de lo que ya está guardado: votos, pulsos y voces.
+ const [charlas,latidos]=user?await database.batch([
+  database.prepare('SELECT at FROM comments WHERE user_id=?').bind(user),
+  database.prepare('SELECT day FROM pulse WHERE user_id=?').bind(user)]):[{results:[]},{results:[]}];
  const expediente=expedienteDe({votos:(personal.results as any[]).map(v=>Number(v.at)),
+  pulsos:(latidos.results as any[]).map(r=>Number(r.day)),
   comentarios:(charlas.results as any[]).map(r=>Number(r.at))});
  const perDay:Record<string,number>={};personal.results.forEach((v:any)=>{const key=new Date(v.at).toISOString().slice(0,10);perDay[key]=(perDay[key]||0)+1;});const day=new Date(now).toISOString().slice(0,10); const today=personal.results.filter((v:any)=>new Date(v.at).toISOString().slice(0,10)===day).length;
- return reply({cases:data,expediente,avisos:campana,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(now/86400000)%seeds.length].id});
+ return reply({cases:data,pulse,expediente,avisos:campana,profile:{votes:personal.results.length,xp:xpDe({votos:personal.results.length,aciertos:pulse.hits,sellos:expediente.sellos}),today,dailyAchieved:Object.values(perDay).some(n=>n>=5),created:cs.results.filter((c:any)=>c.owner===user).length},signedIn:!!user,invitado:!!user&&esInvitado(user),daily:seeds[Math.floor(now/86400000)%seeds.length].id});
  }catch(e){console.error(e);return fail('No hemos podido cargar la partida. Inténtalo de nuevo.',503);}}
 export async function POST(req:Request){try{
  const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return fail('Origen no permitido.',403);
@@ -176,6 +233,16 @@ export async function POST(req:Request){try{
  const a=validDefenses(data.b)?data.b.map((x:string)=>x.trim()):null,at='Bando B';if(!a||!data.consent)return fail('Escribe tres defensas distintas de 12 a 160 caracteres y confirma la pregunta.');
  const invited:any=await database.prepare('SELECT a,workflow FROM cases WHERE invite=?').bind(data.invite).first();if(!invited||!validDefenses(readDefenses(invited.a)))return fail('Esta invitación es anterior al nuevo formato. Pide al autor una nueva zanja.',409);
  const result=invited.workflow?await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='ready',closes=0 WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,data.invite,user).run():await database.prepare("UPDATE cases SET b=?,bt=?,respondent=?,answered=?,status='open',closes=?+duration WHERE invite=? AND status='waiting' AND owner!=?").bind(JSON.stringify(a),at,user,now,now,data.invite,user).run();if(!result.meta.changes)return fail('La invitación ya se ha usado o pertenece a tu propio caso.',409);return reply({ok:true,pendingPublication:!!invited.workflow},cookieNueva);
+ }
+ if(data.action==='pulse'){
+ if(!CHOICES.includes(data.choice))return fail('Elige sí o no.');
+ const hoy=dayOf(now);
+ const puesto=await database.prepare('INSERT OR IGNORE INTO pulse (day,user_id,choice,at) VALUES (?,?,?,?)').bind(hoy,user,data.choice,now).run();
+ if(!puesto.meta.changes)return fail('Ya has respondido el pulso de hoy.',409);
+ const tally=await database.prepare('SELECT choice,count(*) n FROM pulse WHERE day=? GROUP BY choice').bind(hoy).all();
+ const counts:Tally={si:0,no:0};
+ for(const r of tally.results as any[])if(r.choice==='si'||r.choice==='no')counts[r.choice as Choice]=Number(r.n);
+ return reply({ok:true,choice:data.choice,counts,total:totalOf(counts)});
  }
  if(data.action==='comment'||data.action==='uncomment'){
  const sala=String(data.id||'');

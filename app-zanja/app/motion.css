@@ -31,8 +31,8 @@
  * Lo que se puede tocar se hunde. Sin esto una tarjeta grande parece un
  * cartel y no un botón.
  */
-.pulsable,.mission-tile,.home-shortcut,.ficha-abrir,.avisos>li>button,.escalera>li{transition:transform .16s var(--suave),box-shadow .16s var(--suave)}
-.pulsable:active,.mission-tile:active,.home-shortcut:active,.ficha-abrir:active,.avisos>li>button:active{transform:scale(.972)}
+.pulsable,.mission-tile,.home-shortcut,.ficha-abrir,.pulso-tarjeta,.avisos>li>button,.escalera>li{transition:transform .16s var(--suave),box-shadow .16s var(--suave)}
+.pulsable:active,.mission-tile:active,.home-shortcut:active,.ficha-abrir:active,.pulso-tarjeta:active,.avisos>li>button:active{transform:scale(.972)}
 
 /* --- Pantallas -----------------------------------------------------------
  * Entran desde abajo con un punto de rebote, no con un desvanecido plano.
@@ -230,6 +230,7 @@
 [data-motion=off] .fiesta-confeti,[data-motion=off] .fiesta-aro,[data-motion=off] .fiesta-rayos,[data-motion=off] .brillo:after,
 [data-motion=off] .xp-track>[data-slot=progress-indicator]:after,[data-motion=off] .play-zone>.game-btn:after,
 [data-motion=off] .vote-pending .vote-team.selected:after,[data-motion=off] .vote-pending .vote-both.selected:after{display:none}
+
 
 /* --- La mascota ----------------------------------------------------------
  * Flota despacio para que la pantalla vacía no parezca una pantalla rota.

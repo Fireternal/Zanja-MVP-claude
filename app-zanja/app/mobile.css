@@ -64,6 +64,168 @@ html,body{height:100%;overscroll-behavior:none}body{background:radial-gradient(e
 @media(max-height:740px){.scene-title{bottom:18px}.lobby-scene{min-height:112px}}
 .dev-reset{flex-shrink:0;display:flex;align-items:center;gap:4px;min-height:38px;padding:4px 7px;border:1px dashed #cf9ef5;border-radius:9px;background:#482959;color:#ead1ff}.dev-reset>span{font-size:10px;line-height:1.2;font-weight:1000}.dev-reset small{display:block;font-size:9px;letter-spacing:1px;color:#ffdd63}.dev-reset:disabled{opacity:.5}.home-screen .topbar{flex-wrap:wrap}.home-screen .topbar .header-right{margin-left:auto}@media(max-width:390px){.home-screen .topbar{padding-left:10px;padding-right:10px;gap:5px}.home-screen .topbar .brand{font-size:25px}.home-screen .topbar .beta-tag{display:none}.home-screen .topbar .level-chip{padding:6px;min-height:35px}.home-screen .topbar .level-chip>svg{display:none}}
 
+/* ---------- El Pulso ---------- */
+/* Inicio pasa de cuatro bloques a cinco, así que la rejilla deja sitio para
+   una fila que mide lo que ocupa y la pantalla se desplaza si hace falta. */
+/* La casilla del día: antes llevaba a un caso al que ya se llega desde el
+   Juzgado; ahora es la entrada al Pulso, y enseña cómo va si ya respondiste. */
+.pulso-tarjeta .daily-feature-heading{justify-content:space-between}
+/* La casilla enseña el pulso como un marcador: las cifras arriba, en su
+   color, y la barra debajo como apoyo. Ocupa dos líneas y se lee de un
+   vistazo, que es lo que se le pide a un menú. */
+.pulso-avance{margin:9px 44px 0 0;display:flex;flex-direction:column;gap:5px}
+.pulso-marcador-dia{
+ display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pulso-marcador-dia span{display:flex;align-items:baseline;gap:5px}
+.pulso-marcador-dia em{
+ font-style:normal;font-size:10.5px;font-weight:1000;letter-spacing:1.2px}
+.pulso-marcador-dia b{
+ font-family:var(--display);font-weight:400;font-size:21px;line-height:1;
+ font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #22112f}
+.pulso-marcador-dia small{
+ font-size:10px;font-weight:800;letter-spacing:.4px;color:#e8e2f5}
+/* En la casilla, todo va en blanco con la sombra dura de la casa: debajo hay
+   una ilustración, y el azul y el rojo sobre ella se enturbian. El color lo
+   pone la barra, que está justo debajo. */
+.pulso-marcador-dia span,.pulso-marcador-dia b,
+.pulso-marcador-dia em,.pulso-marcador-dia small{
+ color:#fff;text-shadow:0 2px 0 #22112f}
+.pulso-mini{
+ display:flex;gap:2px;height:14px;border-radius:7px;
+ overflow:hidden;border:2px solid #1c1030;background:#160f28}
+.pulso-mini .pulso-tramo{box-shadow:none;min-width:3px}
+.pulso-llamada{
+ align-self:flex-start;margin-top:10px;padding:4px 9px;border-radius:999px;
+ background:#ffffff1f;border:1px solid #ffffff33;
+ font-size:10.5px;font-weight:1000;letter-spacing:1px;color:#fff}
+
+/* La hoja va dentro del diálogo, que ya es la tarjeta: aquí sólo el ritmo. */
+/* HOY en amarillo, como TÚ DECIDES: los dos botones del menú riman. */
+.pulso-tarjeta h2 b{color:var(--yellow);font-weight:inherit}
+
+.pulso{display:flex;flex-direction:column;gap:12px}
+.pulso-pantalla .court-toolbar h1{flex:1}
+.pulso-cierre{
+ display:flex;align-items:center;gap:6px;margin:0;
+ font-size:11px;font-weight:1000;letter-spacing:1.2px;color:var(--yellow)}
+.pulso-cierre b{
+ font-family:var(--display);font-weight:400;font-size:15px;color:#fff;
+ font-variant-numeric:tabular-nums;letter-spacing:.3px}
+.pulso-cierre svg{animation:pulso-latido 1.6s ease-in-out infinite}
+@keyframes pulso-latido{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.2);opacity:1}}
+.pulso-enunciado{
+ margin:0;font-family:var(--display);font-weight:400;
+ font-size:clamp(22px,6.2vw,28px);line-height:1.14;color:#fff;
+ text-shadow:0 3px 0 #22112f;text-wrap:balance}
+.pulso-resumen{margin:0;font-size:13px;line-height:1.45;color:#cfc7de}
+.pulso-pantalla .pulso-duelo{height:62px}
+/* El tirón: la costura no se queda quieta y por los bandos pasa un brillo.
+   Es lo que hace que la pantalla parezca en tensión y no un gráfico. */
+@keyframes pulso-tirar{0%,100%{margin-left:-1.5px}26%{margin-left:-5px}62%{margin-left:2px}}
+@keyframes pulso-barrido{0%{transform:translateX(-110%)}55%,100%{transform:translateX(320%)}}
+/* Los botones brillan, no se mueven: un blanco que no para quieto no hay
+   quien lo pulse. */
+@keyframes pulso-invita{
+ 0%,100%{box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33}
+ 50%{box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33,0 0 20px #ffffff59}}
+.pulso-pantalla .pulso-costura{animation:pulso-tension 1.7s ease-in-out infinite,pulso-tirar 3.4s ease-in-out infinite}
+.pulso-pantalla .pulso-tramo{position:relative;overflow:hidden}
+.pulso-pantalla .pulso-tramo::after{
+ content:"";position:absolute;inset:0;width:45%;
+ background:linear-gradient(100deg,transparent,#ffffff33,transparent);
+ animation:pulso-barrido 3.8s linear infinite}
+.pulso-pantalla .pulso-no::after{animation-delay:1.9s}
+.pulso-pantalla .pulso-botones .pulso-boton{animation:pulso-invita 2.8s ease-in-out infinite}
+.pulso-pantalla .pulso-boton-no{animation-delay:1.4s}
+@media(prefers-reduced-motion:reduce){
+ .pulso-cierre svg,.pulso-pantalla .pulso-costura,.pulso-pantalla .pulso-tramo::after,
+ .pulso-pantalla .pulso-botones .pulso-boton{animation:none}}
+[data-motion=off] .pulso-cierre svg,[data-motion=off] .pulso-pantalla .pulso-costura,
+[data-motion=off] .pulso-pantalla .pulso-tramo::after,
+[data-motion=off] .pulso-pantalla .pulso-botones .pulso-boton{animation:none}
+.pulso-marcador{
+ font-size:10.5px;font-weight:1000;letter-spacing:.8px;color:var(--ink);
+ background:var(--yellow);border-radius:999px;padding:3px 9px;flex:0 0 auto}
+
+.pulso-botones{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.pulso-boton{
+ display:flex;align-items:center;justify-content:center;gap:7px;
+ min-height:44px;border-radius:12px;border:2px solid #271633;
+ font-family:var(--display);font-weight:400;font-size:16px;letter-spacing:.5px;
+ box-shadow:0 4px 0 #140d24,inset 0 2px 0 #ffffff33}
+.pulso-boton-si{background:linear-gradient(var(--a-marco),var(--a-fondo));color:#08283a}
+.pulso-boton-no{background:linear-gradient(var(--b-marco),var(--b-fondo));color:#3a0f18}
+.pulso-boton:active:not(:disabled),.pulso-boton.es-pulsado{transform:translateY(3px);box-shadow:0 1px 0 #140d24}
+.pulso-boton:disabled{opacity:.6}
+
+.pulso-resultado{display:flex;flex-direction:column;gap:8px}
+/* El duelo: dos bandos empujando desde el centro. Arranca en tablas y se
+   abre hasta el reparto real, y la costura late mientras el día sigue vivo. */
+.pulso-duelo{
+ position:relative;display:flex;gap:2px;height:46px;border-radius:13px;
+ overflow:hidden;border:2px solid var(--game-frame);box-shadow:var(--game-bevel);
+ background:#100c1f}
+.pulso-costura{
+ position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;z-index:2;
+ background:#fff;border-radius:2px;
+ box-shadow:0 0 10px #ffffffa6,0 0 22px #ffd13e6b;
+ transition:left .85s cubic-bezier(.18,.9,.22,1);
+ animation:pulso-tension 1.7s ease-in-out infinite}
+@keyframes pulso-tension{
+ 0%,100%{transform:scaleY(1);opacity:.9}
+ 50%{transform:scaleY(1.1);opacity:1}}
+.pulso-tramo{display:block;min-width:4px;transition:width .85s cubic-bezier(.18,.9,.22,1)}
+.pulso-si{background:linear-gradient(180deg,var(--a-marco),var(--a-fondo))}
+.pulso-no{background:linear-gradient(180deg,var(--b-marco),var(--b-fondo))}
+.pulso-tramo.es-mio{box-shadow:inset 0 0 0 2px var(--yellow)}
+.pulso-cifras{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ font-size:11px;font-weight:900;letter-spacing:.8px;color:#b8afcc}
+.pulso-cifras b{font-family:var(--display);font-weight:400;font-size:15px;color:#efe9fb}
+.pulso-lado-si{color:var(--a-marco)}
+.pulso-lado-no{color:var(--b-marco)}
+.pulso-cifras .es-mio::after{
+ content:"TU VOTO";display:block;font-size:9px;letter-spacing:1px;color:var(--yellow)}
+.pulso-cifras b{font-family:var(--display);font-weight:400;font-size:17px}
+.pulso-cifras small{font-size:10.5px;font-weight:800;letter-spacing:.2px}
+.pulso-ayer{
+ margin:0;font-size:11.5px;font-weight:800;line-height:1.4;color:#b8afcc;
+ padding-top:7px;border-top:1px solid #ffffff14}
+.pulso-ayer b{color:#efe9fb}
+.pulso-ayer.es-acierto{color:#d8ffd0}
+.pulso-ayer.es-acierto b{color:var(--yellow)}
+@media(prefers-reduced-motion:reduce){.pulso-tramo{transition:none}}
+[data-motion=off] .pulso-tramo,[data-motion=off] .pulso-costura{transition:none;animation:none}
+@media(prefers-reduced-motion:reduce){.pulso-costura{animation:none;transition:none}}
+/* La zona de debate va dentro de la hoja, pegada al duelo. La hoja ya se
+   desplaza sola, así que aquí no se mete otro scroll dentro. */
+.pulso .sala{margin-top:4px;padding-top:14px}
+
+/* Antes de responder: se ve que hay un reparto y un debate, pero no se
+   entra desde la barrera. Es lo que empuja a mojarse. */
+.pulso-tapado{
+ position:relative;display:grid;place-items:center;height:62px;border-radius:13px;
+ border:2px dashed #5b4a78;background:
+  repeating-linear-gradient(115deg,#241d3a 0 14px,#1d1733 14px 28px)}
+.pulso-tapado span{
+ font-size:10.5px;font-weight:1000;letter-spacing:1.4px;color:#8f86a4}
+.pulso-cerrojo{
+ display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;
+ border:2px solid #473860;background:linear-gradient(100deg,#2d2348,#241d3a);
+ box-shadow:0 4px 0 #14102399;color:#c9c1da}
+.pulso-cerrojo svg{flex:0 0 auto;color:var(--yellow)}
+.pulso-cerrojo strong{display:block;font-size:13.5px;color:#efe9fb}
+.pulso-cerrojo small{display:block;margin-top:3px;font-size:12px;line-height:1.4}
+
+/* El estado del día, cuando el reparto dice algo por sí solo. */
+.pulso-estado{
+ margin:0;align-self:flex-start;padding:6px 11px;border-radius:999px;
+ font-size:11px;font-weight:1000;letter-spacing:1.1px;
+ border:2px solid currentColor}
+.pulso-estado-paliza{color:var(--yellow)}
+.pulso-estado-tablas{color:#c7c2d8}
+.pulso-estado-reñido{color:var(--coral)}
+
 /* ---------- Tú ---------- */
 /* Perfil y Mis zanjas eran dos pestañas y una estaba vacía para quien acaba
    de entrar. Juntas son una sola pantalla que siempre tiene algo: tus votos. */

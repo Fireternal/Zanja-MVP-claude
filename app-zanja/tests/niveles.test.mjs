@@ -6,9 +6,9 @@ import ts from 'typescript';
 
 const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
 const url=nombre=>'data:text/javascript;base64,'+Buffer.from(compile(readFileSync(new URL('../lib/'+nombre,import.meta.url),'utf8'))).toString('base64');
-const expedienteUrl=url('expediente.ts');
+const pulseUrl=url('pulse.ts'),expedienteUrl=url('expediente.ts');
 const fuente=compile(readFileSync(new URL('../lib/niveles.ts',import.meta.url),'utf8'))
- .replace("'./expediente'",JSON.stringify(expedienteUrl));
+ .replace("'./pulse'",JSON.stringify(pulseUrl)).replace("'./expediente'",JSON.stringify(expedienteUrl));
 const {rangos,XP_VOTO,nivelDe,xpDelNivel,tituloDe,progresoDe,limiteDiario,xpDe,PASO_EXTRA,LIMITE_BASE,LIMITE_VETERANO}
  =await import('data:text/javascript;base64,'+Buffer.from(fuente).toString('base64'));
 
@@ -65,15 +65,14 @@ test('el límite diario de zanjas depende del nivel',()=>{
  assert.equal(limiteDiario(xpDelNivel(5)),LIMITE_VETERANO);
 });
 
-test('la experiencia suma juzgar y sellar',()=>{
+test('la experiencia suma los tres sitios',()=>{
  assert.equal(xpDe({}),0);
  assert.equal(xpDe({votos:10}),50);
- assert.ok(xpDe({votos:5,sellos:1})>xpDe({votos:5}));
- // Un día completo del expediente —cinco veredictos y el sello— son 50 XP.
- // Con el acierto del Pulso eran justo los 60 del nivel 2; sin él, quien se
- // lo toma en serio llega igual el primer día con un par de veredictos más.
- const unDia=xpDe({votos:5,sellos:1});
- assert.equal(unDia,50);
- assert.equal(nivelDe(unDia),1);
- assert.equal(nivelDe(xpDe({votos:7,sellos:1})),2);
+ assert.ok(xpDe({votos:5,aciertos:1,sellos:1})>xpDe({votos:5}));
+ // El nivel 2 sigue puesto justo en un día completo del expediente: ya no
+ // abre nada, pero marca que quien se lo toma en serio una tarde sube.
+ const unDia=xpDe({votos:5,aciertos:1,sellos:1});
+ assert.equal(unDia,xpDelNivel(2));
+ assert.equal(nivelDe(unDia),2);
+ assert.equal(nivelDe(unDia-XP_VOTO),1);
 });

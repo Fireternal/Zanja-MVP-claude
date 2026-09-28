@@ -54,7 +54,7 @@ export function Celebracion({fiesta,onCerrar}:{fiesta:Fiesta;onCerrar:()=>void})
    </>:<>
     <span className="fiesta-eyebrow">EXPEDIENTE DEL DÍA</span>
     <h2>Día sellado.</h2>
-    <p>Has juzgado y has dicho lo tuyo en La Sala.</p>
+    <p>Has pasado por el Juzgado, por el Pulso y por La Sala.</p>
     <span className="fiesta-xp">+{SELLO_XP} XP</span>
     {fiesta.racha>1&&<div className="fiesta-racha"><span><Flame size={20} fill="currentColor"/></span>
      <div><small>RACHA</small><strong>{fiesta.racha} días seguidos</strong></div></div>}

@@ -4,13 +4,14 @@
 // Sin esto puedes abrir una zanja, cerrarse con cuarenta votos y no enterarte
 // nunca: la app no te reclama por ningún sitio. Cada aviso lleva a donde ha
 // pasado la cosa, porque un aviso que no se puede abrir es sólo ruido.
-import {Bell,Gavel,Swords,ThumbsUp,MessagesSquare,ChevronRight} from 'lucide-react';
+import {Bell,Gavel,Swords,ThumbsUp,MessagesSquare,Zap,ChevronRight} from 'lucide-react';
 import {DialogTitle,DialogDescription} from '@/components/ui/dialog';
 import {haceCuanto,type Aviso,type TipoAviso} from '@/lib/avisos';
+import {PULSE_POINTS} from '@/lib/pulse';
 
 export type Campanario={items:Aviso[];nuevos:number};
 
-const ICONOS:Record<TipoAviso,typeof Bell>={zanjada:Gavel,respondida:Swords,secundado:ThumbsUp,sala:MessagesSquare};
+const ICONOS:Record<TipoAviso,typeof Bell>={zanjada:Gavel,respondida:Swords,secundado:ThumbsUp,sala:MessagesSquare,pulso:Zap};
 
 function texto(a:Aviso):{titulo:string;pie:string}{
  const n=a.cuantos||1;
@@ -19,6 +20,7 @@ function texto(a:Aviso):{titulo:string;pie:string}{
   case 'respondida':return {titulo:'La otra parte ha escrito su defensa',pie:a.q||''};
   case 'secundado':return {titulo:n===1?'Han secundado tu argumento':`${n} personas han secundado tu argumento`,pie:a.q||''};
   case 'sala':return {titulo:n===1?'Una voz nueva en tu caso':`${n} voces nuevas en tu caso`,pie:a.q||''};
+  case 'pulso':return {titulo:'Acertaste el Pulso de ayer',pie:`+${PULSE_POINTS} XP para tu experiencia`};
  }
 }
 
@@ -52,6 +54,6 @@ export function AvisosHoja({campana,onIr}:{campana:Campanario|null;onIr:(a:Aviso
      </li>;})}
    </ol>
    :<div className="avisos-vacio"><span><Bell size={30}/></span>
-    <p>Aquí aparecerán los veredictos de tus casos, quién ha secundado tus argumentos y las voces nuevas en tus casos.</p></div>}
+    <p>Aquí aparecerán los veredictos de tus casos, quién ha secundado tus argumentos y los aciertos del Pulso.</p></div>}
  </>;
 }
